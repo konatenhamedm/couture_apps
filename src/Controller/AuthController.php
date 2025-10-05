@@ -82,6 +82,11 @@ class AuthController extends ApiInterface
             'user' => [
                 'id' => $user->getId(),
                 'login' => $user->getLogin(),
+                'nom' => $user->getNom() ?? '',
+                'prenoms' => $user->getPrenoms() ?? '',
+                'fcm_token' => $user->getFcmToken() ?? '',
+                'type' => $user->getType() ?? null,
+                'logo' => $user->getLogo() ?? null,
                 'roles' => $user->getRoles(),
                 'is_active' => $user->isActive(),
                 /* 'inactiveSubscriptions' => $inactiveSubscriptions, */
@@ -94,18 +99,6 @@ class AuthController extends ApiInterface
             'token_expires_in' => $jwtService->getTtl()
         ], 'group1', ['Content-Type' => 'application/json']);
 
-        /*    return $this->json([
-            'token' => $token,
-            'user' => [
-                'id' => $user->getId(),
-                'login' => $user->getLogin(),
-                'roles' => $user->getRoles(),
-                'is_active' => $user->isActive(),
-                'inactiveSubscriptions' => $inactiveSubscriptions,
-                'settings' =>  $settingRepository->findOneBy(['entreprise' => $user->getEntreprise()])
-                //'activeSubscriptions' => $activeSubscriptions
-            ],
-            'token_expires_in' => $jwtService->getTtl()
-        ]); */
+       
     }
 }

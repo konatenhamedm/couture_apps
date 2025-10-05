@@ -88,6 +88,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: "datetime_immutable", nullable: true)]
     private ?\DateTimeImmutable $plainTokenExpiresAt = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $fcmToken = null;
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
@@ -298,6 +301,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPlainTokenExpiresAt(?\DateTimeImmutable $plainTokenExpiresAt): self
     {
         $this->plainTokenExpiresAt = $plainTokenExpiresAt;
+        return $this;
+    }
+
+    public function getFcmToken(): ?string
+    {
+        return $this->fcmToken;
+    }
+
+    public function setFcmToken(?string $fcmToken): static
+    {
+        $this->fcmToken = $fcmToken;
+
         return $this;
     }
 }

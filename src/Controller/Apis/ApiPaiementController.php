@@ -360,14 +360,35 @@ class ApiPaiementController extends ApiInterface
         ], 'group1', ['Content-Type' => 'application/json']);
     }
 
-    #[Route('/webhook', name: 'webhook_paiement', methods: ['POST'])]
-    public function webHook(Request $request,  PaiementService $paiementService): Response
+    #[Route('/webhook', name: 'webhook_paiement', methods: ['GET', 'POST'])]
+    public function webHook(Request $request, PaiementService $paiementService): Response
     {
-        $response = $paiementService->methodeWebHook($request);
+        // Récupération des paramètres envoyés en query string
+        $merchantId = $request->query->get('merchantId');
+        $sessionId = $request->query->get('sessionId');
+        $payId = $request->query->get('payId');
+        $channel = $request->query->get('channel');
+        $countryCurrencyCode = $request->query->get('countryCurrencyCode');
+        $referenceNumber = $request->query->get('referenceNumber');
+        $transactiondt = $request->query->get('transactiondt');
+        $customerId = $request->query->get('customerId');
+        $returnContext = $request->query->get('returnContext');
+        $responsecode = $request->query->get('responsecode');
+        $hashcode = $request->query->get('hashcode');
 
+        // Si tu veux tout récupérer d’un coup :
+        $all = $request->query->all(); // renvoie un tableau associatif de tous les paramètres
 
-        return  $this->responseData($response, 'group1', ['Content-Type' => 'application/json']);
+        // Tu peux passer ce tableau à ton service
+        $response = $paiementService->methodeWebHook($all);
+
+        return $this->responseData(
+            $response,
+            'group1',
+            ['Content-Type' => 'application/json']
+        );
     }
+
 
     #[Route('/delete/{id}',  methods: ['DELETE'])]
     /**

@@ -109,7 +109,7 @@ class PaiementService
                 'customerEmail'        => $data['email'],
                 'customerPhoneNumber'  => $data['numero'],
                 'description'          => 'Abonnement ' . $moduleAbonnement->getCode(),
-                'notificationURL'      => "https://webhook.site/524466d3-85ab-447f-bbfd-664c6fc91759",  //$this->urlGenerator->generate('webhook_paiement', [], UrlGeneratorInterface::ABSOLUTE_URL),
+                'notificationURL'      => "https://back.ateliya.com/api/paiement/webhook",  //$this->urlGenerator->generate('webhook_paiement', [], UrlGeneratorInterface::ABSOLUTE_URL),
                 'returnURL'            => 'https://ton-site.com/paiement/retour',
                 'returnContext'        => http_build_query([
                     'paiement_id' => $paiement->getId(),
@@ -147,26 +147,26 @@ class PaiementService
 
 
 
-    public function methodeWebHook(Request $request)
+    public function methodeWebHook($data)
     {
 
-        $data = json_decode($request->getContent());
+      /*   $data = json_decode($request->getContent()); */
 /* 
         $file= fopen(dirname(__FILE__).'/paiement.log', 'w+');
         $data = file_get_contents('php://input');
         fwrite($file, $data); */
 
      
-        $paiement = $this->paiementAbonnementRepository->findOneBy(['reference' => $data->referenceNumber]);
+        $paiement = $this->paiementAbonnementRepository->findOneBy(['reference' => $data['referenceNumber']]);
 
-        if ($data->responsecode == 0) {
+        if ($data['responsecode'] == 0) {
             $paiement->setState(1);
 
             $paiement->setChannel($data->channel);
             //$transaction->setData(json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
             $this->paiementAbonnementRepository->add($paiement, true);
             // JE dois mettre a jour l'abonnement
-            $this->createAbonnement($data->referenceNumber);
+            $this->createAbonnement($data['referenceNumber']);
 
             $response = ['message' => 'OK', 'code' => 200];
         } else {
