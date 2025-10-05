@@ -23,3 +23,4 @@
 /public/.htaccess
 /assets/vendor/
 ###< symfony/asset-mapper ###
+config/firebase_credentials.json
