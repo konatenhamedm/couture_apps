@@ -17,7 +17,7 @@ class PaginationService
     }
 
     /**
-     * Paginer une requête Doctrine ou un tableau
+     * Paginer une requête Doctrine ou un tableaukkkk
      *
      * @param mixed $target QueryBuilder, Query ou array
      * @param int|null $page
