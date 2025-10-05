@@ -109,7 +109,7 @@ class PaiementService
                 'customerEmail'        => $data['email'],
                 'customerPhoneNumber'  => $data['numero'],
                 'description'          => 'Abonnement ' . $moduleAbonnement->getCode(),
-                'notificationURL'      => "https://back.ateliya.com/api/paiement/webhook",  //$this->urlGenerator->generate('webhook_paiement', [], UrlGeneratorInterface::ABSOLUTE_URL),
+                'notificationURL'      => "https://backend.ateliya.com/api/paiement/webhook",  //$this->urlGenerator->generate('webhook_paiement', [], UrlGeneratorInterface::ABSOLUTE_URL),
                 'returnURL'            => 'https://ton-site.com/paiement/retour',
                 'returnContext'        => http_build_query([
                     'paiement_id' => $paiement->getId(),

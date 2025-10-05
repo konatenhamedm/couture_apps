@@ -40,7 +40,7 @@ security:
             - { path: ^/api/login, roles: PUBLIC_ACCESS }
             - { path: ^/api/user/create, roles: PUBLIC_ACCESS }
             - { path: ^/api/user/qr-code, roles: PUBLIC_ACCESS }
-            - { path: ^/api/user/qr-code, roles: PUBLIC_ACCESS }
+            - { path: ^/api/device-token, roles: PUBLIC_ACCESS }
             - { path: ^/api/paiement/webhook, roles: PUBLIC_ACCESS }
             - { path: ^/api/reset-password, roles: PUBLIC_ACCESS }
             - { path: ^/api/reset-password/request, roles: PUBLIC_ACCESS }
