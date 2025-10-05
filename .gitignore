@@ -9,7 +9,6 @@
 /public/bundles/
 /var/
 /vendor/
-/confi/firebase_credentials.json
 ###< symfony/framework-bundle ###
 
 ###> phpunit/phpunit ###
