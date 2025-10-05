@@ -39,7 +39,7 @@ class ApiUserController extends ApiInterface
 {
 
 
-    #[Route('/qr-code', name: 'qr_code')]
+   /*  #[Route('/qr-code', name: 'qr_code')]
     public function generateQrCode(): Response
     {
        
@@ -47,7 +47,7 @@ class ApiUserController extends ApiInterface
         return $this->render('emails/welcome_user.html.twig', [
            
         ]);
-    }
+    } */
 
     #[Route('/', methods: ['GET'])]
     /**
