@@ -6,7 +6,9 @@ use App\Controller\Apis\Config\ApiInterface;
 use App\DTO\ClientDTO;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use App\Entity\Client;
+use App\Repository\BoutiqueRepository;
 use App\Repository\ClientRepository;
+use App\Repository\SurccursaleRepository;
 use App\Repository\TypeUserRepository;
 use App\Repository\UserRepository;
 use Symfony\Component\HttpFoundation\Response;
@@ -150,7 +152,7 @@ class ApiClientController extends ApiInterface
      * Permet de créer un(e) client.
      */
     #[OA\Post(
-        summary: "Permet de créer un(e) client",
+        summary: "Permet de créer un(e) client pour un surccursale",
         description: "Permet de créer un(e) client.",
         requestBody: new OA\RequestBody(
             required: true,
@@ -160,6 +162,7 @@ class ApiClientController extends ApiInterface
                     type: "object",
                     properties: [
                         new OA\Property(property: "nom", type: "string"),
+                        new OA\Property(property: "prenoms", type: "string"),
                         new OA\Property(property: "numero", type: "string"),
                         new OA\Property(property: "surccursale", type: "string"),
                         new OA\Property(property: "photo", type: "string", format: "binary"),
@@ -173,7 +176,73 @@ class ApiClientController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'client')]
-    public function create(Request $request, ClientRepository $clientRepository): Response
+    public function create(Request $request, ClientRepository $clientRepository, SurccursaleRepository $surccursaleRepository): Response
+    {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+            return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
+        }
+        $names = 'document_' . '01';
+        $filePrefix  = str_slug($names);
+        $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
+        $data = json_decode($request->getContent(), true);
+
+        $uploadedFile = $request->files->get('photo');
+
+        $client = new Client();
+        $client->setEntreprise($this->getUser()->getEntreprise());
+        $client->setPrenom($request->get('prenoms'));
+        $client->setNom($request->get('nom'));
+        $client->setNumero($request->get('numero'));
+        $client->setSurccursale($surccursaleRepository->find($request->get('surccursale')));
+
+        if ($uploadedFile) {
+            if ($fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH)) {
+                $client->setPhoto($fichier);
+            }
+        }
+
+        $client->setCreatedBy($this->getUser());
+        $client->setUpdatedBy($this->getUser());
+        $errorResponse = $this->errorResponse($client);
+        if ($errorResponse !== null) {
+            return $errorResponse; 
+        } else {
+
+            $clientRepository->add($client, true);
+        }
+
+        return $this->responseData($client, 'group1', ['Content-Type' => 'application/json']);
+    }
+    #[Route('/create/boutique', methods: ['POST'])]
+    /**
+     * Permet de créer un(e) client boutique.
+     */
+    #[OA\Post(
+        summary: "Permet de créer un(e) client pour une boutique",
+        description: "Permet de créer un(e) client.",
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: "multipart/form-data",
+                schema: new OA\Schema(
+                    type: "object",
+                    properties: [
+                        new OA\Property(property: "nom", type: "string"),
+                        new OA\Property(property: "prenom", type: "string"),
+                        new OA\Property(property: "numero", type: "string"),
+                        new OA\Property(property: "boutique", type: "string"),
+                        new OA\Property(property: "photo", type: "string", format: "binary"),
+                    ],
+
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(response: 401, description: "Invalid credentials")
+        ]
+    )]
+    #[OA\Tag(name: 'client')]
+    public function createBoutique(Request $request, ClientRepository $clientRepository,BoutiqueRepository $boutiqueRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
@@ -188,8 +257,9 @@ class ApiClientController extends ApiInterface
         $client = new Client();
         $client->setEntreprise($this->getUser()->getEntreprise());
         $client->setNom($request->get('nom'));
+        $client->setPrenom($request->get('prenoms'));
         $client->setNumero($request->get('numero'));
-        $client->setSurccursale($request->get('surccursale'));
+        $client->setBoutique($boutiqueRepository->find($request->get('boutique')));
 
         if ($uploadedFile) {
             if ($fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH)) {

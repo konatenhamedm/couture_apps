@@ -19,6 +19,9 @@ class NotificationController extends AbstractController
         private UserRepository $userRepository
     ) {}
 
+
+    
+
     #[Route('/device-token', name: 'save_device_token', methods: ['POST'])]
     #[OA\Post(
         path: "/api/device-token",
@@ -29,7 +32,7 @@ class NotificationController extends AbstractController
             content: new OA\JsonContent(
                 type: "object",
                 properties: [
-                    new OA\Property(property: "login", type: "string", example: "mr.amangoua@gmail.com"),
+                    new OA\Property(property: "login", type: "string", example: "konatenhamed@gmail.com"),
                     new OA\Property(property: "token", type: "string", example: "fcm_12345_example_token")
                 ]
             )

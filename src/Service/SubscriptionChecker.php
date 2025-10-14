@@ -4,13 +4,24 @@ namespace App\Service;
 
 use App\Entity\Abonnement;
 use App\Entity\Entreprise;
+use App\Entity\Setting;
+use App\Entity\User;
 use App\Repository\AbonnementRepository;
+use App\Repository\BoutiqueRepository;
+use App\Repository\SettingRepository;
+use App\Repository\SurccursaleRepository;
+use App\Repository\UserRepository;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class SubscriptionChecker
 {
     public function __construct(
-        private AbonnementRepository $abonnementRepository
+        private AbonnementRepository $abonnementRepository,
+        private SettingRepository $settingRepository,
+        private BoutiqueRepository $boutiqueRepository,
+        private UserRepository $userRepository,
+        private SurccursaleRepository $surccursaleRepository
+
     ) {}
 
     public function getInactiveSubscriptions(Entreprise $entreprise)
@@ -66,5 +77,43 @@ class SubscriptionChecker
                 $abonnement->getType()
             ));
         } */
+    }
+
+    public function getSettingByUser(Entreprise $entreprise,$type)
+     {
+
+        $set = $this->settingRepository->findOneBy(['entreprise' => $entreprise]);
+
+        $nombreBoutique = (int)$set->getNombreBoutique();
+        $nombreUser = (int)$set->getNombreUser();
+        $nombreSuccursale = (int)$set->getNombreSuccursale();
+        $nombreSms = (int)$set->getNombreSms();
+        $nombreUserActive =  count($this->userRepository->findBy(['entreprise' => $entreprise, 'isActive' => true]));
+        $nombreBoutiqueActive =  count($this->boutiqueRepository->findBy(['entreprise' => $entreprise, 'isActive' => true]));
+        $nombreSuccursaleActive =  count($this->surccursaleRepository->findBy(['entreprise' => $entreprise, 'isActive' => true]));
+
+
+        if($type == "user"){
+            if($nombreUser <= $nombreUserActive){
+                return false;
+            }else{
+                return true;
+            }
+            
+        }elseif($type == "boutique"){
+            if($nombreBoutique <= $nombreBoutiqueActive){
+                return false;
+            }else{
+                return true;
+            }
+        }elseif($type == "succursale"){
+            if($nombreSuccursale <= $nombreSuccursaleActive){
+                return false;
+            }else{
+                return true;
+            }
+        }
+        
+       // return $this->settingRepository->findOneBy(['entreprise' => $entreprise]);
     }
 }

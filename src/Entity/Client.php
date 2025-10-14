@@ -38,6 +38,7 @@ class Client
     private Collection $factures;
 
     #[ORM\ManyToOne(inversedBy: 'clients')]
+     #[Groups(["group1", "group_type"])]
     private ?Surccursale $surccursale = null;
 
 
@@ -61,6 +62,10 @@ class Client
       */
      #[ORM\OneToMany(targetEntity: self::class, mappedBy: 'entreprise')]
      private Collection $clients;
+
+     #[ORM\ManyToOne(inversedBy: 'clients')]
+     #[Groups(["group1", "group_type"])]
+     private ?Boutique $boutique = null;
 
     public function __construct()
     {
@@ -234,6 +239,18 @@ class Client
                 $client->setEntreprise(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getBoutique(): ?Boutique
+    {
+        return $this->boutique;
+    }
+
+    public function setBoutique(?Boutique $boutique): static
+    {
+        $this->boutique = $boutique;
 
         return $this;
     }

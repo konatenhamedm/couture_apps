@@ -11,6 +11,7 @@ use App\Repository\CaisseSuccursaleRepository;
 use App\Repository\EntrepriseRepository;
 use App\Repository\SurccursaleRepository;
 use App\Repository\UserRepository;
+use App\Service\SubscriptionChecker;
 use App\Service\Utils;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -47,9 +48,6 @@ class ApiSurccursaleController extends ApiInterface
         try {
 
             $surccursales = $surccursaleRepository->findAll();
-
-
-
             $response =  $this->responseData($surccursales, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setMessage("");
@@ -84,8 +82,6 @@ class ApiSurccursaleController extends ApiInterface
                 ['id' => 'ASC']
             );
 
-
-
             $response =  $this->responseData($surccursales, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setMessage("");
@@ -119,8 +115,6 @@ class ApiSurccursaleController extends ApiInterface
                 ['entreprise' => $this->getUser()->getEntreprise()],
                 ['id' => 'ASC']
             );
-
-
 
             $response =  $this->responseData($surccursales, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -198,7 +192,7 @@ class ApiSurccursaleController extends ApiInterface
     )]
     #[OA\Tag(name: 'surccursale')]
     #[Security(name: 'Bearer')]
-    public function create(Request $request,Utils $utils,CaisseSuccursaleRepository $caisseSuccursaleRepository, SurccursaleRepository $surccursaleRepository, EntrepriseRepository $entrepriseRepository): Response
+    public function create(Request $request,Utils $utils,SubscriptionChecker $subscriptionChecker, CaisseSuccursaleRepository $caisseSuccursaleRepository, SurccursaleRepository $surccursaleRepository, EntrepriseRepository $entrepriseRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
@@ -210,7 +204,7 @@ class ApiSurccursaleController extends ApiInterface
         $surccursale = new Surccursale();
         $surccursale->setLibelle($data['libelle']);
         $surccursale->setContact($data['contact']);
-        $surccursale->setIsActive(true);
+        $surccursale->setIsActive($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "succursale"));
         $surccursale->setEntreprise($this->getUser()->getEntreprise());
         $surccursale->setCreatedBy($this->getUser());
         $surccursale->setUpdatedBy($this->getUser());
@@ -219,9 +213,7 @@ class ApiSurccursaleController extends ApiInterface
             return $errorResponse; 
         } else {
 
-
             $surccursaleRepository->add($surccursale, true);
-
             $caisse = new CaisseSuccursale();
             $caisse->setMontant("0"); 
             $caisse->setSuccursale($surccursale);
@@ -327,7 +319,6 @@ class ApiSurccursaleController extends ApiInterface
             if ($surccursale != null) {
 
                 $villeRepository->remove($surccursale, true);
-
                 // On retourne la confirmation
                 $this->setMessage("Operation effectuées avec success");
                 $response = $this->response($surccursale);
@@ -369,7 +360,6 @@ class ApiSurccursaleController extends ApiInterface
 
             foreach ($data->ids as $key => $value) {
                 $surccursale = $villeRepository->find($value['id']);
-
                 if ($surccursale != null) {
                     $villeRepository->remove($surccursale);
                 }

@@ -23,6 +23,7 @@ use App\Repository\UserRepository;
 use App\Service\AddCategorie;
 use App\Service\ResetPasswordService;
 use App\Service\SendMailService;
+use App\Service\SubscriptionChecker;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use Symfony\Component\HttpFoundation\Response;
@@ -333,7 +334,7 @@ class ApiUserController extends ApiInterface
     )]
     #[OA\Tag(name: 'user')]
     #[Security(name: 'Bearer')]
-    public function createMembre(Request $request, SurccursaleRepository $surccursaleRepository, TypeUserRepository $typeUserRepository, UserRepository $userRepository, EntrepriseRepository $entrepriseRepository, SendMailService $sendMailService): Response
+    public function createMembre(Request $request,SubscriptionChecker $subscriptionChecker, SurccursaleRepository $surccursaleRepository, TypeUserRepository $typeUserRepository, UserRepository $userRepository, EntrepriseRepository $entrepriseRepository, SendMailService $sendMailService): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
@@ -350,7 +351,7 @@ class ApiUserController extends ApiInterface
             $user = new User();
             $user->setLogin($data['numero']);
             $user->setSurccursale($surccursaleRepository->find($data['surccursale']));
-            $user->setIsActive(true);
+            $user->setIsActive($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "user"));
             $user->setPassword($this->hasher->hashPassword($user,  $data['password']));
             $user->setRoles(['ROLE_MEMBRE']);
             $user->setType($typeUserRepository->find($data['type']));

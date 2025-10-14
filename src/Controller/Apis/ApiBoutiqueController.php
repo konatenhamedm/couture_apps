@@ -12,6 +12,7 @@ use App\Repository\BoutiqueRepository;
 use App\Repository\CaisseBoutiqueRepository;
 use App\Repository\TypeUserRepository;
 use App\Repository\UserRepository;
+use App\Service\SubscriptionChecker;
 use App\Service\Utils;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -166,9 +167,9 @@ class ApiBoutiqueController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'boutique')]
-    public function create(Request $request,Utils $utils, CaisseBoutiqueRepository $caisseBoutiqueRepository, BoutiqueRepository $boutiqueRepository): Response
+    public function create(Request $request, Utils $utils, SubscriptionChecker $subscriptionChecker, CaisseBoutiqueRepository $caisseBoutiqueRepository, BoutiqueRepository $boutiqueRepository): Response
     {
-       
+
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
@@ -181,13 +182,14 @@ class ApiBoutiqueController extends ApiInterface
         $boutique->setLibelle($data['libelle']);
         $boutique->setSituation($data['situation']);
         $boutique->setContact($data['contact']);
-        $boutique->setIsActive(true);
+        $boutique->setIsActive($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "boutique"));
+
 
         $boutique->setCreatedBy($this->getUser());
         $boutique->setUpdatedBy($this->getUser());
         $errorResponse = $this->errorResponse($boutique);
         if ($errorResponse !== null) {
-            return $errorResponse; 
+            return $errorResponse;
         } else {
 
             $boutiqueRepository->add($boutique, true);
@@ -247,7 +249,7 @@ class ApiBoutiqueController extends ApiInterface
                 $errorResponse = $this->errorResponse($boutique);
 
                 if ($errorResponse !== null) {
-                    return $errorResponse; 
+                    return $errorResponse;
                 } else {
                     $boutiqueRepository->add($boutique, true);
                 }
@@ -286,7 +288,7 @@ class ApiBoutiqueController extends ApiInterface
     //#[Security(name: 'Bearer')]
     public function delete(Request $request, Boutique $boutique, BoutiqueRepository $villeRepository): Response
     {
-     if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
