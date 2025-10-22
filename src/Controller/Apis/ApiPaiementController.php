@@ -5,6 +5,7 @@ namespace  App\Controller\Apis;
 use App\Controller\Apis\Config\ApiInterface;
 use App\DTO\PaiementFactureDTO;
 use App\Entity\Abonnement;
+use App\Entity\Boutique;
 use App\Entity\CaisseSuccursale;
 use App\Entity\Facture;
 use App\Entity\Modele;
@@ -12,14 +13,17 @@ use App\Entity\ModuleAbonnement;
 use App\Entity\Paiement;
 use App\Entity\PaiementAbonnement;
 use App\Entity\PaiementBoutique;
+use App\Entity\PaiementBoutiqueLigne;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use App\Entity\PaiementFacture;
 use App\Repository\AbonnementRepository;
 use App\Repository\BoutiqueRepository;
 use App\Repository\CaisseBoutiqueRepository;
 use App\Repository\CaisseSuccursaleRepository;
+use App\Repository\ClientRepository;
 use App\Repository\FactureRepository;
 use App\Repository\ModeleBoutiqueRepository;
+use App\Repository\PaiementBoutiqueLigneRepository;
 use App\Repository\PaiementFactureRepository;
 use App\Repository\TypeUserRepository;
 use App\Repository\UserRepository;
@@ -106,7 +110,7 @@ class ApiPaiementController extends ApiInterface
 
             $response =  $this->responseDataWith_([
                 'data' => $paiements,
-                'inactiveSubscriptions' => $inactiveSubscriptions
+                // 'inactiveSubscriptions' => $inactiveSubscriptions
             ], 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setMessage("");
@@ -273,7 +277,7 @@ class ApiPaiementController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "montant", type: "string"),
-                    new OA\Property(property: "boutiqueId", type: "string"),
+                    new OA\Property(property: "client", type: "string"),
                     new OA\Property(property: "modeleBoutiqueId", type: "string"),
                     new OA\Property(property: "quantite", type: "string"),
 
@@ -286,7 +290,7 @@ class ApiPaiementController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'paiement')]
-    public function paiementBoutiqueModele(Request $request, UserRepository $userRepository, Utils $utils, ModeleBoutiqueRepository $modeleBoutiqueRepository, CaisseBoutiqueRepository $caisseBoutiqueRepository, BoutiqueRepository $boutiqueRepository,  FactureRepository $factureRepository, PaiementFactureRepository $paiementRepository): Response
+    public function paiementBoutiqueModele(Request $request, ClientRepository $clientRepository, PaiementBoutiqueLigneRepository $paiementBoutiqueLigneRepository, Boutique $boutique, UserRepository $userRepository, Utils $utils, ModeleBoutiqueRepository $modeleBoutiqueRepository, CaisseBoutiqueRepository $caisseBoutiqueRepository, BoutiqueRepository $boutiqueRepository,  FactureRepository $factureRepository, PaiementFactureRepository $paiementRepository): Response
     {
 
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
@@ -294,26 +298,33 @@ class ApiPaiementController extends ApiInterface
         }
         $admin = $userRepository->getUserByCodeType($this->getUser()->getEntreprise());
         $data = json_decode($request->getContent(), true);
-        $boutique = $boutiqueRepository->findOneBy(['id' => $data['boutiqueId']]);
+        // $boutique = $boutiqueRepository->findOneBy(['id' => $data['boutiqueId']]);
         $paiement = new PaiementBoutique();
         $paiement->setMontant($data['montant']);
+        $paiement->setClient($clientRepository->findOneBy(['id' => $data['client']]));
         $paiement->setType(Paiement::TYPE["paiementBoutique"]);
-        $paiement->setBoutique($boutiqueRepository->findOneBy(['id' => $data['boutiqueId']]));
+        $paiement->setBoutique($boutique);
         $paiement->setReference($utils->generateReference('PMT'));
         $paiement->setQuantite($data['quantite']);
         $paiement->setCreatedBy($this->getUser());
         $paiement->setUpdatedBy($this->getUser());
 
-        $caisse =  $caisseBoutiqueRepository->findOneBy(['boutique' => $data['boutiqueId']]);
+        $caisse =  $caisseBoutiqueRepository->findOneBy(['boutique' => $boutique->getId()]);
 
         $caisse->setMontant((int)$caisse->getMontant() + (int)$data['montant']);
-        $caisse->setType('caisse_boutique');
-
-
+       
         $errorResponse = $this->errorResponse($paiement);
         if ($errorResponse !== null) {
             return $errorResponse;
         } else {
+            $ligne = new PaiementBoutiqueLigne();
+            $ligne->setPaiementBoutique($paiement);
+            $ligne->setModeleBoutique($modeleBoutiqueRepository->findOneBy(['id' => $data['modeleBoutiqueId']]));
+            $ligne->setQuantite($data['quantite']);
+            $ligne->setMontant($data['montant']);
+            $paiementBoutiqueLigneRepository->add($ligne, true);
+
+
             $modeleBoutique = $modeleBoutiqueRepository->findOneBy(['id' => $data['modeleBoutiqueId']]);
             $modeleBoutique->setQuantite((int)$modeleBoutique->getQuantite() - (int)$data['quantite']);
             $modeleBoutiqueRepository->add($modeleBoutique, true);
@@ -360,11 +371,134 @@ class ApiPaiementController extends ApiInterface
         ], 'group1', ['Content-Type' => 'application/json']);
     }
 
+
+
+    #[Route('/boutique/multiple/{id}', methods: ['POST'])]
+    /**
+     * Permet de faire une sortie de stock avec ses lignes.
+     */
+    #[OA\Post(
+        summary: "Permet de faire un(e) paiement dans une boutique avec ses lignes.",
+        description: "Permet de faire un(e) paiement dans une boutique avec ses lignes.",
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: "client", type: "string"),
+
+                    new OA\Property(
+                        property: "lignes",
+                        type: "array",
+                        items: new OA\Items(
+                            type: "object",
+                            properties: [
+                                new OA\Property(property: "montant", type: "string"),
+                                new OA\Property(property: "modeleBoutiqueId", type: "string"),
+                                new OA\Property(property: "quantite", type: "string"),
+                            ]
+                        ),
+                    ),
+                ],
+                type: "object"
+            )
+        ),
+        responses: [
+            new OA\Response(response: 401, description: "Invalid credentials"),
+            new OA\Response(response: 400, description: "Stock insuffisant")
+        ]
+    )]
+    #[OA\Tag(name: 'paiement')]
+    public function paiementBoutiqueModeleSeveralLigne(Request $request, ClientRepository $clientRepository, PaiementBoutiqueLigneRepository $paiementBoutiqueLigneRepository, Boutique $boutique, UserRepository $userRepository, Utils $utils, ModeleBoutiqueRepository $modeleBoutiqueRepository, CaisseBoutiqueRepository $caisseBoutiqueRepository, BoutiqueRepository $boutiqueRepository,  FactureRepository $factureRepository, PaiementFactureRepository $paiementRepository): Response
+    {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+            return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
+        }
+
+        $data = json_decode($request->getContent(), true);
+
+        $admin = $userRepository->getUserByCodeType($this->getUser()->getEntreprise());
+
+        $paiement = new PaiementBoutique();
+
+        $paiement->setType(Paiement::TYPE["paiementBoutique"]);
+        $paiement->setBoutique($boutique);
+        $paiement->setReference($utils->generateReference('PMT'));
+        $paiement->setClient($clientRepository->findOneBy(['id' => $data['client']]));
+        $paiement->setCreatedBy($this->getUser());
+        $paiement->setUpdatedBy($this->getUser());
+
+        $caisse =  $caisseBoutiqueRepository->findOneBy(['boutique' => $boutique->getId()]);
+
+        $sommeMontant = 0;
+        $sommeQuantite = 0;
+
+
+        foreach ($data['lignes'] as $ligne) {
+            $ligne = new PaiementBoutiqueLigne();
+            $ligne->setPaiementBoutique($paiement);
+            $ligne->setModeleBoutique($modeleBoutiqueRepository->findOneBy(['id' => $ligne['modeleBoutiqueId']]));
+            $ligne->setQuantite($ligne['quantite']);
+            $ligne->setMontant($ligne['montant']);
+            $sommeMontant += $ligne['montant'];
+            $sommeQuantite += $ligne['quantite'];
+
+            $modeleBoutique = $modeleBoutiqueRepository->findOneBy(['id' => $ligne['modeleBoutiqueId']]);
+            $modeleBoutique->setQuantite((int)$modeleBoutique->getQuantite() - (int)$ligne['quantite']);
+            $modeleBoutiqueRepository->add($modeleBoutique, true);
+            $paiementBoutiqueLigneRepository->add($ligne, true);
+        }
+
+        $caisse->setMontant((int)$caisse->getMontant() + (int)$sommeMontant);
+        $caisseBoutiqueRepository->add($caisse, true);
+
+        $paiement->setMontant($sommeMontant);
+        $paiement->setQuantite($sommeQuantite);
+        $paiementRepository->add($paiement, true);
+
+        $this->sendMailService->sendNotification([
+            'entreprise' => $this->getUser()->getEntreprise(),
+            "user" => $admin,
+            "libelle" => sprintf(
+                "Bonjour %s,\n\n" .
+                    "Nous vous informons qu'une nouvelle vente vient d'être enregistrée dans la boutique **%s**.\n\n" .
+                    "- Montant : %s\n" .
+                    "- Effectuée par : %s\n" .
+                    "- Date : %s\n\n" .
+                    "Cordialement,\nVotre application de gestion.",
+                $admin->getLogin(),
+                $boutique->getLibelle(),
+                $data['montant'] ?? "Non spécifié",
+                $this->getUser()->getNom() && $this->getUser()->getPrenoms() ? $this->getUser()->getNom() . " " . $this->getUser()->getPrenoms() : $this->getUser()->getLogin(),
+                (new \DateTime())->format('d/m/Y H:i')
+            ),
+            "titre" => "Vente - " . $boutique->getLibelle(),
+
+        ]);
+
+        $this->sendMailService->send(
+            $this->sendMail,
+            $this->superAdmin,
+            "Vente - " . $this->getUser()->getEntreprise(),
+            "vente_email",
+            [
+                "boutique_libelle" => $this->getUser()->getEntreprise(),
+                "montant" => $data['montant'],
+                "date" => (new \DateTime())->format('d/m/Y H:i'),
+            ]
+        );
+
+
+        return $this->responseDataWith_([
+            'data' => $paiement,
+            /*  'inactiveSubscriptions' => $inactiveSubscriptions */
+        ], 'group1', ['Content-Type' => 'application/json']);
+    }
+
     #[Route('/webhook', name: 'webhook_paiement', methods: ['GET', 'POST'])]
     public function webHook(Request $request, PaiementService $paiementService): Response
     {
-        // Récupération des paramètres envoyés en query string
-        $merchantId = $request->query->get('merchantId');
+
+        /* $merchantId = $request->query->get('merchantId');
         $sessionId = $request->query->get('sessionId');
         $payId = $request->query->get('payId');
         $channel = $request->query->get('channel');
@@ -374,12 +508,10 @@ class ApiPaiementController extends ApiInterface
         $customerId = $request->query->get('customerId');
         $returnContext = $request->query->get('returnContext');
         $responsecode = $request->query->get('responsecode');
-        $hashcode = $request->query->get('hashcode');
+        $hashcode = $request->query->get('hashcode'); */
 
-        // Si tu veux tout récupérer d’un coup :
-        $all = $request->query->all(); // renvoie un tableau associatif de tous les paramètres
+        $all = $request->query->all();
 
-        // Tu peux passer ce tableau à ton service
         $response = $paiementService->methodeWebHook($all);
 
         return $this->responseData(

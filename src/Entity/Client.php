@@ -67,11 +67,18 @@ class Client
      #[Groups(["group1", "group_type"])]
      private ?Boutique $boutique = null;
 
+     /**
+      * @var Collection<int, PaiementBoutique>
+      */
+     #[ORM\OneToMany(targetEntity: PaiementBoutique::class, mappedBy: 'client')]
+     private Collection $paiementBoutiques;
+
     public function __construct()
     {
         $this->factures = new ArrayCollection();
         $this->reservations = new ArrayCollection();
         $this->clients = new ArrayCollection();
+        $this->paiementBoutiques = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -251,6 +258,36 @@ class Client
     public function setBoutique(?Boutique $boutique): static
     {
         $this->boutique = $boutique;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PaiementBoutique>
+     */
+    public function getPaiementBoutiques(): Collection
+    {
+        return $this->paiementBoutiques;
+    }
+
+    public function addPaiementBoutique(PaiementBoutique $paiementBoutique): static
+    {
+        if (!$this->paiementBoutiques->contains($paiementBoutique)) {
+            $this->paiementBoutiques->add($paiementBoutique);
+            $paiementBoutique->setClient($this);
+        }
+
+        return $this;
+    }
+
+    public function removePaiementBoutique(PaiementBoutique $paiementBoutique): static
+    {
+        if ($this->paiementBoutiques->removeElement($paiementBoutique)) {
+            // set the owning side to null (unless already changed)
+            if ($paiementBoutique->getClient() === $this) {
+                $paiementBoutique->setClient(null);
+            }
+        }
 
         return $this;
     }

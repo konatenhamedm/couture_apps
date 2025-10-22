@@ -29,6 +29,9 @@ class LigneReservation
     #[ORM\ManyToOne(inversedBy: 'ligneReservations')]
     private ?ModeleBoutique $modele = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $avanceModele = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -66,6 +69,18 @@ class LigneReservation
     public function setModele(?ModeleBoutique $modele): static
     {
         $this->modele = $modele;
+
+        return $this;
+    }
+
+    public function getAvanceModele(): ?string
+    {
+        return $this->avanceModele;
+    }
+
+    public function setAvanceModele(?string $avanceModele): static
+    {
+        $this->avanceModele = $avanceModele;
 
         return $this;
     }

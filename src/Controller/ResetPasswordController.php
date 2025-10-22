@@ -21,7 +21,8 @@ use Symfony\Component\Routing\Annotation\Route;
 use SymfonyCasts\Bundle\ResetPassword\Exception\ResetPasswordExceptionInterface;
 use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
 use OpenApi\Attributes as OA;
-
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/api/reset-password')]
 class ResetPasswordController extends AbstractController
@@ -29,7 +30,8 @@ class ResetPasswordController extends AbstractController
     public function __construct(
         private ResetPasswordHelperInterface $resetPasswordHelper,
         private EntityManagerInterface $entityManager,
-        private MailerInterface $mailer
+        private MailerInterface $mailer,
+        private ValidatorInterface $validator
     ) {}
 
     /*  #[Route('/requests', name: 'api_forgot_password_request', methods: ['POST'])]  */
@@ -198,6 +200,131 @@ class ResetPasswordController extends AbstractController
         } catch (\Exception $e) {
             return $this->json(
                 ['message' => 'Erreur lors de la réinitialisation du mot de passe'],
+                Response::HTTP_INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
+        public function errorResponse($DTO,string $customMessage = ''): ?JsonResponse
+    {
+        $errors = $this->validator->validate($DTO);
+
+        if (count($errors) > 0) {
+            $errorMessages = [];
+            foreach ($errors as $error) {
+                $errorMessages[] = $error->getMessage();
+            }
+
+            //array_push($arerrorMessagesray, 4)
+
+            $response = [
+                'code' => 400,
+                'message' => 'Validation failed',
+                'errors' => $errorMessages
+            ];
+            
+            return new JsonResponse($response, 400);
+        }elseif ($customMessage != '') {
+            $errorMessages[] = $customMessage;
+            $response = [
+                'code' => 400,
+                'message' => 'Validation failed',
+                'errors' => $errorMessages
+            ];
+
+            return new JsonResponse($response, 400);
+        }
+
+        return null; // Pas d'erreurs, donc pas de réponse d'erreur
+    }
+
+    #[Route('/reset/in/application', name: 'api_reset_password_in_application', methods: ['POST'])]
+    #[OA\Post(
+        summary: "Reset user password",
+        description: "Reset user password with old password and new password",
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: "oldPassword", type: "string"),
+                    new OA\Property(property: "confirmPassword", type: "string"),
+                    new OA\Property(property: "newPassword", type: "string")
+                ],
+                type: "object"
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: "Password reset successfully"),
+            new OA\Response(response: 400, description: "Invalid token or missing data")
+        ]
+    )]
+    #[OA\Tag(name: 'auth')]
+    public function resetPasswordInApplication(
+        Request $request,
+        UserPasswordHasherInterface $passwordHasher,
+        TokenStorageInterface $tokenStorage
+    ): JsonResponse {
+        $data = json_decode($request->getContent(), true);
+        $newPassword = $data['newPassword'] ?? null;
+        $oldPassword = $data['oldPassword'] ?? null;
+
+        $token = $tokenStorage->getToken();
+
+        if (!$token) {
+            return $this->json(
+                ['message' => 'Utilisateur non authentifié'],
+                Response::HTTP_UNAUTHORIZED
+            );
+        }
+        $user = $token->getUser();
+
+           $errorResponse = $request->get('confirmPassword') !== $request->get('newPassword') ?   $this->errorResponse($user, "Les mots de passe ne sont pas identiques") :  $this->errorResponse($user);
+        if ($errorResponse !== null) {
+            return $errorResponse; 
+        }
+
+        if (!$user instanceof User) {
+            return $this->json(
+                ['message' => 'Utilisateur non trouvé'],
+                Response::HTTP_NOT_FOUND
+            );
+        }
+
+        if (empty($oldPassword) || empty($newPassword)) {
+            return $this->json(
+                ['message' => 'Ancien mot de passe et nouveau mot de passe sont requis'],
+                Response::HTTP_BAD_REQUEST
+            );
+        }
+
+        if (strlen($newPassword) < 6) {
+            return $this->json(
+                ['message' => 'Le mot de passe doit contenir au moins 6 caractères'],
+                Response::HTTP_BAD_REQUEST
+            );
+        }
+
+        if (!$passwordHasher->isPasswordValid($user, $oldPassword)) {
+            return $this->json(
+                ['message' => 'Ancien mot de passe incorrect'],
+                Response::HTTP_BAD_REQUEST
+            );
+        }
+
+        try {
+            $hashedPassword = $passwordHasher->hashPassword($user, $newPassword);
+            $user->setPassword($hashedPassword);
+
+            $this->entityManager->persist($user);
+            $this->entityManager->flush();
+
+            return $this->json([
+                'message' => 'Mot de passe modifié avec succès',
+                'success' => true
+            ]);
+        } catch (\Exception $e) {
+            return $this->json(
+                ['message' => 'Erreur lors de la modification du mot de passe'],
                 Response::HTTP_INTERNAL_SERVER_ERROR
             );
         }

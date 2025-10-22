@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\PaiementBoutiqueRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -17,6 +19,21 @@ class PaiementBoutique extends Paiement
     #[ORM\Column(nullable: true)]
      #[Groups(["group1", "group_type"])]
     private ?int $quantite = null;
+
+    #[ORM\ManyToOne(inversedBy: 'paiementBoutiques')]
+    private ?Client $client = null;
+
+    /**
+     * @var Collection<int, PaiementBoutiqueLigne>
+     */
+    #[ORM\OneToMany(targetEntity: PaiementBoutiqueLigne::class, mappedBy: 'paiementBoutique')]
+    private Collection $paiementBoutiqueLignes;
+
+    public function __construct()
+    {
+        $this->paiementBoutiqueLignes = new ArrayCollection();
+    }
+
 
     public function getBoutique(): ?Boutique
     {
@@ -41,4 +58,48 @@ class PaiementBoutique extends Paiement
 
         return $this;
     }
+
+    public function getClient(): ?Client
+    {
+        return $this->client;
+    }
+
+    public function setClient(?Client $client): static
+    {
+        $this->client = $client;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PaiementBoutiqueLigne>
+     */
+    public function getPaiementBoutiqueLignes(): Collection
+    {
+        return $this->paiementBoutiqueLignes;
+    }
+
+    public function addPaiementBoutiqueLigne(PaiementBoutiqueLigne $paiementBoutiqueLigne): static
+    {
+        if (!$this->paiementBoutiqueLignes->contains($paiementBoutiqueLigne)) {
+            $this->paiementBoutiqueLignes->add($paiementBoutiqueLigne);
+            $paiementBoutiqueLigne->setPaiementBoutique($this);
+        }
+
+        return $this;
+    }
+
+    public function removePaiementBoutiqueLigne(PaiementBoutiqueLigne $paiementBoutiqueLigne): static
+    {
+        if ($this->paiementBoutiqueLignes->removeElement($paiementBoutiqueLigne)) {
+            // set the owning side to null (unless already changed)
+            if ($paiementBoutiqueLigne->getPaiementBoutique() === $this) {
+                $paiementBoutiqueLigne->setPaiementBoutique(null);
+            }
+        }
+
+        return $this;
+    }
+
+
 }

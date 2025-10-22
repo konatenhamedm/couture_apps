@@ -48,10 +48,19 @@ class ModeleBoutique
     #[ORM\OneToMany(targetEntity: LigneReservation::class, mappedBy: 'modele')]
     private Collection $ligneReservations;
 
+    /**
+     * @var Collection<int, PaiementBoutiqueLigne>
+     */
+    #[ORM\OneToMany(targetEntity: PaiementBoutiqueLigne::class, mappedBy: 'modeleBoutique')]
+    private Collection $paiementBoutiqueLignes;
+
+
+
     public function __construct()
     {
         $this->ligneEntres = new ArrayCollection();
         $this->ligneReservations = new ArrayCollection();
+        $this->paiementBoutiqueLignes = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -166,4 +175,36 @@ class ModeleBoutique
 
         return $this;
     }
+
+    /**
+     * @return Collection<int, PaiementBoutiqueLigne>
+     */
+    public function getPaiementBoutiqueLignes(): Collection
+    {
+        return $this->paiementBoutiqueLignes;
+    }
+
+    public function addPaiementBoutiqueLigne(PaiementBoutiqueLigne $paiementBoutiqueLigne): static
+    {
+        if (!$this->paiementBoutiqueLignes->contains($paiementBoutiqueLigne)) {
+            $this->paiementBoutiqueLignes->add($paiementBoutiqueLigne);
+            $paiementBoutiqueLigne->setModeleBoutique($this);
+        }
+
+        return $this;
+    }
+
+    public function removePaiementBoutiqueLigne(PaiementBoutiqueLigne $paiementBoutiqueLigne): static
+    {
+        if ($this->paiementBoutiqueLignes->removeElement($paiementBoutiqueLigne)) {
+            // set the owning side to null (unless already changed)
+            if ($paiementBoutiqueLigne->getModeleBoutique() === $this) {
+                $paiementBoutiqueLigne->setModeleBoutique(null);
+            }
+        }
+
+        return $this;
+    }
+
+   
 }
