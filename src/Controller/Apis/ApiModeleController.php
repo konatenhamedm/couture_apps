@@ -203,7 +203,7 @@ class ApiModeleController extends ApiInterface
         $modele->setUpdatedBy($this->getUser());
         $errorResponse = $this->errorResponse($modele);
         if ($errorResponse !== null) {
-            return $errorResponse; 
+            return $errorResponse;
         } else {
 
             $modeleRepository->add($modele, true);
@@ -264,7 +264,7 @@ class ApiModeleController extends ApiInterface
                 $errorResponse = $this->errorResponse($modele);
 
                 if ($errorResponse !== null) {
-                    return $errorResponse; 
+                    return $errorResponse;
                 } else {
                     $modeleRepository->add($modele, true);
                 }
@@ -326,7 +326,7 @@ class ApiModeleController extends ApiInterface
         return $response;
     }
 
-    #[Route('/delete/all', name: 'modele_delete_all', methods: ['DELETE'])]
+    #[Route('/delete/all', methods: ['DELETE'])]
     /**
      * Supprime plusieurs modèles à partir d’un tableau d’IDs.
      * @param Request $request
@@ -334,19 +334,14 @@ class ApiModeleController extends ApiInterface
      * @return Response
      */
     #[OA\RequestBody(
-        description: 'Liste des identifiants des modèles à supprimer',
         required: true,
+        description: 'Tableau d’identifiants à supprimer',
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(
                     property: 'ids',
                     type: 'array',
-                    items: new OA\Items(
-                        properties: [
-                            new OA\Property(property: 'id', type: 'integer', example: 1)
-                        ],
-                        type: 'object'
-                    )
+                    items: new OA\Items(type: 'integer', example: 1)
                 )
             ]
         )
@@ -360,18 +355,7 @@ class ApiModeleController extends ApiInterface
             ]
         )
     )]
-    #[OA\Response(
-        response: 400,
-        description: 'Requête invalide'
-    )]
-    #[OA\Response(
-        response: 403,
-        description: 'Abonnement requis pour cette fonctionnalité'
-    )]
-    #[OA\Response(
-        response: 500,
-        description: 'Erreur interne lors de la suppression'
-    )]
+    #[OA\Response(response: 500, description: 'Erreur interne lors de la suppression')]
     #[OA\Tag(name: 'modele')]
     public function deleteAll(Request $request, ModeleRepository $villeRepository): Response
     {
