@@ -37,7 +37,7 @@ class SurccursaleRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('s')
             ->select('COUNT(u.id)')
-            ->where('s.active = :active')
+            ->where('s.isActive = :active')
             ->andWhere('s.entreprise = :entreprise')
             ->setParameter('active', true)
             ->setParameter('entreprise', $entreprise)

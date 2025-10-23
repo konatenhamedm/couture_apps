@@ -36,7 +36,7 @@ class BoutiqueRepository extends ServiceEntityRepository
 {
     return $this->createQueryBuilder('b')
         ->select('COUNT(u.id)')
-        ->where('b.active = :active')
+        ->where('b.isActive = :active')
         ->andWhere('b.entreprise = :entreprise')
         ->setParameter('active', true)
         ->setParameter('entreprise', $entreprise)
