@@ -187,6 +187,8 @@ class ApiBoutiqueController extends ApiInterface
 
         $boutique->setCreatedBy($this->getUser());
         $boutique->setUpdatedBy($this->getUser());
+        $boutique->setCreatedAtValue(new \DateTime());
+        $boutique->setUpdatedAt(new \DateTime());
         $errorResponse = $this->errorResponse($boutique);
         if ($errorResponse !== null) {
             return $errorResponse;
@@ -202,7 +204,8 @@ class ApiBoutiqueController extends ApiInterface
             $caisse->setEntreprise($this->getUser()->getEntreprise());
             $caisse->setCreatedBy($this->getUser());
             $caisse->setUpdatedBy($this->getUser());
-
+            $caisse->setCreatedAtValue(new \DateTime());
+            $caisse->setUpdatedAt(new \DateTime());
             $caisseBoutiqueRepository->add($caisse, true);
         }
 
