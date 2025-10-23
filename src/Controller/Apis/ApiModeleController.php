@@ -326,17 +326,51 @@ class ApiModeleController extends ApiInterface
         return $response;
     }
 
-    #[Route('/delete/all',  methods: ['DELETE'])]
+    #[Route('/delete/all', name: 'modele_delete_all', methods: ['DELETE'])]
     /**
-     * Permet de supprimer plusieurs modele.
+     * Supprime plusieurs modèles à partir d’un tableau d’IDs.
+     * @param Request $request
+     * @param ModeleRepository $modeleRepository
+     * @return Response
      */
+    #[OA\RequestBody(
+        description: 'Liste des identifiants des modèles à supprimer',
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(
+                    property: 'ids',
+                    type: 'array',
+                    items: new OA\Items(
+                        properties: [
+                            new OA\Property(property: 'id', type: 'integer', example: 1)
+                        ],
+                        type: 'object'
+                    )
+                )
+            ]
+        )
+    )]
     #[OA\Response(
         response: 200,
-        description: 'Returns the rewards of an user',
+        description: 'Suppression effectuée avec succès',
         content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new Model(type: Modele::class, groups: ['full']))
+            properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'Opération effectuée avec succès')
+            ]
         )
+    )]
+    #[OA\Response(
+        response: 400,
+        description: 'Requête invalide'
+    )]
+    #[OA\Response(
+        response: 403,
+        description: 'Abonnement requis pour cette fonctionnalité'
+    )]
+    #[OA\Response(
+        response: 500,
+        description: 'Erreur interne lors de la suppression'
     )]
     #[OA\Tag(name: 'modele')]
     public function deleteAll(Request $request, ModeleRepository $villeRepository): Response

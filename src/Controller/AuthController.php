@@ -73,7 +73,7 @@ class AuthController extends ApiInterface
             'roles' => $user->getRoles()
         ]);
 
-        $inactiveSubscriptions = $subscriptionChecker->checkInactiveSubscription($user->getEntreprise());
+        //$inactiveSubscriptions = $subscriptionChecker->checkInactiveSubscription($user->getEntreprise());
         $activeSubscriptions = $subscriptionChecker->getActiveSubscription($user->getEntreprise());
         /* dd($this->json([$activeSubscriptions])); */
 
@@ -99,6 +99,5 @@ class AuthController extends ApiInterface
             'token_expires_in' => $jwtService->getTtl()
         ], 'group1', ['Content-Type' => 'application/json']);
 
-       
     }
 }

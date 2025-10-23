@@ -17,10 +17,12 @@ use App\Repository\EntrepriseRepository;
 use App\Repository\ModuleAbonnementRepository;
 use App\Repository\PaysRepository;
 use App\Repository\ResetPasswordTokenRepository;
+use App\Repository\SettingRepository;
 use App\Repository\SurccursaleRepository;
 use App\Repository\TypeUserRepository;
 use App\Repository\UserRepository;
 use App\Service\AddCategorie;
+use App\Service\JwtService;
 use App\Service\ResetPasswordService;
 use App\Service\SendMailService;
 use App\Service\SubscriptionChecker;
@@ -182,7 +184,7 @@ class ApiUserController extends ApiInterface
     )]
     #[OA\Tag(name: 'user')]
     #[Security(name: 'Bearer')]
-    public function create(Request $request, AddCategorie $addCategorie, PaysRepository $paysRepository, SurccursaleRepository $surccursaleRepository, AbonnementRepository $abonnementRepository, ModuleAbonnementRepository $moduleAbonnementRepository, TypeUserRepository $typeUserRepository, UserRepository $userRepository, EntrepriseRepository $entrepriseRepository, SendMailService $sendMailService): Response
+    public function create(Request $request, SettingRepository $settingRepository, SubscriptionChecker $subscriptionChecker, JwtService $jwtService, AddCategorie $addCategorie, PaysRepository $paysRepository,  AbonnementRepository $abonnementRepository, ModuleAbonnementRepository $moduleAbonnementRepository, TypeUserRepository $typeUserRepository, UserRepository $userRepository, EntrepriseRepository $entrepriseRepository, SendMailService $sendMailService): Response
     {
 
         try {
@@ -292,16 +294,44 @@ class ApiUserController extends ApiInterface
                     "welcome_user",
                     [
                         "user" => [
-                            "nom" => $user->getNom() && $user->getPrenoms() ?  $user->getNom() . " " . $user->getPrenoms() : $user->getLogin(),
+                            "nom" =>  $user->getLogin(),
                         ],
                         "qr_code_url" => "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://monapp.com/download",
                         "url_appstore" => "https://apps.apple.com/app/id123456789",
                         "url_playstore" => "https://play.google.com/store/apps/details?id=com.monapp"
                     ]
                 );
-            }
 
-            $response = $this->responseData($entreprise, 'group1', ['Content-Type' => 'application/json']);
+
+                $token = $jwtService->generateToken([
+                    'id' => $user->getId(),
+                    'login' => $user->getLogin(),
+                    'roles' => $user->getRoles()
+                ]);
+
+                $activeSubscriptions = $subscriptionChecker->getActiveSubscription($user->getEntreprise());
+
+                $response = $this->responseData([
+                    'token' => $token,
+                    'user' => [
+                        'id' => $user->getId(),
+                        'login' => $user->getLogin(),
+                        'nom' => $user->getNom() ?? '',
+                        'prenoms' => $user->getPrenoms() ?? '',
+                        'fcm_token' => $user->getFcmToken() ?? '',
+                        'type' => $user->getType() ?? null,
+                        'logo' => $user->getLogo() ?? null,
+                        'roles' => $user->getRoles(),
+                        'is_active' => $user->isActive(),
+                        'pays' => $user->getEntreprise()->getPays()->getId(),
+                        'boutique' => $user->getBoutique() ? $user->getBoutique()->getId() : null,
+                        'succursale' => $user->getSurccursale() ? $user->getSurccursale()->getId() : null,
+                        'settings' =>  $settingRepository->findOneBy(['entreprise' => $user->getEntreprise()]),
+                        'activeSubscriptions' => $activeSubscriptions
+                    ],
+                    'token_expires_in' => $jwtService->getTtl()
+                ], 'group1', ['Content-Type' => 'application/json']);
+            }
         } catch (Exception $th) {
 
             // dd($th);
