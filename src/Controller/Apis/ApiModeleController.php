@@ -366,8 +366,8 @@ class ApiModeleController extends ApiInterface
         try {
             $data = json_decode($request->getContent());
 
-            foreach ($data->ids as $key => $value) {
-                $modele = $villeRepository->find($value['id']);
+            foreach ($data['ids'] as $id) {
+                $modele = $villeRepository->find($id);
 
                 if ($modele != null) {
                     $villeRepository->remove($modele);
