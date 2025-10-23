@@ -298,7 +298,7 @@ class ApiPaiementController extends ApiInterface
         }
         $admin = $userRepository->getUserByCodeType($this->getUser()->getEntreprise());
         $data = json_decode($request->getContent(), true);
-        // $boutique = $boutiqueRepository->findOneBy(['id' => $data['boutiqueId']]);
+        
         $paiement = new PaiementBoutique();
         $paiement->setMontant($data['montant']);
         $paiement->setClient($clientRepository->findOneBy(['id' => $data['client']]));

@@ -88,6 +88,7 @@ class Entreprise
     private Collection $boutiques;
 
     #[ORM\ManyToOne(inversedBy: 'entreprises')]
+    #[ORM\JoinColumn(nullable: false)]
     private ?Pays $pays = null;
 
     /**

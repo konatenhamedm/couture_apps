@@ -40,7 +40,7 @@ class ApiUserController extends ApiInterface
 {
 
 
-   /*  #[Route('/qr-code', name: 'qr_code')]
+    /*  #[Route('/qr-code', name: 'qr_code')]
     public function generateQrCode(): Response
     {
        
@@ -240,15 +240,22 @@ class ApiUserController extends ApiInterface
             $abonnement->setType('gratuit');
 
             $errorResponse = $data['password'] !== $data['confirmPassword'] ?  $this->errorResponse($user, "Les mots de passe ne sont pas identiques") :  $this->errorResponse($user);
+            $errorResponse2 = $this->errorResponse($entreprise);
+            $errorResponse3 = $this->errorResponse($abonnement);
 
-            if ($errorResponse !== null) {
-                return $errorResponse;
+            if ($errorResponse !== null || $errorResponse2 !== null || $errorResponse3 !== null) {
+                if ($errorResponse !== null) {
+                    return $errorResponse;
+                } elseif ($errorResponse2 !== null) {
+                    return $errorResponse2;
+                } elseif ($errorResponse3 !== null) {
+                    return $errorResponse3;
+                }
             } else {
 
                 $entrepriseRepository->add($entreprise, true);
                 $userRepository->add($user, true);
                 $abonnementRepository->add($abonnement, true);
-                // $entrepriseRepository->add($entreprise, true);
                 $addCategorie->setParametreForEntreprise($user);
                 $addCategorie->setting($entreprise, [
                     'succursale' => $nombresuccursale,
@@ -334,7 +341,7 @@ class ApiUserController extends ApiInterface
     )]
     #[OA\Tag(name: 'user')]
     #[Security(name: 'Bearer')]
-    public function createMembre(Request $request,SubscriptionChecker $subscriptionChecker, SurccursaleRepository $surccursaleRepository, TypeUserRepository $typeUserRepository, UserRepository $userRepository, EntrepriseRepository $entrepriseRepository, SendMailService $sendMailService): Response
+    public function createMembre(Request $request, SubscriptionChecker $subscriptionChecker, SurccursaleRepository $surccursaleRepository, TypeUserRepository $typeUserRepository, UserRepository $userRepository, EntrepriseRepository $entrepriseRepository, SendMailService $sendMailService): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
