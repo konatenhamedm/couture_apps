@@ -36,7 +36,7 @@ class SurccursaleRepository extends ServiceEntityRepository
     public function countActiveByEntreprise($entreprise): int
     {
         return $this->createQueryBuilder('s')
-            ->select('COUNT(u.id)')
+            ->select('COUNT(s.id)')
             ->where('s.isActive = :active')
             ->andWhere('s.entreprise = :entreprise')
             ->setParameter('active', true)
