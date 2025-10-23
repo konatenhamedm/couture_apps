@@ -41,7 +41,7 @@ class ApiPaysController extends ApiInterface
     {
         try {
 
-            $pays = $paysRepository->findAll();
+            $pays = $this->paginationService->paginate($paysRepository->findAll());
 
           
 
@@ -72,7 +72,7 @@ class ApiPaysController extends ApiInterface
     {
         try {
 
-            $pays = $paysRepository->findBy(['actif' => true]);
+            $pays = $this->paginationService->paginate($paysRepository->findBy(['actif' => true]));
 
           
 
@@ -275,12 +275,17 @@ class ApiPaysController extends ApiInterface
     /**
      * Permet de supprimer plusieurs pays.
      */
-    #[OA\Response(
-        response: 200,
-        description: 'Returns the rewards of an user',
+      #[OA\RequestBody(
+        required: true,
+        description: 'Tableau d’identifiants à supprimer',
         content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new Model(type: Pays::class, groups: ['full']))
+            properties: [
+                new OA\Property(
+                    property: 'ids',
+                    type: 'array',
+                    items: new OA\Items(type: 'integer', example: 1)
+                )
+            ]
         )
     )]
     #[OA\Tag(name: 'pays')]
@@ -289,8 +294,8 @@ class ApiPaysController extends ApiInterface
         try {
             $data = json_decode($request->getContent());
 
-            foreach ($data->ids as $key => $value) {
-                $pays = $villeRepository->find($value['id']);
+            foreach ($data['ids'] as $id) {
+                $pays = $villeRepository->find($id);
 
                 if ($pays != null) {
                     $villeRepository->remove($pays);

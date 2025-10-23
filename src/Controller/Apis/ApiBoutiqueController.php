@@ -47,7 +47,7 @@ class ApiBoutiqueController extends ApiInterface
     {
         try {
 
-            $boutiques = $boutiqueRepository->findAll();
+            $boutiques = $this->paginationService->paginate($boutiqueRepository->findAll());
 
             $response =  $this->responseData($boutiques, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -317,12 +317,17 @@ class ApiBoutiqueController extends ApiInterface
     /**
      * Permet de supprimer plusieurs boutique.
      */
-    #[OA\Response(
-        response: 200,
-        description: 'Returns the rewards of an user',
+    #[OA\RequestBody(
+        required: true,
+        description: 'Tableau d’identifiants à supprimer',
         content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new Model(type: Boutique::class, groups: ['full']))
+            properties: [
+                new OA\Property(
+                    property: 'ids',
+                    type: 'array',
+                    items: new OA\Items(type: 'integer', example: 1)
+                )
+            ]
         )
     )]
     #[OA\Tag(name: 'boutique')]
@@ -335,8 +340,8 @@ class ApiBoutiqueController extends ApiInterface
         try {
             $data = json_decode($request->getContent());
 
-            foreach ($data->ids as $key => $value) {
-                $boutique = $villeRepository->find($value['id']);
+            foreach ($data['ids'] as $id) {
+                $boutique = $villeRepository->find($id);
 
                 if ($boutique != null) {
                     $villeRepository->remove($boutique);

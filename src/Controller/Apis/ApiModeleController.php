@@ -42,9 +42,7 @@ class ApiModeleController extends ApiInterface
     {
         try {
 
-            $modeles = $modeleRepository->findAll();
-
-
+            $modeles = $this->paginationService->paginate($modeleRepository->findAll());
 
             $response =  $this->responseData($modeles, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -82,15 +80,15 @@ class ApiModeleController extends ApiInterface
             if ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'SADM'])) {
 
 
-                $modeles = $modeleRepository->findBy(
+                $modeles = $this->paginationService->paginate($modeleRepository->findBy(
                     ['entreprise' => $this->getUser()->getEntreprise()],
                     ['id' => 'ASC']
-                );
+                ));
             } else {
-                $modeles = $modeleRepository->findBy(
+                $modeles = $this->paginationService->paginate($modeleRepository->findBy(
                     ['surccursale' => $this->getUser()->getSurccursale()],
                     ['id' => 'ASC']
-                );
+                ));
             }
 
 

@@ -42,10 +42,10 @@ class ApiGestionStockController extends ApiInterface
     public function index(ModeleRepository $modeleRepository, EntreStockRepository $entreStockRepository, Boutique $boutique): Response
     {
         try {
-            $entrees = $entreStockRepository->findBy(
+            $entrees = $this->paginationService->paginate($entreStockRepository->findBy(
                 ['boutique' => $boutique->getId()],
                 ['id' => 'ASC']
-            );
+            ));
 
             $response =  $this->responseData($entrees, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -77,10 +77,10 @@ class ApiGestionStockController extends ApiInterface
         try {
 
 
-            $entrees = $ligneEntreRepository->findBy(
+            $entrees =  $this->paginationService->paginate($ligneEntreRepository->findBy(
                 ['modele' => $modeleBoutique->getId()],
                 ['id' => 'ASC']
-            );
+            ));
 
             $response =  $this->responseData($entrees, 'group_ligne', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {

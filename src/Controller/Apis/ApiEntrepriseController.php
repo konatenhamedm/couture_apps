@@ -37,8 +37,8 @@ class ApiEntrepriseController extends ApiInterface
     {
         try {
 
-            $surccursales = $surccursaleRepository->findBy(['entreprise' => $this->getUser()->getEntreprise()]);
-            $boutiques = $boutiqueRepository->findBy(['entreprise' => $this->getUser()->getEntreprise()]);
+            $surccursales = $this->paginationService->paginate($surccursaleRepository->findBy(['entreprise' => $this->getUser()->getEntreprise()])) ;
+            $boutiques = $this->paginationService->paginate($boutiqueRepository->findBy(['entreprise' => $this->getUser()->getEntreprise()])) ;
 
             $data = [
                     "surccursales" => $surccursales,

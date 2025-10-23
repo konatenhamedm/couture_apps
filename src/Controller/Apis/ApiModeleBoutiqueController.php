@@ -45,7 +45,7 @@ class ApiModeleBoutiqueController extends ApiInterface
     {
         try {
 
-            $modeleBoutiques = $modeleBoutiqueRepository->findAll();
+            $modeleBoutiques =  $this->paginationService->paginate($modeleBoutiqueRepository->findAll());
 
 
 
@@ -80,10 +80,10 @@ class ApiModeleBoutiqueController extends ApiInterface
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
-            $modeles = $modeleRepository->findBy(
+            $modeles = $this->paginationService->paginate($modeleRepository->findBy(
                 ['boutique' => $boutique->getId()],
                 ['id' => 'ASC']
-            );
+            ));
 
             $response =  $this->responseData($modeles, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -120,15 +120,15 @@ class ApiModeleBoutiqueController extends ApiInterface
         try {
             if ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'SADM'])) {
 
-                $modeleBoutiques = $modeleBoutiqueRepository->findBy(
+                $modeleBoutiques = $this->paginationService->paginate($modeleBoutiqueRepository->findBy(
                     ['boutique' => $boutique],
                     ['id' => 'ASC']
-                );
+                ));
             } else {
-                $modeleBoutiques = $modeleBoutiqueRepository->findBy(
+                $modeleBoutiques = $this->paginationService->paginate($modeleBoutiqueRepository->findBy(
                     ['boutique' => $this->getUser()->getBoutique()],
                     ['id' => 'ASC']
-                );
+                ));
             }
 
 
@@ -349,12 +349,17 @@ class ApiModeleBoutiqueController extends ApiInterface
     /**
      * Permet de supprimer plusieurs modeleBoutique.
      */
-    #[OA\Response(
-        response: 200,
-        description: 'Returns the rewards of an user',
+     #[OA\RequestBody(
+        required: true,
+        description: 'Tableau d’identifiants à supprimer',
         content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new Model(type: ModeleBoutique::class, groups: ['full']))
+            properties: [
+                new OA\Property(
+                    property: 'ids',
+                    type: 'array',
+                    items: new OA\Items(type: 'integer', example: 1)
+                )
+            ]
         )
     )]
     #[OA\Tag(name: 'modeleBoutique')]
@@ -367,8 +372,8 @@ class ApiModeleBoutiqueController extends ApiInterface
         try {
             $data = json_decode($request->getContent());
 
-            foreach ($data->ids as $key => $value) {
-                $modeleBoutique = $villeRepository->find($value['id']);
+            foreach ($data['ids'] as $id) {
+                $modeleBoutique = $villeRepository->find($id);
 
                 if ($modeleBoutique != null) {
                     $villeRepository->remove($modeleBoutique);

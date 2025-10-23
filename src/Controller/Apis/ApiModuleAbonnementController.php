@@ -44,7 +44,7 @@ class ApiModuleAbonnementController extends ApiInterface
     {
         try {
 
-            $moduleAbonnements = $moduleAbonnementRepository->findAll();
+            $moduleAbonnements = $this->paginationService->paginate($moduleAbonnementRepository->findAll());
 
 
 
@@ -342,12 +342,17 @@ class ApiModuleAbonnementController extends ApiInterface
     /**
      * Permet de supprimer plusieurs moduleAbonnement.
      */
-    #[OA\Response(
-        response: 200,
-        description: 'Returns the rewards of an user',
+       #[OA\RequestBody(
+        required: true,
+        description: 'Tableau d’identifiants à supprimer',
         content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new AttributeModel(type: ModuleAbonnement::class, groups: ['full']))
+            properties: [
+                new OA\Property(
+                    property: 'ids',
+                    type: 'array',
+                    items: new OA\Items(type: 'integer', example: 1)
+                )
+            ]
         )
     )]
     #[OA\Tag(name: 'moduleAbonnement')]
@@ -357,8 +362,8 @@ class ApiModuleAbonnementController extends ApiInterface
         try {
             $data = json_decode($request->getContent());
 
-            foreach ($data->ids as $key => $value) {
-                $moduleAbonnement = $villeRepository->find($value['id']);
+            foreach ($data['ids'] as $id) {
+                $moduleAbonnement = $villeRepository->find($id);
 
                 if ($moduleAbonnement != null) {
                     $villeRepository->remove($moduleAbonnement);

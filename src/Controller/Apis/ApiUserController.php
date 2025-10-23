@@ -71,7 +71,7 @@ class ApiUserController extends ApiInterface
     {
         try {
 
-            $users = $userRepository->findAll();
+            $users = $this->paginationService->paginate($userRepository->findAll());
 
             $context = [AbstractNormalizer::GROUPS => 'group1'];
             $json = $this->serializer->serialize($users, 'json', $context);
@@ -104,7 +104,7 @@ class ApiUserController extends ApiInterface
     {
         try {
 
-            $users = $userRepository->findBy(['entreprise' => $this->getUser()->getEntreprise(), 'isActive' => true], ['id' => 'ASC']);
+            $users = $this->paginationService->paginate($userRepository->findBy(['entreprise' => $this->getUser()->getEntreprise(), 'isActive' => true], ['id' => 'ASC']));
 
             $context = [AbstractNormalizer::GROUPS => 'group1'];
             $json = $this->serializer->serialize($users, 'json', $context);
@@ -138,7 +138,7 @@ class ApiUserController extends ApiInterface
     {
         try {
 
-            $users = $userRepository->findBy(['entreprise' => $this->getUser()->getEntreprise()], ['id' => 'ASC']);
+            $users = $this->paginationService->paginate($userRepository->findBy(['entreprise' => $this->getUser()->getEntreprise()], ['id' => 'ASC']));
 
             $context = [AbstractNormalizer::GROUPS => 'group1'];
             $json = $this->serializer->serialize($users, 'json', $context);

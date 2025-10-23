@@ -42,7 +42,7 @@ class ApiOperateurController extends ApiInterface
     {
         try {
 
-            $operateurs = $operateurRepository->findAll();
+            $operateurs = $this->paginationService->paginate($operateurRepository->findAll());
 
 
 
@@ -75,9 +75,7 @@ class ApiOperateurController extends ApiInterface
     {
         try {
 
-            $operateurs = $operateurRepository->findBy(['pays'=>$pays->getId(),'actif'=>true]);
-
-
+            $operateurs = $this->paginationService->paginate($operateurRepository->findBy(['pays'=>$pays->getId(),'actif'=>true]));
 
             $response =  $this->responseData($operateurs, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -315,13 +313,17 @@ class ApiOperateurController extends ApiInterface
     /**
      * Permet de supprimer plusieurs operateur.
      */
-    #[OA\Response(
-        response: 200,
-        description: 'Returns the rewards of an user',
+    #[OA\RequestBody(
+        required: true,
+        description: 'Tableau d’identifiants à supprimer',
         content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new Model(type: Operateur::class, groups: ['full']))
-
+            properties: [
+                new OA\Property(
+                    property: 'ids',
+                    type: 'array',
+                    items: new OA\Items(type: 'integer', example: 1)
+                )
+            ]
         )
     )]
     #[OA\Tag(name: 'operateur')]
@@ -330,8 +332,8 @@ class ApiOperateurController extends ApiInterface
         try {
             $data = json_decode($request->getContent());
 
-            foreach ($request->get('ids') as $key => $value) {
-                $operateur = $villeRepository->find($value['id']);
+            foreach ($data['ids'] as $id) {
+                $operateur = $villeRepository->find($id);
 
                 if ($operateur != null) {
                     $villeRepository->remove($operateur);

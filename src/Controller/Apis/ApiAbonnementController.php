@@ -44,7 +44,7 @@ class ApiAbonnementController extends ApiInterface
     {
         try {
 
-            $categories = $moduleRepository->findAll();
+            $categories = $this->paginationService->paginate($moduleRepository->findAll());
 
             $response =  $this->responseData($categories, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -70,7 +70,7 @@ class ApiAbonnementController extends ApiInterface
     )]
     //#[OA\Tag(name: 'abonnement')]
     // #[Security(name: 'Bearer')]
-/*     public function showActiveInfoAbonnement(AbonnementRepository $moduleRepository): Response
+    /*     public function showActiveInfoAbonnement(AbonnementRepository $moduleRepository): Response
     {
         try {
 
@@ -126,9 +126,9 @@ class ApiAbonnementController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'abonnement')]
-    public function createAbonnement(Request $request,UserRepository $userRepository, PaiementService $paiementService, AbonnementRepository $abonnementRepository, Utils $utils, ModuleAbonnement $moduleAbonnement, FactureRepository $factureRepository, PaiementFactureRepository $paiementRepository)
+    public function createAbonnement(Request $request, UserRepository $userRepository, PaiementService $paiementService, AbonnementRepository $abonnementRepository, Utils $utils, ModuleAbonnement $moduleAbonnement, FactureRepository $factureRepository, PaiementFactureRepository $paiementRepository)
     {
-        
+
         $data = json_decode($request->getContent(), true);
         /* dd($data); */
         $createTransactionData = $paiementService->traiterPaiement([
@@ -140,13 +140,13 @@ class ApiAbonnementController extends ApiInterface
             'numero' => $data['numero'],
             'operateur' => $data['operateur'],
         ], $this->getUser(), $moduleAbonnement);
-       // dd($createTransactionData);
+        // dd($createTransactionData);
         return   $this->response($createTransactionData);
     }
 
 
 
-     #[Route('/entreprise', methods: ['GET'])]
+    #[Route('/entreprise', methods: ['GET'])]
     /**
      * Retourne la liste les abonnements d'une entreprise.
      * 
@@ -165,12 +165,12 @@ class ApiAbonnementController extends ApiInterface
     {
         try {
 
-            $typeMesures = $abonnementRepository->findBy(
+            $typeMesures = $this->paginationService->paginate($abonnementRepository->findBy(
                 ['entreprise' => $this->getUser()->getEntreprise()],
                 ['id' => 'ASC']
-            );
+            ));
 
-          
+
 
             $response =  $this->responseData($typeMesures, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -182,7 +182,7 @@ class ApiAbonnementController extends ApiInterface
         return $response;
     }
 
-     #[Route('/entreprise/actif', methods: ['GET'])]
+    #[Route('/entreprise/actif', methods: ['GET'])]
     /**
      * Retourne la liste des abonnements actifs d'une entreprise.
      * 
@@ -201,12 +201,12 @@ class ApiAbonnementController extends ApiInterface
     {
         try {
 
-            $typeMesures = $moduleRepository->findBy(
-                ['entreprise' => $this->getUser()->getEntreprise(),'etat' => 'actif'],
+            $typeMesures = $this->paginationService->paginate($moduleRepository->findBy(
+                ['entreprise' => $this->getUser()->getEntreprise(), 'etat' => 'actif'],
                 ['id' => 'ASC']
-            );
+            ));
 
-          
+
 
             $response =  $this->responseData($typeMesures, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -217,8 +217,4 @@ class ApiAbonnementController extends ApiInterface
         // On envoie la réponse
         return $response;
     }
-   
-
-
-
 }

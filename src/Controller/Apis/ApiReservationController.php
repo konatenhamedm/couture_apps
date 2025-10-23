@@ -59,7 +59,7 @@ class ApiReservationController extends ApiInterface
     {
         try {
 
-            $reservations = $reservationRepository->findAll();
+            $reservations = $this->paginationService->paginate($reservationRepository->findAll());
 
             $response =  $this->responseData($reservations, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -91,15 +91,15 @@ class ApiReservationController extends ApiInterface
     {
         try {
             if ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'SADM'])) {
-                $reservations = $reservationRepository->findBy(
+                $reservations = $this->paginationService->paginate($reservationRepository->findBy(
                     ['entreprise' => $this->getUser()->getEntreprise()],
                     ['id' => 'ASC']
-                );
+                ));
             } else {
-                $reservations = $reservationRepository->findBy(
+                $reservations = $this->paginationService->paginate($reservationRepository->findBy(
                     ['boutique' => $this->getUser()->getBoutique()],
                     ['id' => 'ASC']
-                );
+                ));
             }
             $response =  $this->responseData($reservations, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -429,12 +429,17 @@ class ApiReservationController extends ApiInterface
     /**
      * Permet de supprimer plusieurs reservation.
      */
-    #[OA\Response(
-        response: 200,
-        description: 'Returns the rewards of an user',
+     #[OA\RequestBody(
+        required: true,
+        description: 'Tableau d’identifiants à supprimer',
         content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new Model(type: Reservation::class, groups: ['full']))
+            properties: [
+                new OA\Property(
+                    property: 'ids',
+                    type: 'array',
+                    items: new OA\Items(type: 'integer', example: 1)
+                )
+            ]
         )
     )]
     #[OA\Tag(name: 'reservation')]
@@ -447,8 +452,8 @@ class ApiReservationController extends ApiInterface
         try {
             $data = json_decode($request->getContent());
 
-            foreach ($data->ids as $key => $value) {
-                $reservation = $villeRepository->find($value['id']);
+            foreach ($data['ids'] as $id) {
+                $reservation = $villeRepository->find($id);
 
                 if ($reservation != null) {
                     $villeRepository->remove($reservation);

@@ -78,10 +78,10 @@ class ApiCategorieMesureController extends ApiInterface
 
         try {
 
-            $typeMesures = $moduleRepository->findBy(
+            $typeMesures = $this->paginationService->paginate($moduleRepository->findBy(
                 ['entreprise' => $this->getUser()->getEntreprise()],
                 ['id' => 'ASC']
-            );
+            ));
 
 
 
@@ -288,12 +288,17 @@ class ApiCategorieMesureController extends ApiInterface
     /**
      * Permet de supprimer plusieurs categorieMesure.
      */
-    #[OA\Response(
-        response: 200,
-        description: 'Returns the rewards of an user',
+    #[OA\RequestBody(
+        required: true,
+        description: 'Tableau d’identifiants à supprimer',
         content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new AttributeModel(type: CategorieMesure::class, groups: ['full']))
+            properties: [
+                new OA\Property(
+                    property: 'ids',
+                    type: 'array',
+                    items: new OA\Items(type: 'integer', example: 1)
+                )
+            ]
         )
     )]
     #[OA\Tag(name: 'categorieMesure')]
@@ -307,8 +312,8 @@ class ApiCategorieMesureController extends ApiInterface
         try {
             $data = json_decode($request->getContent());
 
-            foreach ($data->ids as $key => $value) {
-                $categorieMesure = $villeRepository->find($value['id']);
+            foreach ($data['ids'] as $id) {
+                $categorieMesure = $villeRepository->find($id);
 
                 if ($categorieMesure != null) {
                     $villeRepository->remove($categorieMesure);

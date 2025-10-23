@@ -39,7 +39,7 @@ class ApiNotificationController extends ApiInterface
     {
         try {
 
-            $categories = $moduleRepository->findAll();
+            $categories = $this->paginationService->paginate($moduleRepository->findAll());
 
           
 
@@ -77,12 +77,10 @@ class ApiNotificationController extends ApiInterface
 
         try {
 
-            $typeMesures = $moduleRepository->findBy(
+            $typeMesures = $this->paginationService->paginate($moduleRepository->findBy(
                 ['user' => $this->getUser()],
                 ['id' => 'ASC']
-            );
-
-          
+            ));
 
             $response =  $this->responseData($typeMesures, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -141,12 +139,17 @@ class ApiNotificationController extends ApiInterface
     /**
      * Permet de supprimer plusieurs notification.
      */
-    #[OA\Response(
-        response: 200,
-        description: 'Returns the rewards of an user',
+     #[OA\RequestBody(
+        required: true,
+        description: 'Tableau d’identifiants à supprimer',
         content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new AttributeModel(type: Notification::class, groups: ['full']))
+            properties: [
+                new OA\Property(
+                    property: 'ids',
+                    type: 'array',
+                    items: new OA\Items(type: 'integer', example: 1)
+                )
+            ]
         )
     )]
     #[OA\Tag(name: 'notification')]
@@ -160,8 +163,8 @@ class ApiNotificationController extends ApiInterface
         try {
             $data = json_decode($request->getContent());
 
-            foreach ($data->ids as $key => $value) {
-                $notification = $villeRepository->find($value['id']);
+            foreach ($data['ids'] as $id) {
+                $notification = $villeRepository->find($id);
 
                 if ($notification != null) {
                     $villeRepository->remove($notification);

@@ -44,7 +44,7 @@ class ApiClientController extends ApiInterface
     {
         try {
 
-            $clients = $clientRepository->findAll();
+            $clients = $this->paginationService->paginate($clientRepository->findAll());
 
 
 
@@ -82,15 +82,15 @@ class ApiClientController extends ApiInterface
         try {
             if ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'SADM'])) {
 
-                $clients = $clientRepository->findBy(
+                $clients = $this->paginationService->paginate($clientRepository->findBy(
                     ['entreprise' => $this->getUser()->getEntreprise()],
                     ['id' => 'ASC']
-                );
+                ));
             } else {
-                $clients = $clientRepository->findBy(
+                $clients = $this->paginationService->paginate($clientRepository->findBy(
                     ['surccursale' => $this->getUser()->getSurccursale()],
                     ['id' => 'ASC']
-                );
+                ));
             }
 
 
@@ -399,12 +399,17 @@ class ApiClientController extends ApiInterface
     /**
      * Permet de supprimer plusieurs client.
      */
-    #[OA\Response(
-        response: 200,
-        description: 'Returns the rewards of an user',
+    #[OA\RequestBody(
+        required: true,
+        description: 'Tableau d’identifiants à supprimer',
         content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new Model(type: Client::class, groups: ['full']))
+            properties: [
+                new OA\Property(
+                    property: 'ids',
+                    type: 'array',
+                    items: new OA\Items(type: 'integer', example: 1)
+                )
+            ]
         )
     )]
     #[OA\Tag(name: 'client')]
@@ -414,8 +419,8 @@ class ApiClientController extends ApiInterface
         try {
             $data = json_decode($request->getContent());
 
-            foreach ($data->ids as $key => $value) {
-                $client = $villeRepository->find($value['id']);
+            foreach ($data['ids'] as $id) {
+                $client = $villeRepository->find($id);
 
                 if ($client != null) {
                     $villeRepository->remove($client);

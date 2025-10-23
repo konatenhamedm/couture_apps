@@ -46,7 +46,7 @@ class ApiTypeMesureController extends ApiInterface
     {
         try {
 
-            $typeMesures = $typeMesureRepository->findAll();
+            $typeMesures = $this->paginationService->paginate($typeMesureRepository->findAll());
 
             $response =  $this->responseData($typeMesures, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -81,10 +81,10 @@ class ApiTypeMesureController extends ApiInterface
 
         try {
 
-            $typeMesures = $typeMesureRepository->findBy(
+            $typeMesures = $this->paginationService->paginate($typeMesureRepository->findBy(
                 ['entreprise' => $this->getUser()->getEntreprise()],
                 ['id' => 'ASC']
-            );
+            ));
 
           
 
@@ -121,10 +121,10 @@ class ApiTypeMesureController extends ApiInterface
 
         try {
 
-            $categories = $categorieTypeMesureRepository->findBy(
+            $categories = $this->paginationService->paginate($categorieTypeMesureRepository->findBy(
                 ['typeMesure' => $typeMesure],
                 ['id' => 'ASC']
-            );
+            ));
 
           
 
@@ -422,12 +422,17 @@ class ApiTypeMesureController extends ApiInterface
     /**
      * Permet de supprimer plusieurs typeMesure.
      */
-    #[OA\Response(
-        response: 200,
-        description: 'Returns the rewards of an user',
+        #[OA\RequestBody(
+        required: true,
+        description: 'Tableau d’identifiants à supprimer',
         content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new AttributeModel(type: TypeMesure::class, groups: ['full']))
+            properties: [
+                new OA\Property(
+                    property: 'ids',
+                    type: 'array',
+                    items: new OA\Items(type: 'integer', example: 1)
+                )
+            ]
         )
     )]
     #[OA\Tag(name: 'typeMesure')]
@@ -441,8 +446,8 @@ class ApiTypeMesureController extends ApiInterface
         try {
             $data = json_decode($request->getContent());
 
-            foreach ($data->ids as $key => $value) {
-                $typeMesure = $villeRepository->find($value['id']);
+            foreach ($data['ids'] as $id) {
+                $typeMesure = $villeRepository->find($id);
 
                 if ($typeMesure != null) {
                     $villeRepository->remove($typeMesure);

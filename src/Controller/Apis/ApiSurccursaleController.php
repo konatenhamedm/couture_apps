@@ -47,7 +47,7 @@ class ApiSurccursaleController extends ApiInterface
     {
         try {
 
-            $surccursales = $surccursaleRepository->findAll();
+            $surccursales = $this->paginationService->paginate($surccursaleRepository->findAll());
             $response =  $this->responseData($surccursales, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setMessage("");
@@ -77,10 +77,10 @@ class ApiSurccursaleController extends ApiInterface
     {
         try {
 
-            $surccursales = $surccursaleRepository->findBy(
+            $surccursales = $this->paginationService->paginate($surccursaleRepository->findBy(
                 ['entreprise' => $this->getUser()->getEntreprise(), 'active' => true],
                 ['id' => 'ASC']
-            );
+            ));
 
             $response =  $this->responseData($surccursales, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -111,10 +111,10 @@ class ApiSurccursaleController extends ApiInterface
     {
         try {
 
-            $surccursales = $surccursaleRepository->findBy(
+            $surccursales = $this->paginationService->paginate($surccursaleRepository->findBy(
                 ['entreprise' => $this->getUser()->getEntreprise()],
                 ['id' => 'ASC']
-            );
+            ));
 
             $response =  $this->responseData($surccursales, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -338,12 +338,17 @@ class ApiSurccursaleController extends ApiInterface
     /**
      * Permet de supprimer plusieurs surccursale.
      */
-    #[OA\Response(
-        response: 200,
-        description: 'Returns the rewards of an user',
+     #[OA\RequestBody(
+        required: true,
+        description: 'Tableau d’identifiants à supprimer',
         content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new AttributeModel(type: Surccursale::class, groups: ['full']))
+            properties: [
+                new OA\Property(
+                    property: 'ids',
+                    type: 'array',
+                    items: new OA\Items(type: 'integer', example: 1)
+                )
+            ]
         )
     )]
     #[OA\Tag(name: 'surccursale')]
@@ -358,8 +363,8 @@ class ApiSurccursaleController extends ApiInterface
         try {
             $data = json_decode($request->getContent());
 
-            foreach ($data->ids as $key => $value) {
-                $surccursale = $villeRepository->find($value['id']);
+            foreach ($data['ids'] as $id) {
+                $surccursale = $villeRepository->find($id);
                 if ($surccursale != null) {
                     $villeRepository->remove($surccursale);
                 }

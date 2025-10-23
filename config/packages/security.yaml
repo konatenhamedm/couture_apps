@@ -45,12 +45,13 @@ security:
             - { path: ^/api/reset-password, roles: PUBLIC_ACCESS }
             - { path: ^/api/reset-password/request, roles: PUBLIC_ACCESS }
             - { path: ^/api/reset-password/reset, roles: PUBLIC_ACCESS }
+            - { path: ^/api/user/create, roles: PUBLIC_ACCESS }
             - { path: ^/login, roles: PUBLIC_ACCESS }
             - { path: ^/$, roles: PUBLIC_ACCESS }  
             - { path: ^/public/, roles: PUBLIC_ACCESS }
             - { path: ^/assets/, roles: PUBLIC_ACCESS }
             - { path: ^/admin, roles: ROLE_ADMIN }
-            #- { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
+            - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
             - { path: ^/, roles: PUBLIC_ACCESS }  
       
 

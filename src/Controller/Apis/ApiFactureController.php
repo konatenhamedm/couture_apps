@@ -54,7 +54,7 @@ class ApiFactureController extends ApiInterface
     {
         try {
 
-            $factures = $factureRepository->findAll();
+            $factures = $this->paginationService->paginate($factureRepository->findAll());
 
             $response =  $this->responseData($factures, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -89,10 +89,10 @@ class ApiFactureController extends ApiInterface
 
         try {
 
-            $factures = $factureRepository->findBy(
+            $factures = $this->paginationService->paginate($factureRepository->findBy(
                 ['entreprise' => $this->getUser()->getEntreprise()],
                 ['id' => 'ASC']
-            );
+            ));
             $response =  $this->responseData($factures, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setMessage("");
@@ -581,12 +581,17 @@ class ApiFactureController extends ApiInterface
     /**
      * Permet de supprimer plusieurs facture.
      */
-    #[OA\Response(
-        response: 200,
-        description: 'Returns the rewards of an user',
+     #[OA\RequestBody(
+        required: true,
+        description: 'Tableau d’identifiants à supprimer',
         content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new AttributeModel(type: Facture::class, groups: ['full']))
+            properties: [
+                new OA\Property(
+                    property: 'ids',
+                    type: 'array',
+                    items: new OA\Items(type: 'integer', example: 1)
+                )
+            ]
         )
     )]
     #[OA\Tag(name: 'facture')]
@@ -600,8 +605,8 @@ class ApiFactureController extends ApiInterface
         try {
             $data = json_decode($request->getContent());
 
-            foreach ($data->ids as $key => $value) {
-                $facture = $villeRepository->find($value['id']);
+            foreach ($data['ids'] as $id) {
+                $facture = $villeRepository->find($id);
 
                 if ($facture != null) {
                     $villeRepository->remove($facture);

@@ -42,7 +42,7 @@ class ApiTypeUserController extends ApiInterface
     {
         try {
 
-            $typeUsers = $typeUserRepository->findAll();
+            $typeUsers = $this->paginationService->paginate($typeUserRepository->findAll());
 
           
 
@@ -239,12 +239,17 @@ class ApiTypeUserController extends ApiInterface
     /**
      * Permet de supprimer plusieurs typeUser.
      */
-    #[OA\Response(
-        response: 200,
-        description: 'Returns the rewards of an user',
+      #[OA\RequestBody(
+        required: true,
+        description: 'Tableau d’identifiants à supprimer',
         content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new Model(type: TypeUser::class, groups: ['full']))
+            properties: [
+                new OA\Property(
+                    property: 'ids',
+                    type: 'array',
+                    items: new OA\Items(type: 'integer', example: 1)
+                )
+            ]
         )
     )]
     #[OA\Tag(name: 'typeUser')]
@@ -253,8 +258,8 @@ class ApiTypeUserController extends ApiInterface
         try {
             $data = json_decode($request->getContent());
 
-            foreach ($data->ids as $key => $value) {
-                $typeUser = $villeRepository->find($value['id']);
+            foreach ($data['ids'] as $id) {
+                $typeUser = $villeRepository->find($id);
 
                 if ($typeUser != null) {
                     $villeRepository->remove($typeUser);

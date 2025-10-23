@@ -60,7 +60,7 @@ class ApiPaiementController extends ApiInterface
     {
         try {
 
-            $paiements = $paiementRepository->findAll();
+            $paiements = $this->paginationService->paginate($paiementRepository->findAll());
 
             $response =  $this->responseData($paiements, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -96,15 +96,15 @@ class ApiPaiementController extends ApiInterface
 
         try {
             if ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'SADM'])) {
-                $paiements = $paiementRepository->findBy(
+                $paiements = $this->paginationService->paginate($paiementRepository->findBy(
                     ['entreprise' => $this->getUser()->getEntreprise()],
                     ['id' => 'ASC']
-                );
+                ));
             } else {
-                $paiements = $paiementRepository->findBy(
+                $paiements = $this->paginationService->paginate($paiementRepository->findBy(
                     ['surccursale' => $this->getUser()->getSurccursale()],
                     ['id' => 'ASC']
-                );
+                ));
             }
 
 
@@ -565,12 +565,17 @@ class ApiPaiementController extends ApiInterface
     /**
      * Permet de supprimer plusieurs paiement.
      */
-    #[OA\Response(
-        response: 200,
-        description: 'Returns the rewards of an user',
+      #[OA\RequestBody(
+        required: true,
+        description: 'Tableau d’identifiants à supprimer',
         content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new Model(type: PaiementFacture::class, groups: ['full']))
+            properties: [
+                new OA\Property(
+                    property: 'ids',
+                    type: 'array',
+                    items: new OA\Items(type: 'integer', example: 1)
+                )
+            ]
         )
     )]
     #[OA\Tag(name: 'paiement')]
@@ -583,8 +588,8 @@ class ApiPaiementController extends ApiInterface
         try {
             $data = json_decode($request->getContent());
 
-            foreach ($data->ids as $key => $value) {
-                $paiement = $villeRepository->find($value['id']);
+            foreach ($data['ids'] as $id) {
+                $paiement = $villeRepository->find($id);
 
                 if ($paiement != null) {
                     $villeRepository->remove($paiement);
