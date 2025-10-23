@@ -34,11 +34,11 @@ class ApiStatistiqueController extends ApiInterface
     )]
     #[OA\Tag(name: 'statistique')]
     // #[Security(name: 'Bearer')]
-    public function index(StatistiqueRepository $statistiqueRepository): Response
+    public function index(): Response
     {
         try {
 
-            $statistiques = $statistiqueRepository->findAll();
+            $statistiques = [];
 
             $response =  $this->responseData($statistiques, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {

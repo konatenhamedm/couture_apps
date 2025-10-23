@@ -403,7 +403,6 @@ class ApiUserController extends ApiInterface
                     new OA\Property(property: "nom", type: "string"),
                     new OA\Property(property: "prenom", type: "string"),
                     new OA\Property(property: "email", type: "string"),
-                    new OA\Property(property: "numero", type: "string"),
                 ],
                 type: "object"
             )
@@ -436,13 +435,13 @@ class ApiUserController extends ApiInterface
                 $user->setPrenoms($data['prenom']);
             }
 
-            if (isset($data['numero'])) {
+            if (isset($data['email'])) {
 
-                $existingUser = $userRepository->findOneBy(['login' => $data['numero']]);
+                $existingUser = $userRepository->findOneBy(['login' => $data['email']]);
                 if ($existingUser && $existingUser->getId() !== $user->getId()) {
-                    return $this->errorResponse(null, "Ce numéro est déjà utilisé par un autre utilisateur");
+                    return $this->errorResponse(null, "Ce email est déjà utilisé par un autre utilisateur");
                 }
-                $user->setLogin($data['numero']);
+                $user->setLogin($data['email']);
             }
 
 
