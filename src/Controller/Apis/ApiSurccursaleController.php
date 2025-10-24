@@ -197,7 +197,7 @@ class ApiSurccursaleController extends ApiInterface
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
-        $this->allParametres('surccursale');
+        $this->allParametres('succursale');
 
         $data = json_decode($request->getContent(), true);
         $surccursale = new Surccursale();
@@ -207,7 +207,11 @@ class ApiSurccursaleController extends ApiInterface
         $surccursale->setEntreprise($this->getUser()->getEntreprise());
         $surccursale->setCreatedBy($this->getUser());
         $surccursale->setUpdatedBy($this->getUser());
+        $errorResponse = $this->errorResponse($surccursale);
       
+        if ($errorResponse !== null) {
+            return $errorResponse;
+        } else {
 
             $surccursaleRepository->add($surccursale, true);
             $caisse = new CaisseSuccursale();
@@ -221,9 +225,9 @@ class ApiSurccursaleController extends ApiInterface
 
             $caisseSuccursaleRepository->add($caisse, true);
       
-        
+        }
 
-        return $this->responseData($surccursale, 'group1', ['Content-Type' => 'application/json']);
+        return $this->responseData($surccursale, 'group_surccursale', ['Content-Type' => 'application/json']);
     }
 
 
@@ -265,14 +269,13 @@ class ApiSurccursaleController extends ApiInterface
                 $surccursale->setUpdatedAt(new \DateTime());
                 $errorResponse = $this->errorResponse($surccursale);
 
-               
+                if ($errorResponse !== null){
+                    return $errorResponse;
+                } else {
                     $surccursaleRepository->add($surccursale, true);
-                
-
-
-
-                // On retourne la confirmation
-                $response = $this->responseData($surccursale, 'group1', ['Content-Type' => 'application/json']);
+                }
+                   
+                $response = $this->responseData($surccursale, 'group_surccursale', ['Content-Type' => 'application/json']);
             } else {
                 $this->setMessage("Cette ressource est inexsitante");
                 $this->setStatusCode(300);
