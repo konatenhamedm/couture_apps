@@ -174,7 +174,7 @@ class ApiBoutiqueController extends ApiInterface
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
-        $this->allParametres('boutique');
+        //$this->allParametres('boutique');
         $data = json_decode($request->getContent(), true);
 
 

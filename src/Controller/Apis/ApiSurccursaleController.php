@@ -197,7 +197,7 @@ class ApiSurccursaleController extends ApiInterface
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
-        $this->allParametres('succursale');
+       // $this->allParametres('succursale');
 
         $data = json_decode($request->getContent(), true);
         $surccursale = new Surccursale();
