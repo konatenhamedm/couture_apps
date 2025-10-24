@@ -208,8 +208,9 @@ class ApiSurccursaleController extends ApiInterface
         $surccursale->setCreatedBy($this->getUser());
         $surccursale->setUpdatedBy($this->getUser());
         $errorResponse = $this->errorResponse($surccursale);
+      
         if ($errorResponse !== null) {
-            return $errorResponse; 
+            return $errorResponse;
         } else {
 
             $surccursaleRepository->add($surccursale, true);
@@ -268,8 +269,8 @@ class ApiSurccursaleController extends ApiInterface
                 $surccursale->setUpdatedAt(new \DateTime());
                 $errorResponse = $this->errorResponse($surccursale);
 
-                if ($errorResponse !== null) {
-                    return $errorResponse; 
+                if ($errorResponse !== null){
+                    return $errorResponse;
                 } else {
                     $surccursaleRepository->add($surccursale, true);
                 }
