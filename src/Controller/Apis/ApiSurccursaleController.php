@@ -207,11 +207,7 @@ class ApiSurccursaleController extends ApiInterface
         $surccursale->setEntreprise($this->getUser()->getEntreprise());
         $surccursale->setCreatedBy($this->getUser());
         $surccursale->setUpdatedBy($this->getUser());
-        $errorResponse = $this->errorResponse($surccursale);
       
-        if ($errorResponse !== null) {
-            return $errorResponse;
-        } else {
 
             $surccursaleRepository->add($surccursale, true);
             $caisse = new CaisseSuccursale();
@@ -225,7 +221,7 @@ class ApiSurccursaleController extends ApiInterface
 
             $caisseSuccursaleRepository->add($caisse, true);
       
-        }
+        
 
         return $this->responseData($surccursale, 'group1', ['Content-Type' => 'application/json']);
     }
@@ -269,11 +265,9 @@ class ApiSurccursaleController extends ApiInterface
                 $surccursale->setUpdatedAt(new \DateTime());
                 $errorResponse = $this->errorResponse($surccursale);
 
-                if ($errorResponse !== null){
-                    return $errorResponse;
-                } else {
+               
                     $surccursaleRepository->add($surccursale, true);
-                }
+                
 
 
 
