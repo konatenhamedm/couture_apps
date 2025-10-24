@@ -217,7 +217,6 @@ class ApiTypeMesureController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'typeMesure')]
-    #[Security(name: 'Bearer')]
     public function create(Request $request,CategorieMesureRepository $categorieMesureRepository, TypeMesureRepository $typeMesureRepository,EntrepriseRepository $entrepriseRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
@@ -300,7 +299,6 @@ class ApiTypeMesureController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'typeMesure')]
-    #[Security(name: 'Bearer')]
     public function update(Request $request, TypeMesure $typeMesure, TypeMesureRepository $typeMesureRepository,EntrepriseRepository $entrepriseRepository,CategorieMesureRepository $categorieMesureRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
@@ -436,7 +434,6 @@ class ApiTypeMesureController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'typeMesure')]
-    #[Security(name: 'Bearer')]
     public function deleteAll(Request $request, TypeMesureRepository $villeRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {

@@ -140,7 +140,6 @@ class ApiModuleAbonnementController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'moduleAbonnement')]
-    #[Security(name: 'Bearer')]
     public function create(Request $request, ModuleAbonnementRepository $moduleAbonnementRepository, ModuleRepository $moduleRepository): Response
     {
 
@@ -225,7 +224,6 @@ class ApiModuleAbonnementController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'moduleAbonnement')]
-    #[Security(name: 'Bearer')]
     public function update(Request $request, ModuleAbonnement $moduleAbonnement, LigneModuleRepository $ligneModuleRepository, ModuleAbonnementRepository $moduleAbonnementRepository, ModuleRepository $moduleRepository): Response
     {
         try {

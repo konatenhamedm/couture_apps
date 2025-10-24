@@ -163,7 +163,6 @@ class ApiCategorieMesureController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'categorieMesure')]
-    #[Security(name: 'Bearer')]
     public function create(Request $request, CategorieMesureRepository $moduleRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
@@ -209,7 +208,6 @@ class ApiCategorieMesureController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'categorieMesure')]
-    #[Security(name: 'Bearer')]
     public function update(Request $request, CategorieMesure $categorieMesure, CategorieMesureRepository $moduleRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {

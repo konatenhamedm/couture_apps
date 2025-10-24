@@ -191,7 +191,6 @@ class ApiSurccursaleController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'surccursale')]
-    #[Security(name: 'Bearer')]
     public function create(Request $request,Utils $utils,SubscriptionChecker $subscriptionChecker, CaisseSuccursaleRepository $caisseSuccursaleRepository, SurccursaleRepository $surccursaleRepository, EntrepriseRepository $entrepriseRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
@@ -252,7 +251,6 @@ class ApiSurccursaleController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'surccursale')]
-    #[Security(name: 'Bearer')]
     public function update(Request $request, Surccursale $surccursale, SurccursaleRepository $surccursaleRepository, EntrepriseRepository $entrepriseRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
@@ -352,7 +350,6 @@ class ApiSurccursaleController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'surccursale')]
-    #[Security(name: 'Bearer')]
     public function deleteAll(Request $request, SurccursaleRepository $villeRepository): Response
     {
 

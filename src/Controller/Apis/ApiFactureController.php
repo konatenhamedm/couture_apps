@@ -210,7 +210,6 @@ class ApiFactureController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'facture')]
-    #[Security(name: 'Bearer')]
     public function create(Request $request,UserRepository $userRepository, CaisseSuccursaleRepository $caisseSuccursaleRepository, Utils $utils, TypeMesureRepository $typeMesureRepository, ClientRepository $clientRepository, CategorieMesureRepository $categorieMesureRepository, FactureRepository $factureRepository, EntrepriseRepository $entrepriseRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
@@ -419,7 +418,6 @@ class ApiFactureController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'facture')]
-    #[Security(name: 'Bearer')]
     public function update(
         Request $request,
         Facture $facture,
@@ -595,7 +593,6 @@ class ApiFactureController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'facture')]
-    #[Security(name: 'Bearer')]
     public function deleteAll(Request $request, FactureRepository $villeRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {

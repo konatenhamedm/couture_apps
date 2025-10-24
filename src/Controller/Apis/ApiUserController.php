@@ -183,7 +183,6 @@ class ApiUserController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'user')]
-    #[Security(name: 'Bearer')]
     public function create(Request $request, SettingRepository $settingRepository, SubscriptionChecker $subscriptionChecker, JwtService $jwtService, AddCategorie $addCategorie, PaysRepository $paysRepository,  AbonnementRepository $abonnementRepository, ModuleAbonnementRepository $moduleAbonnementRepository, TypeUserRepository $typeUserRepository, UserRepository $userRepository, EntrepriseRepository $entrepriseRepository, SendMailService $sendMailService): Response
     {
 
@@ -370,7 +369,6 @@ class ApiUserController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'user')]
-    #[Security(name: 'Bearer')]
     public function createMembre(Request $request, SubscriptionChecker $subscriptionChecker, SurccursaleRepository $surccursaleRepository, TypeUserRepository $typeUserRepository, UserRepository $userRepository, EntrepriseRepository $entrepriseRepository, SendMailService $sendMailService): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
@@ -443,7 +441,6 @@ class ApiUserController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'user')]
-    #[Security(name: 'Bearer')]
     public function update(
         Request $request,
         UserRepository $userRepository,
@@ -515,7 +512,6 @@ class ApiUserController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'user')]
-    #[Security(name: 'Bearer')]
     public function updateLogo(Request $request, User $user, UserRepository $userRepository): Response
     {
         try {
