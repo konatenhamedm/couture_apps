@@ -181,6 +181,7 @@ class ApiBoutiqueController extends ApiInterface
         $boutique = new Boutique();
         $boutique->setLibelle($data['libelle']);
         $boutique->setSituation($data['situation']);
+        $boutique->setEntreprise($this->getUser()->getEntreprise());
         $boutique->setContact($data['contact']);
         $boutique->setIsActive($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "boutique"));
 
@@ -244,9 +245,10 @@ class ApiBoutiqueController extends ApiInterface
 
             if ($boutique != null) {
 
-                $boutique->setLibelle($data);
-                $boutique->setSituation($data);
-                $boutique->setContact($data);
+                $boutique->setLibelle($data->libelle);
+                $boutique->setSituation($data->situation);
+                $boutique->setEntreprise($this->getUser()->getEntreprise());
+                $boutique->setContact($data->contact);
                 $boutique->setUpdatedBy($this->getUser());
                 $boutique->setUpdatedAt(new \DateTime());
                 $errorResponse = $this->errorResponse($boutique);
