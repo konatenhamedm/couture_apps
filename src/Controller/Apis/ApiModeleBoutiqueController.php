@@ -98,7 +98,7 @@ class ApiModeleBoutiqueController extends ApiInterface
 
     #[Route('/entreprise/{boutique}', methods: ['GET'])]
     /**
-     * Retourne la liste des typeMesures d'une entreprise.
+     * Retourne la liste des ModeleBoutiques d'une entreprise.
      * 
      */
     #[OA\Response(
