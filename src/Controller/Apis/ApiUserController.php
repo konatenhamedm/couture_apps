@@ -13,6 +13,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use App\Entity\User;
 use App\Repository\AbonnementRepository;
 use App\Repository\AdministrateurRepository;
+use App\Repository\BoutiqueRepository;
 use App\Repository\EntrepriseRepository;
 use App\Repository\ModuleAbonnementRepository;
 use App\Repository\PaysRepository;
@@ -354,10 +355,13 @@ class ApiUserController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
 
-                    new OA\Property(property: "numero", type: "string"),
+                    new OA\Property(property: "nom", type: "string"),
+                    new OA\Property(property: "prenoms", type: "string"),
+                    new OA\Property(property: "email", type: "string"),
                     new OA\Property(property: "password", type: "string"),
                     new OA\Property(property: "confirmPassword", type: "string"),
                     new OA\Property(property: "surccursale", type: "string"),
+                    new OA\Property(property: "boutique", type: "string"),
                     new OA\Property(property: "type", type: "string"),
 
                 ],
@@ -369,12 +373,12 @@ class ApiUserController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'user')]
-    public function createMembre(Request $request, SubscriptionChecker $subscriptionChecker, SurccursaleRepository $surccursaleRepository, TypeUserRepository $typeUserRepository, UserRepository $userRepository, EntrepriseRepository $entrepriseRepository, SendMailService $sendMailService): Response
+    public function createMembre(Request $request,BoutiqueRepository $boutiqueRepository, SubscriptionChecker $subscriptionChecker, SurccursaleRepository $surccursaleRepository, TypeUserRepository $typeUserRepository, UserRepository $userRepository, EntrepriseRepository $entrepriseRepository, SendMailService $sendMailService): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
-        $this->allParametres('boutique');
+       // $this->allParametres('boutique');
 
         try {
             $data = json_decode($request->getContent(), true);
@@ -384,12 +388,22 @@ class ApiUserController extends ApiInterface
             }
 
             $user = new User();
-            $user->setLogin($data['numero']);
-            $user->setSurccursale($surccursaleRepository->find($data['surccursale']));
+            $user->setNom($data['nom']);
+            $user->setPrenoms($data['prenoms']);
+            $user->setLogin($data['email']);
+
+            if($data['surccursale'] && $data['surccursale'] != "")
+                $user->setSurccursale($surccursaleRepository->find($data['surccursale']));
+
+            if($data['boutique'] && $data['boutique'] != "")
+                $user->setBoutique($boutiqueRepository->find($data['boutique']));
+            
+
             $user->setIsActive($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "user"));
             $user->setPassword($this->hasher->hashPassword($user,  $data['password']));
             $user->setRoles(['ROLE_MEMBRE']);
             $user->setType($typeUserRepository->find($data['type']));
+            $user->setEntreprise($this->getUser()->getEntreprise());
 
 
             $sendMailService->sendNotification([
@@ -429,7 +443,7 @@ class ApiUserController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "nom", type: "string"),
-                    new OA\Property(property: "prenom", type: "string"),
+                    new OA\Property(property: "prenoms", type: "string"),
                     new OA\Property(property: "email", type: "string"),
                 ],
                 type: "object"
@@ -458,8 +472,8 @@ class ApiUserController extends ApiInterface
                 $user->setNom($data['nom']);
             }
 
-            if (isset($data['prenom'])) {
-                $user->setPrenoms($data['prenom']);
+            if (isset($data['prenoms'])) {
+                $user->setPrenoms($data['prenoms']);
             }
 
             if (isset($data['email'])) {
