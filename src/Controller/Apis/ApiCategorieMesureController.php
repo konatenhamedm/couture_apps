@@ -1,6 +1,6 @@
 <?php
 
-namespace  App\Controller\Apis;
+namespace App\Controller\Apis;
 
 use App\Controller\Apis\Config\ApiInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -16,60 +16,92 @@ use Nelmio\ApiDocBundle\Attribute\Model as AttributeModel;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
+/**
+ * Contrôleur pour la gestion des catégories de mesure
+ * Permet de créer, lire, mettre à jour et supprimer des catégories de mesure
+ */
 #[Route('/api/categorieMesure')]
+#[OA\Tag(name: 'categorieMesure', description: 'Gestion des catégories de mesure')]
 class ApiCategorieMesureController extends ApiInterface
 {
-
-    #[Route('/', methods: ['GET'])]
     /**
-     * Retourne la liste des modules.
-     * 
+     * Liste toutes les catégories de mesure du système
      */
+    #[Route('/', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/categorieMesure/",
+        summary: "Lister toutes les catégories de mesure",
+        description: "Retourne la liste paginée de toutes les catégories de mesure disponibles dans le système",
+        tags: ['categorieMesure']
+    )]
     #[OA\Response(
         response: 200,
-        description: 'Returns the rewards of an user',
+        description: "Liste des catégories de mesure récupérée avec succès",
         content: new OA\JsonContent(
             type: 'array',
-            items: new OA\Items(ref: new AttributeModel(type: CategorieMesure::class, groups: ['full']))
+            items: new OA\Items(
+                type: "object",
+                properties: [
+                    new OA\Property(property: "id", type: "integer", example: 1, description: "Identifiant unique de la catégorie"),
+                    new OA\Property(property: "libelle", type: "string", example: "Mesures corporelles", description: "Nom de la catégorie de mesure"),
+                    new OA\Property(property: "code", type: "string", example: "CORP", description: "Code unique de la catégorie"),
+                    new OA\Property(property: "entreprise", type: "object", description: "Entreprise associée", nullable: true),
+                    new OA\Property(property: "createdAt", type: "string", format: "date-time", example: "2025-01-15T10:30:00+00:00", description: "Date de création"),
+                    new OA\Property(property: "updatedAt", type: "string", format: "date-time", example: "2025-01-20T14:20:00+00:00", description: "Date de mise à jour")
+                ]
+            )
         )
     )]
-    #[OA\Tag(name: 'categorieMesure')]
-    // #[Security(name: 'Bearer')]
+    #[OA\Response(response: 500, description: "Erreur serveur lors de la récupération")]
     public function index(CategorieMesureRepository $moduleRepository): Response
     {
-        //dd($this->getUser());
         try {
-
             $categories = $this->paginationService->paginate($moduleRepository->findAll());
-            /* dd($categories); */
-
-
-            $response =  $this->responseData($categories, 'group1', ['Content-Type' => 'application/json'], true);
+            $response = $this->responseData($categories, 'group1', ['Content-Type' => 'application/json'], true);
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la récupération des catégories de mesure");
             $response = $this->response('[]');
         }
 
-        // On envoie la réponse
         return $response;
     }
 
-
-    #[Route('/entreprise', methods: ['GET'])]
     /**
-     * Retourne la liste des typeMesures d'une entreprise.
-     * 
+     * Liste les catégories de mesure d'une entreprise spécifique
      */
+    #[Route('/entreprise', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/categorieMesure/entreprise",
+        summary: "Lister les catégories de mesure d'une entreprise",
+        description: "Retourne la liste paginée des catégories de mesure de l'entreprise de l'utilisateur authentifié. Nécessite un abonnement actif.",
+        tags: ['categorieMesure']
+    )]
     #[OA\Response(
         response: 200,
-        description: 'Returns the rewards of an user',
+        description: "Liste des catégories de mesure de l'entreprise récupérée avec succès",
         content: new OA\JsonContent(
             type: 'array',
-            items: new OA\Items(ref: new AttributeModel(type: CategorieMesure::class, groups: ['full']))
+            items: new OA\Items(
+                type: "object",
+                properties: [
+                    new OA\Property(property: "id", type: "integer", example: 1, description: "Identifiant de la catégorie"),
+                    new OA\Property(property: "libelle", type: "string", example: "Mesures corporelles", description: "Nom de la catégorie"),
+                    new OA\Property(property: "code", type: "string", example: "CORP", description: "Code unique"),
+                    new OA\Property(property: "entreprise", type: "object", description: "Informations de l'entreprise",
+                        properties: [
+                            new OA\Property(property: "id", type: "integer", example: 5),
+                            new OA\Property(property: "nom", type: "string", example: "Mon Entreprise SARL")
+                        ]
+                    ),
+                    new OA\Property(property: "createdAt", type: "string", format: "date-time"),
+                    new OA\Property(property: "updatedAt", type: "string", format: "date-time")
+                ]
+            )
         )
     )]
-    #[OA\Tag(name: 'typeMesure')]
-    // #[Security(name: 'Bearer')]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
     public function indexAll(CategorieMesureRepository $moduleRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
@@ -77,46 +109,61 @@ class ApiCategorieMesureController extends ApiInterface
         }
 
         try {
+            $typeMesures = $this->paginationService->paginate(
+                $moduleRepository->findBy(
+                    ['entreprise' => $this->getUser()->getEntreprise()],
+                    ['id' => 'ASC']
+                )
+            );
 
-            $typeMesures = $this->paginationService->paginate($moduleRepository->findBy(
-                ['entreprise' => $this->getUser()->getEntreprise()],
-                ['id' => 'ASC']
-            ));
-
-
-
-            $response =  $this->responseData($typeMesures, 'group1', ['Content-Type' => 'application/json']);
+            $response = $this->responseData($typeMesures, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la récupération des catégories de mesure de l'entreprise");
             $response = $this->response('[]');
         }
 
-        // On envoie la réponse
         return $response;
     }
 
-
-
-    #[Route('/get/one/{id}', methods: ['GET'])]
     /**
-     * Affiche un(e) categorieMesure en offrant un identifiant.
+     * Récupère les détails d'une catégorie de mesure spécifique
      */
-    #[OA\Response(
-        response: 200,
-        description: 'Affiche un(e) categorieMesure en offrant un identifiant',
-        content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new AttributeModel(type: CategorieMesure::class, groups: ['full']))
-        )
+    #[Route('/get/one/{id}', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/categorieMesure/get/one/{id}",
+        summary: "Détails d'une catégorie de mesure",
+        description: "Affiche les informations détaillées d'une catégorie de mesure spécifique par son identifiant. Nécessite un abonnement actif.",
+        tags: ['categorieMesure']
     )]
     #[OA\Parameter(
-        name: 'code',
-        in: 'query',
-        schema: new OA\Schema(type: 'string')
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: "Identifiant unique de la catégorie de mesure",
+        schema: new OA\Schema(type: 'integer', example: 1)
     )]
-    #[OA\Tag(name: 'categorieMesure')]
-    //#[Security(name: 'Bearer')]
-    public function getOne(?categorieMesure $categorieMesure)
+    #[OA\Response(
+        response: 200,
+        description: "Catégorie de mesure trouvée avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "id", type: "integer", example: 1, description: "Identifiant de la catégorie"),
+                new OA\Property(property: "libelle", type: "string", example: "Mesures corporelles", description: "Nom de la catégorie"),
+                new OA\Property(property: "code", type: "string", example: "CORP", description: "Code unique"),
+                new OA\Property(property: "entreprise", type: "object", description: "Entreprise associée"),
+                new OA\Property(property: "createdAt", type: "string", format: "date-time", description: "Date de création"),
+                new OA\Property(property: "updatedAt", type: "string", format: "date-time", description: "Date de mise à jour"),
+                new OA\Property(property: "createdBy", type: "object", description: "Utilisateur créateur"),
+                new OA\Property(property: "updatedBy", type: "object", description: "Dernier utilisateur modificateur")
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 404, description: "Catégorie de mesure non trouvée")]
+    #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
+    public function getOne(?CategorieMesure $categorieMesure): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
@@ -127,87 +174,148 @@ class ApiCategorieMesureController extends ApiInterface
                 $response = $this->response($categorieMesure);
             } else {
                 $this->setMessage('Cette ressource est inexistante');
-                $this->setStatusCode(300);
-                $response = $this->response($categorieMesure);
+                $this->setStatusCode(404);
+                $response = $this->response(null);
             }
         } catch (\Exception $exception) {
             $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
 
-
         return $response;
     }
 
-
-    #[Route('/create',  methods: ['POST'])]
     /**
-     * Permet de créer un(e) categorieMesure.
+     * Crée une nouvelle catégorie de mesure
      */
+    #[Route('/create', methods: ['POST'])]
     #[OA\Post(
-        summary: "Permet de créer un(e) categorieMesure.",
-        description: "Permet de créer un(e) categorieMesure..",
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: "libelle", type: "string"),
-                    new OA\Property(property: "code", type: "string"),
-
-                ],
-                type: "object"
-            )
-        ),
-        responses: [
-            new OA\Response(response: 401, description: "Invalid credentials")
-        ]
+        path: "/api/categorieMesure/create",
+        summary: "Créer une nouvelle catégorie de mesure",
+        description: "Permet de créer une nouvelle catégorie de mesure pour l'entreprise. Nécessite un abonnement actif.",
+        tags: ['categorieMesure']
     )]
-    #[OA\Tag(name: 'categorieMesure')]
+    #[OA\RequestBody(
+        required: true,
+        description: "Données de la nouvelle catégorie de mesure à créer",
+        content: new OA\JsonContent(
+            type: "object",
+            required: ["libelle"],
+            properties: [
+                new OA\Property(
+                    property: "libelle",
+                    type: "string",
+                    example: "Mesures corporelles",
+                    description: "Nom de la catégorie de mesure (obligatoire)"
+                ),
+                new OA\Property(
+                    property: "code",
+                    type: "string",
+                    example: "CORP",
+                    description: "Code unique de la catégorie (optionnel, peut être généré automatiquement)"
+                )
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 201,
+        description: "Catégorie de mesure créée avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "id", type: "integer", example: 5, description: "ID de la catégorie créée"),
+                new OA\Property(property: "libelle", type: "string", example: "Mesures corporelles"),
+                new OA\Property(property: "code", type: "string", example: "CORP"),
+                new OA\Property(property: "entreprise", type: "object"),
+                new OA\Property(property: "createdAt", type: "string", format: "date-time"),
+                new OA\Property(property: "createdBy", type: "object", description: "Utilisateur créateur")
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: "Données invalides")]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     public function create(Request $request, CategorieMesureRepository $moduleRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
-
         $data = json_decode($request->getContent(), true);
         $categorieMesure = new CategorieMesure();
         $categorieMesure->setLibelle($data['libelle']);
+        $categorieMesure->setEntreprise($this->getUser()->getEntreprise());
         $categorieMesure->setCreatedBy($this->getUser());
         $categorieMesure->setUpdatedBy($this->getUser());
+        $categorieMesure->setCreatedAtValue(new \DateTime());
+        $categorieMesure->setUpdatedAt(new \DateTime());
+
         $errorResponse = $this->errorResponse($categorieMesure);
         if ($errorResponse !== null) {
-            return $errorResponse; 
+            return $errorResponse;
         } else {
-
             $moduleRepository->add($categorieMesure, true);
         }
 
         return $this->responseData($categorieMesure, 'group1', ['Content-Type' => 'application/json']);
     }
 
-
+    /**
+     * Met à jour une catégorie de mesure existante
+     */
     #[Route('/update/{id}', methods: ['PUT', 'POST'])]
-    #[OA\Post(
-        summary: "Permet de mettre a jour un categorieMesure.",
-        description: "Permet de mettre a jour un categorieMesure.",
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: "libelle", type: "string"),
-                    new OA\Property(property: "code", type: "string"),
-
-
-                ],
-                type: "object"
-            )
-        ),
-        responses: [
-            new OA\Response(response: 401, description: "Invalid credentials")
-        ]
+    #[OA\Put(
+        path: "/api/categorieMesure/update/{id}",
+        summary: "Mettre à jour une catégorie de mesure",
+        description: "Permet de mettre à jour les informations d'une catégorie de mesure existante. Nécessite un abonnement actif.",
+        tags: ['categorieMesure']
     )]
-    #[OA\Tag(name: 'categorieMesure')]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: "Identifiant unique de la catégorie de mesure à mettre à jour",
+        schema: new OA\Schema(type: 'integer', example: 1)
+    )]
+    #[OA\RequestBody(
+        required: true,
+        description: "Données à mettre à jour",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(
+                    property: "libelle",
+                    type: "string",
+                    example: "Mesures corporelles (mis à jour)",
+                    description: "Nouveau nom de la catégorie"
+                ),
+                new OA\Property(
+                    property: "code",
+                    type: "string",
+                    example: "CORP_V2",
+                    description: "Nouveau code de la catégorie"
+                )
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Catégorie de mesure mise à jour avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "id", type: "integer", example: 1),
+                new OA\Property(property: "libelle", type: "string", example: "Mesures corporelles (mis à jour)"),
+                new OA\Property(property: "code", type: "string", example: "CORP_V2"),
+                new OA\Property(property: "updatedAt", type: "string", format: "date-time"),
+                new OA\Property(property: "updatedBy", type: "object", description: "Utilisateur modificateur")
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: "Données invalides")]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 404, description: "Catégorie de mesure non trouvée")]
     public function update(Request $request, CategorieMesure $categorieMesure, CategorieMesureRepository $moduleRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
@@ -217,89 +325,132 @@ class ApiCategorieMesureController extends ApiInterface
         try {
             $data = json_decode($request->getContent());
             if ($categorieMesure != null) {
-
                 $categorieMesure->setLibelle($data->libelle);
+                
+                if (isset($data->code)) {
+                    $categorieMesure->setCode($data->code);
+                }
+                
                 $categorieMesure->setUpdatedBy($this->getUser());
                 $categorieMesure->setUpdatedAt(new \DateTime());
+                
                 $errorResponse = $this->errorResponse($categorieMesure);
-
                 if ($errorResponse !== null) {
-                    return $errorResponse; 
+                    return $errorResponse;
                 } else {
                     $moduleRepository->add($categorieMesure, true);
                 }
 
-                // On retourne la confirmation
                 $response = $this->responseData($categorieMesure, 'group1', ['Content-Type' => 'application/json']);
             } else {
-                $this->setMessage("Cette ressource est inexsitante");
-                $this->setStatusCode(300);
+                $this->setMessage("Cette ressource est inexistante");
+                $this->setStatusCode(404);
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la mise à jour de la catégorie de mesure");
             $response = $this->response('[]');
         }
         return $response;
     }
 
-    //const TAB_ID = 'parametre-tabs';
-
-    #[Route('/delete/{id}',  methods: ['DELETE'])]
     /**
-     * permet de supprimer un(e) categorieMesure.
+     * Supprime une catégorie de mesure
      */
+    #[Route('/delete/{id}', methods: ['DELETE'])]
+    #[OA\Delete(
+        path: "/api/categorieMesure/delete/{id}",
+        summary: "Supprimer une catégorie de mesure",
+        description: "Permet de supprimer définitivement une catégorie de mesure par son identifiant. Nécessite un abonnement actif.",
+        tags: ['categorieMesure']
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: "Identifiant unique de la catégorie de mesure à supprimer",
+        schema: new OA\Schema(type: 'integer', example: 1)
+    )]
     #[OA\Response(
         response: 200,
-        description: 'permet de supprimer un(e) categorieMesure',
+        description: "Catégorie de mesure supprimée avec succès",
         content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new AttributeModel(type: CategorieMesure::class, groups: ['full']))
+            type: "object",
+            properties: [
+                new OA\Property(property: "message", type: "string", example: "Operation effectuées avec succès"),
+                new OA\Property(property: "deleted", type: "boolean", example: true)
+            ]
         )
     )]
-    #[OA\Tag(name: 'categorieMesure')]
-    //#[Security(name: 'Bearer')]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 404, description: "Catégorie de mesure non trouvée")]
+    #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
     public function delete(Request $request, CategorieMesure $categorieMesure, CategorieMesureRepository $villeRepository): Response
     {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+            return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
+        }
+
         try {
-
             if ($categorieMesure != null) {
-
                 $villeRepository->remove($categorieMesure, true);
-
-                // On retourne la confirmation
-                $this->setMessage("Operation effectuées avec success");
+                $this->setMessage("Operation effectuées avec succès");
                 $response = $this->response($categorieMesure);
             } else {
                 $this->setMessage("Cette ressource est inexistante");
-                $this->setStatusCode(300);
+                $this->setStatusCode(404);
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la suppression de la catégorie de mesure");
             $response = $this->response('[]');
         }
         return $response;
     }
 
-    #[Route('/delete/all',  methods: ['DELETE'])]
     /**
-     * Permet de supprimer plusieurs categorieMesure.
+     * Supprime plusieurs catégories de mesure en masse
      */
+    #[Route('/delete/all', methods: ['DELETE'])]
+    #[OA\Delete(
+        path: "/api/categorieMesure/delete/all",
+        summary: "Supprimer plusieurs catégories de mesure",
+        description: "Permet de supprimer plusieurs catégories de mesure en une seule opération en fournissant un tableau d'identifiants. Nécessite un abonnement actif.",
+        tags: ['categorieMesure']
+    )]
     #[OA\RequestBody(
         required: true,
-        description: 'Tableau d’identifiants à supprimer',
+        description: "Tableau des identifiants des catégories de mesure à supprimer",
         content: new OA\JsonContent(
+            type: "object",
+            required: ["ids"],
             properties: [
                 new OA\Property(
                     property: 'ids',
                     type: 'array',
-                    items: new OA\Items(type: 'integer', example: 1)
+                    description: "Liste des identifiants des catégories de mesure à supprimer",
+                    items: new OA\Items(type: 'integer', example: 1),
+                    example: [1, 2, 3, 5, 8]
                 )
             ]
         )
     )]
-    #[OA\Tag(name: 'categorieMesure')]
+    #[OA\Response(
+        response: 200,
+        description: "Catégories de mesure supprimées avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "message", type: "string", example: "Operation effectuées avec succès"),
+                new OA\Property(property: "deletedCount", type: "integer", example: 5, description: "Nombre de catégories supprimées")
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: "Données invalides")]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
     #[Security(name: 'Bearer')]
     public function deleteAll(Request $request, CategorieMesureRepository $villeRepository): Response
     {
@@ -308,7 +459,7 @@ class ApiCategorieMesureController extends ApiInterface
         }
 
         try {
-            $data = json_decode($request->getContent());
+            $data = json_decode($request->getContent(), true);
 
             foreach ($data['ids'] as $id) {
                 $categorieMesure = $villeRepository->find($id);
@@ -317,10 +468,10 @@ class ApiCategorieMesureController extends ApiInterface
                     $villeRepository->remove($categorieMesure);
                 }
             }
-            $this->setMessage("Operation effectuées avec success");
+            $this->setMessage("Operation effectuées avec succès");
             $response = $this->response('[]');
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la suppression des catégories de mesure");
             $response = $this->response('[]');
         }
         return $response;

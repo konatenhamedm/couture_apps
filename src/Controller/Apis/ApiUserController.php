@@ -1,6 +1,6 @@
 <?php
 
-namespace  App\Controller\Apis;
+namespace App\Controller\Apis;
 
 use App\Controller\Apis\Config\ApiInterface;
 use App\DTO\UserDTO;
@@ -38,40 +38,58 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
+/**
+ * Contrôleur pour la gestion des utilisateurs
+ * Gère l'inscription des entreprises, la création de membres, la mise à jour des profils
+ */
 #[Route('/api/user')]
+#[OA\Tag(name: 'user', description: 'Gestion des utilisateurs : inscription entreprises avec abonnement gratuit, création membres, profils')]
 class ApiUserController extends ApiInterface
 {
-
-
-    /*  #[Route('/qr-code', name: 'qr_code')]
-    public function generateQrCode(): Response
-    {
-       
-        
-        return $this->render('emails/welcome_user.html.twig', [
-           
-        ]);
-    } */
-
-    #[Route('/', methods: ['GET'])]
     /**
-     * Retourne la liste des users.
-     * 
+     * Liste tous les utilisateurs du système
      */
+    #[Route('/', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/user/",
+        summary: "Lister tous les utilisateurs",
+        description: "Retourne la liste paginée de tous les utilisateurs du système, toutes entreprises confondues.",
+        tags: ['user']
+    )]
     #[OA\Response(
         response: 200,
-        description: 'Returns the rewards of an user',
+        description: "Liste des utilisateurs récupérée avec succès",
         content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new Model(type: User::class, groups: ['full']))
+            type: "object",
+            properties: [
+                new OA\Property(property: "code", type: "integer", example: 200),
+                new OA\Property(
+                    property: "data",
+                    type: "array",
+                    items: new OA\Items(
+                        type: "object",
+                        properties: [
+                            new OA\Property(property: "id", type: "integer", example: 1),
+                            new OA\Property(property: "login", type: "string", example: "admin@fashionci.com"),
+                            new OA\Property(property: "nom", type: "string", example: "Kouassi", nullable: true),
+                            new OA\Property(property: "prenoms", type: "string", example: "Jean", nullable: true),
+                            new OA\Property(property: "isActive", type: "boolean", example: true),
+                            new OA\Property(property: "roles", type: "array", items: new OA\Items(type: "string", example: "ROLE_ADMIN")),
+                            new OA\Property(property: "type", type: "object", description: "Type d'utilisateur (SADM, ADMIN, GESTIONNAIRE, etc.)"),
+                            new OA\Property(property: "entreprise", type: "object"),
+                            new OA\Property(property: "boutique", type: "object", nullable: true),
+                            new OA\Property(property: "surccursale", type: "object", nullable: true),
+                            new OA\Property(property: "createdAt", type: "string", format: "date-time")
+                        ]
+                    )
+                )
+            ]
         )
     )]
-    #[OA\Tag(name: 'user')]
-    // #[Security(name: 'Bearer')]
+    #[OA\Response(response: 500, description: "Erreur serveur lors de la récupération")]
     public function index(UserRepository $userRepository): Response
     {
         try {
-
             $users = $this->paginationService->paginate($userRepository->findAll());
 
             $context = [AbstractNormalizer::GROUPS => 'group1'];
@@ -79,159 +97,283 @@ class ApiUserController extends ApiInterface
 
             return new JsonResponse(['code' => 200, 'data' => json_decode($json)]);
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la récupération des utilisateurs");
             $response = $this->response('[]');
         }
 
-        // On envoie la réponse
         return $response;
     }
-    #[Route('/actif/entreprise', methods: ['GET'])]
+
     /**
-     * Retourne la liste des users actifs d'une entreprise.
-     * 
+     * Liste les utilisateurs actifs de l'entreprise de l'utilisateur connecté
      */
+    #[Route('/actif/entreprise', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/user/actif/entreprise",
+        summary: "Lister les utilisateurs actifs de l'entreprise",
+        description: "Retourne la liste paginée uniquement des utilisateurs actifs de l'entreprise de l'utilisateur connecté. Utile pour les formulaires d'assignation.",
+        tags: ['user']
+    )]
     #[OA\Response(
         response: 200,
-        description: 'Returns the rewards of an user',
+        description: "Liste des utilisateurs actifs récupérée avec succès",
         content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new Model(type: User::class, groups: ['full']))
+            type: "object",
+            properties: [
+                new OA\Property(property: "code", type: "integer", example: 200),
+                new OA\Property(
+                    property: "data",
+                    type: "array",
+                    items: new OA\Items(type: "object")
+                )
+            ]
         )
     )]
-    #[OA\Tag(name: 'user')]
-    // #[Security(name: 'Bearer')]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
     public function indexEntrepriseActive(UserRepository $userRepository): Response
     {
         try {
-
-            $users = $this->paginationService->paginate($userRepository->findBy(['entreprise' => $this->getUser()->getEntreprise(), 'isActive' => true], ['id' => 'ASC']));
+            $users = $this->paginationService->paginate($userRepository->findBy(
+                ['entreprise' => $this->getUser()->getEntreprise(), 'isActive' => true],
+                ['nom' => 'ASC']
+            ));
 
             $context = [AbstractNormalizer::GROUPS => 'group1'];
             $json = $this->serializer->serialize($users, 'json', $context);
 
             return new JsonResponse(['code' => 200, 'data' => json_decode($json)]);
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la récupération des utilisateurs actifs");
             $response = $this->response('[]');
         }
 
-        // On envoie la réponse
         return $response;
     }
 
-    #[Route('/entreprise', methods: ['GET'])]
     /**
-     * Retourne la liste des users d'une entreprise.
-     * 
+     * Liste tous les utilisateurs de l'entreprise de l'utilisateur connecté
      */
+    #[Route('/entreprise', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/user/entreprise",
+        summary: "Lister tous les utilisateurs de l'entreprise",
+        description: "Retourne la liste paginée de tous les utilisateurs (actifs et inactifs) de l'entreprise de l'utilisateur connecté.",
+        tags: ['user']
+    )]
     #[OA\Response(
         response: 200,
-        description: 'Returns the rewards of an user',
+        description: "Liste des utilisateurs de l'entreprise récupérée avec succès",
         content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new Model(type: User::class, groups: ['full']))
+            type: "object",
+            properties: [
+                new OA\Property(property: "code", type: "integer", example: 200),
+                new OA\Property(property: "data", type: "array", items: new OA\Items(type: "object"))
+            ]
         )
     )]
-    #[OA\Tag(name: 'user')]
-    // #[Security(name: 'Bearer')]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
     public function indexEntreprise(UserRepository $userRepository): Response
     {
         try {
-
-            $users = $this->paginationService->paginate($userRepository->findBy(['entreprise' => $this->getUser()->getEntreprise()], ['id' => 'ASC']));
+            $users = $this->paginationService->paginate($userRepository->findBy(
+                ['entreprise' => $this->getUser()->getEntreprise()],
+                ['id' => 'DESC']
+            ));
 
             $context = [AbstractNormalizer::GROUPS => 'group1'];
             $json = $this->serializer->serialize($users, 'json', $context);
 
             return new JsonResponse(['code' => 200, 'data' => json_decode($json)]);
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la récupération des utilisateurs de l'entreprise");
             $response = $this->response('[]');
         }
 
-        // On envoie la réponse
         return $response;
     }
 
-
-    #[Route('/create',  methods: ['POST'])]
     /**
-     * Permet de créer un(e) user.
+     * Inscription complète : création entreprise + administrateur + abonnement gratuit
      */
+    #[Route('/create', methods: ['POST'])]
     #[OA\Post(
-        summary: "Creation user memnbre",
-        description: "Creation user memnbre",
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                properties: [
-
-                    new OA\Property(property: "email", type: "string"),
-                    new OA\Property(property: "password", type: "string"),
-                    new OA\Property(property: "confirmPassword", type: "string"),
-                    new OA\Property(property: "denominationEntreprise", type: "string"),
-                    new OA\Property(property: "emailEntreprise", type: "string"),
-                    new OA\Property(property: "numeroEntreprise", type: "string"),
-                    new OA\Property(property: "pays", type: "string"),
-
-                ],
-                type: "object"
-            )
-        ),
-        responses: [
-            new OA\Response(response: 401, description: "Invalid credentials")
-        ]
+        path: "/api/user/create",
+        summary: "Inscription complète (entreprise + admin)",
+        description: "Permet l'inscription d'une nouvelle entreprise avec création automatique de : l'entreprise, l'utilisateur administrateur avec rôle ROLE_ADMIN, un abonnement gratuit (plan FREE), les paramètres par défaut, et envoi d'emails de bienvenue. Retourne un token JWT pour connexion immédiate.",
+        tags: ['user']
     )]
-    #[OA\Tag(name: 'user')]
-    public function create(Request $request, SettingRepository $settingRepository, SubscriptionChecker $subscriptionChecker, JwtService $jwtService, AddCategorie $addCategorie, PaysRepository $paysRepository,  AbonnementRepository $abonnementRepository, ModuleAbonnementRepository $moduleAbonnementRepository, TypeUserRepository $typeUserRepository, UserRepository $userRepository, EntrepriseRepository $entrepriseRepository, SendMailService $sendMailService): Response
-    {
-
+    #[OA\RequestBody(
+        required: true,
+        description: "Données d'inscription de l'entreprise et de l'administrateur",
+        content: new OA\JsonContent(
+            type: "object",
+            required: ["email", "password", "confirmPassword", "denominationEntreprise", "emailEntreprise", "numeroEntreprise", "pays"],
+            properties: [
+                new OA\Property(
+                    property: "email",
+                    type: "string",
+                    format: "email",
+                    example: "admin@fashionci.com",
+                    description: "Email de connexion de l'administrateur (obligatoire, unique)"
+                ),
+                new OA\Property(
+                    property: "password",
+                    type: "string",
+                    format: "password",
+                    example: "SecurePass123!",
+                    description: "Mot de passe (obligatoire, minimum 8 caractères)"
+                ),
+                new OA\Property(
+                    property: "confirmPassword",
+                    type: "string",
+                    format: "password",
+                    example: "SecurePass123!",
+                    description: "Confirmation du mot de passe (obligatoire, doit correspondre à password)"
+                ),
+                new OA\Property(
+                    property: "denominationEntreprise",
+                    type: "string",
+                    example: "Fashion Boutique CI",
+                    description: "Nom de l'entreprise (obligatoire)"
+                ),
+                new OA\Property(
+                    property: "emailEntreprise",
+                    type: "string",
+                    format: "email",
+                    example: "contact@fashionci.com",
+                    description: "Email de contact de l'entreprise (obligatoire)"
+                ),
+                new OA\Property(
+                    property: "numeroEntreprise",
+                    type: "string",
+                    example: "+225 27 20 12 34 56",
+                    description: "Numéro de téléphone de l'entreprise (obligatoire)"
+                ),
+                new OA\Property(
+                    property: "pays",
+                    type: "integer",
+                    example: 1,
+                    description: "ID du pays de l'entreprise (obligatoire)"
+                )
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 201,
+        description: "Inscription réussie, token JWT retourné",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "token", type: "string", example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...", description: "Token JWT pour authentification"),
+                new OA\Property(
+                    property: "user",
+                    type: "object",
+                    properties: [
+                        new OA\Property(property: "id", type: "integer", example: 50),
+                        new OA\Property(property: "login", type: "string", example: "admin@fashionci.com"),
+                        new OA\Property(property: "nom", type: "string", example: ""),
+                        new OA\Property(property: "prenoms", type: "string", example: ""),
+                        new OA\Property(property: "roles", type: "array", items: new OA\Items(type: "string", example: "ROLE_ADMIN")),
+                        new OA\Property(property: "is_active", type: "boolean", example: true),
+                        new OA\Property(property: "pays", type: "integer", example: 1),
+                        new OA\Property(property: "type", type: "object", description: "Type SADM (Super Admin)"),
+                        new OA\Property(property: "settings", type: "object", description: "Paramètres de l'entreprise"),
+                        new OA\Property(
+                            property: "activeSubscriptions",
+                            type: "object",
+                            description: "Abonnement gratuit actif",
+                            properties: [
+                                new OA\Property(property: "id", type: "integer", example: 100),
+                                new OA\Property(property: "etat", type: "string", example: "actif"),
+                                new OA\Property(property: "type", type: "string", example: "gratuit"),
+                                new OA\Property(property: "moduleAbonnement", type: "object", description: "Plan FREE")
+                            ]
+                        )
+                    ]
+                ),
+                new OA\Property(property: "token_expires_in", type: "integer", example: 3600, description: "Durée de validité du token en secondes")
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: "Email déjà utilisé ou mots de passe non identiques")]
+    #[OA\Response(response: 404, description: "Pays non trouvé")]
+    #[OA\Response(response: 500, description: "Erreur lors de la création")]
+    public function create(
+        Request $request,
+        SettingRepository $settingRepository,
+        SubscriptionChecker $subscriptionChecker,
+        JwtService $jwtService,
+        AddCategorie $addCategorie,
+        PaysRepository $paysRepository,
+        AbonnementRepository $abonnementRepository,
+        ModuleAbonnementRepository $moduleAbonnementRepository,
+        TypeUserRepository $typeUserRepository,
+        UserRepository $userRepository,
+        EntrepriseRepository $entrepriseRepository,
+        SendMailService $sendMailService
+    ): Response {
         try {
-
-            /* $this->allParametres('user'); */
-
             $data = json_decode($request->getContent(), true);
 
+            // Vérification unicité email
             if ($userRepository->findOneBy(['login' => $data['email']])) {
-                return $this->errorResponse(null, "Ce numéro existe déjà ,veuillez utiliser  un autre");
+                return $this->errorResponse(null, "Cet email existe déjà, veuillez utiliser un autre");
             }
 
-
+            // Création de l'entreprise
             $entreprise = new Entreprise();
             $entreprise->setLibelle($data['denominationEntreprise']);
             $entreprise->setEmail($data['emailEntreprise']);
             $entreprise->setNumero($data['numeroEntreprise']);
-            $entreprise->setPays($paysRepository->find($data['pays']));
+            
+            $pays = $paysRepository->find($data['pays']);
+            if (!$pays) {
+                return $this->errorResponse(null, "Pays non trouvé", 404);
+            }
+            $entreprise->setPays($pays);
             $entreprise->setCreatedAtValue(new \DateTime());
             $entreprise->setUpdatedAt(new \DateTime());
 
+            // Création de l'utilisateur administrateur
             $user = new User();
             $user->setLogin($data['email']);
             $user->setEntreprise($entreprise);
             $user->setIsActive(true);
-            $user->setPassword($this->hasher->hashPassword($user,  $data['password']));
+            $user->setPassword($this->hasher->hashPassword($user, $data['password']));
             $user->setRoles(['ROLE_ADMIN']);
             $user->setType($typeUserRepository->findOneBy(['code' => 'SADM']));
+            $user->setCreatedAtValue(new \DateTime());
+            $user->setUpdatedAt(new \DateTime());
 
+            // Récupération du plan gratuit FREE
+            $module = $moduleAbonnementRepository->findOneBy(['code' => 'FREE']);
+            if (!$module) {
+                return $this->errorResponse(null, "Plan d'abonnement FREE non trouvé", 500);
+            }
 
-            /*   $entreprise->addUser($user); */
             $nombreSms = 0;
             $nombreUser = 0;
             $nombresuccursale = 0;
             $nombreBoutique = 0;
 
-
-            $module = $moduleAbonnementRepository->findOneBy(['code' => 'FREE']);
-
-            foreach ($module->getLigneModules() as  $ligneModule) {
-                $nombreSms = $ligneModule->getLibelle() == "SMS" ? $ligneModule->getQuantite() : 0;
-                $nombreUser = $ligneModule->getLibelle() == "USER" ? $ligneModule->getQuantite() : 0;
-                $nombresuccursale = $ligneModule->getLibelle() == "SUCCURSALE" ? $ligneModule->getQuantite() : 0;
-                $nombreBoutique = $ligneModule->getLibelle() == "BOUTIQUE" ? $ligneModule->getQuantite() : 0;
-                /* $Nombresuccursale = $ligneModule->getNombreSuccursale(); */
+            foreach ($module->getLigneModules() as $ligneModule) {
+                if ($ligneModule->getLibelle() == "SMS") {
+                    $nombreSms = $ligneModule->getQuantite();
+                }
+                if ($ligneModule->getLibelle() == "USER") {
+                    $nombreUser = $ligneModule->getQuantite();
+                }
+                if ($ligneModule->getLibelle() == "SUCCURSALE") {
+                    $nombresuccursale = $ligneModule->getQuantite();
+                }
+                if ($ligneModule->getLibelle() == "BOUTIQUE") {
+                    $nombreBoutique = $ligneModule->getQuantite();
+                }
             }
 
+            // Création de l'abonnement gratuit
             $abonnement = new Abonnement();
             $abonnement->setEntreprise($entreprise);
             $abonnement->setCreatedAtValue(new \DateTime());
@@ -241,7 +383,12 @@ class ApiUserController extends ApiInterface
             $abonnement->setDateFin((new \DateTime())->modify('+' . $module->getDuree() . ' month'));
             $abonnement->setType('gratuit');
 
-            $errorResponse = $data['password'] !== $data['confirmPassword'] ?  $this->errorResponse($user, "Les mots de passe ne sont pas identiques") :  $this->errorResponse($user);
+            // Validations
+            if ($data['password'] !== $data['confirmPassword']) {
+                return $this->errorResponse($user, "Les mots de passe ne sont pas identiques");
+            }
+
+            $errorResponse = $this->errorResponse($user);
             $errorResponse2 = $this->errorResponse($entreprise);
             $errorResponse3 = $this->errorResponse($abonnement);
 
@@ -254,10 +401,12 @@ class ApiUserController extends ApiInterface
                     return $errorResponse3;
                 }
             } else {
-
+                // Enregistrement en base de données
                 $entrepriseRepository->add($entreprise, true);
                 $userRepository->add($user, true);
                 $abonnementRepository->add($abonnement, true);
+
+                // Initialisation des paramètres et catégories
                 $addCategorie->setParametreForEntreprise($user);
                 $addCategorie->setting($entreprise, [
                     'succursale' => $nombresuccursale,
@@ -267,6 +416,7 @@ class ApiUserController extends ApiInterface
                     'numero' => $module->getNumero()
                 ]);
 
+                // Envoi des notifications
                 $sendMailService->sendNotification([
                     'libelle' => "Bienvenue dans notre application",
                     'titre' => "Bienvenue",
@@ -275,18 +425,20 @@ class ApiUserController extends ApiInterface
                     'userUpdate' => $user
                 ]);
 
+                // Email à l'admin système
                 $this->sendMailService->send(
                     $this->sendMail,
                     $this->superAdmin,
                     "Nouvelle inscription - " . $entreprise->getLibelle(),
                     "nouvellesinscription",
                     [
-                        "entreprise" =>   $entreprise->getLibelle(),
+                        "entreprise" => $entreprise->getLibelle(),
                         "abonnement" => $module->getCode(),
                         "date" => (new \DateTime())->format('d/m/Y H:i'),
                     ]
                 );
 
+                // Email de bienvenue au nouvel utilisateur
                 $this->sendMailService->send(
                     $this->sendMail,
                     $data['email'],
@@ -294,7 +446,7 @@ class ApiUserController extends ApiInterface
                     "welcome_user",
                     [
                         "user" => [
-                            "nom" =>  $user->getLogin(),
+                            "nom" => $user->getLogin(),
                         ],
                         "qr_code_url" => "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://monapp.com/download",
                         "url_appstore" => "https://apps.apple.com/app/id123456789",
@@ -302,7 +454,7 @@ class ApiUserController extends ApiInterface
                     ]
                 );
 
-
+                // Génération du token JWT
                 $token = $jwtService->generateToken([
                     'id' => $user->getId(),
                     'login' => $user->getLogin(),
@@ -326,135 +478,273 @@ class ApiUserController extends ApiInterface
                         'pays' => $user->getEntreprise()->getPays()->getId(),
                         'boutique' => $user->getBoutique() ? $user->getBoutique()->getId() : null,
                         'succursale' => $user->getSurccursale() ? $user->getSurccursale()->getId() : null,
-                        'settings' =>  $settingRepository->findOneBy(['entreprise' => $user->getEntreprise()]),
+                        'settings' => $settingRepository->findOneBy(['entreprise' => $user->getEntreprise()]),
                         'activeSubscriptions' => $activeSubscriptions
                     ],
                     'token_expires_in' => $jwtService->getTtl()
                 ], 'group1', ['Content-Type' => 'application/json']);
             }
         } catch (Exception $th) {
-
-            // dd($th);
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de l'inscription");
             $response = $this->response('[]');
         }
 
         return $response;
     }
 
-
-    #[Route('/create/membre',  methods: ['POST'])]
     /**
-     * Permet de créer un(e) user.
+     * Création d'un utilisateur membre dans une entreprise existante
      */
+    #[Route('/create/membre', methods: ['POST'])]
     #[OA\Post(
-        summary: "Creation user memnbre",
-        description: "Creation user memnbre",
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                properties: [
-
-                    new OA\Property(property: "nom", type: "string"),
-                    new OA\Property(property: "prenoms", type: "string"),
-                    new OA\Property(property: "email", type: "string"),
-                    new OA\Property(property: "password", type: "string"),
-                    new OA\Property(property: "confirmPassword", type: "string"),
-                    new OA\Property(property: "surccursale", type: "string"),
-                    new OA\Property(property: "boutique", type: "string"),
-                    new OA\Property(property: "type", type: "string"),
-
-                ],
-                type: "object"
-            )
-        ),
-        responses: [
-            new OA\Response(response: 401, description: "Invalid credentials")
-        ]
+        path: "/api/user/create/membre",
+        summary: "Créer un membre dans l'entreprise",
+        description: "Permet de créer un nouvel utilisateur membre (employé) dans l'entreprise de l'utilisateur connecté. Le membre peut être assigné à une succursale et/ou une boutique spécifique. Nécessite un abonnement actif.",
+        tags: ['user']
     )]
-    #[OA\Tag(name: 'user')]
-    public function createMembre(Request $request,BoutiqueRepository $boutiqueRepository, SubscriptionChecker $subscriptionChecker, SurccursaleRepository $surccursaleRepository, TypeUserRepository $typeUserRepository, UserRepository $userRepository, EntrepriseRepository $entrepriseRepository, SendMailService $sendMailService): Response
-    {
+    #[OA\RequestBody(
+        required: true,
+        description: "Données du membre à créer",
+        content: new OA\JsonContent(
+            type: "object",
+            required: ["nom", "prenoms", "email", "password", "confirmPassword", "type"],
+            properties: [
+                new OA\Property(
+                    property: "nom",
+                    type: "string",
+                    example: "Traoré",
+                    description: "Nom de famille du membre (obligatoire)"
+                ),
+                new OA\Property(
+                    property: "prenoms",
+                    type: "string",
+                    example: "Aminata",
+                    description: "Prénom(s) du membre (obligatoire)"
+                ),
+                new OA\Property(
+                    property: "email",
+                    type: "string",
+                    format: "email",
+                    example: "aminata.traore@fashionci.com",
+                    description: "Email de connexion du membre (obligatoire, unique)"
+                ),
+                new OA\Property(
+                    property: "password",
+                    type: "string",
+                    format: "password",
+                    example: "SecurePass123!",
+                    description: "Mot de passe (obligatoire)"
+                ),
+                new OA\Property(
+                    property: "confirmPassword",
+                    type: "string",
+                    format: "password",
+                    example: "SecurePass123!",
+                    description: "Confirmation du mot de passe (obligatoire)"
+                ),
+                new OA\Property(
+                    property: "surccursale",
+                    type: "integer",
+                    nullable: true,
+                    example: 1,
+                    description: "ID de la succursale d'affectation (optionnel)"
+                ),
+                new OA\Property(
+                    property: "boutique",
+                    type: "integer",
+                    nullable: true,
+                    example: 2,
+                    description: "ID de la boutique d'affectation (optionnel)"
+                ),
+                new OA\Property(
+                    property: "type",
+                    type: "integer",
+                    example: 3,
+                    description: "ID du type d'utilisateur (obligatoire: GESTIONNAIRE, VENDEUR, etc.)"
+                )
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 201,
+        description: "Membre créé avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "id", type: "integer", example: 75),
+                new OA\Property(property: "nom", type: "string", example: "Traoré"),
+                new OA\Property(property: "prenoms", type: "string", example: "Aminata"),
+                new OA\Property(property: "login", type: "string", example: "aminata.traore@fashionci.com"),
+                new OA\Property(property: "isActive", type: "boolean", example: true),
+                new OA\Property(property: "roles", type: "array", items: new OA\Items(type: "string", example: "ROLE_MEMBRE")),
+                new OA\Property(property: "type", type: "object"),
+                new OA\Property(property: "entreprise", type: "object"),
+                new OA\Property(property: "surccursale", type: "object", nullable: true),
+                new OA\Property(property: "boutique", type: "object", nullable: true)
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: "Email déjà utilisé ou mots de passe non identiques")]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 404, description: "Succursale, boutique ou type utilisateur non trouvé")]
+    public function createMembre(
+        Request $request,
+        BoutiqueRepository $boutiqueRepository,
+        SubscriptionChecker $subscriptionChecker,
+        SurccursaleRepository $surccursaleRepository,
+        TypeUserRepository $typeUserRepository,
+        UserRepository $userRepository,
+        EntrepriseRepository $entrepriseRepository,
+        SendMailService $sendMailService
+    ): Response {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
-       // $this->allParametres('boutique');
 
         try {
             $data = json_decode($request->getContent(), true);
 
-            if ($userRepository->findOneBy(['login' => $data['numero']])) {
-                return $this->errorResponse(null, "Ce numéro existe déjà ,veuillez utiliser  un autre");
+            // Vérification unicité email
+            if ($userRepository->findOneBy(['login' => $data['email']])) {
+                return $this->errorResponse(null, "Cet email existe déjà, veuillez utiliser un autre");
             }
 
+            // Création de l'utilisateur membre
             $user = new User();
             $user->setNom($data['nom']);
             $user->setPrenoms($data['prenoms']);
             $user->setLogin($data['email']);
 
-            if($data['surccursale'] && $data['surccursale'] != "")
-                $user->setSurccursale($surccursaleRepository->find($data['surccursale']));
+            // Affectation à une succursale (optionnel)
+            if (isset($data['surccursale']) && $data['surccursale'] != "") {
+                $succursale = $surccursaleRepository->find($data['surccursale']);
+                if ($succursale) {
+                    $user->setSurccursale($succursale);
+                }
+            }
 
-            if($data['boutique'] && $data['boutique'] != "")
-                $user->setBoutique($boutiqueRepository->find($data['boutique']));
-            
+            // Affectation à une boutique (optionnel)
+            if (isset($data['boutique']) && $data['boutique'] != "") {
+                $boutique = $boutiqueRepository->find($data['boutique']);
+                if ($boutique) {
+                    $user->setBoutique($boutique);
+                }
+            }
 
             $user->setIsActive($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "user"));
-            $user->setPassword($this->hasher->hashPassword($user,  $data['password']));
+            $user->setPassword($this->hasher->hashPassword($user, $data['password']));
             $user->setRoles(['ROLE_MEMBRE']);
-            $user->setType($typeUserRepository->find($data['type']));
+            
+            $typeUser = $typeUserRepository->find($data['type']);
+            if (!$typeUser) {
+                return $this->errorResponse(null, "Type d'utilisateur non trouvé", 404);
+            }
+            $user->setType($typeUser);
             $user->setEntreprise($this->getUser()->getEntreprise());
+            $user->setCreatedAtValue(new \DateTime());
+            $user->setUpdatedAt(new \DateTime());
 
+            // Validation mot de passe
+            if ($data['password'] !== $data['confirmPassword']) {
+                return $this->errorResponse($user, "Les mots de passe ne sont pas identiques");
+            }
 
-            $sendMailService->sendNotification([
-                'libelle' => "Bienvenue dans notre application",
-                'titre' => "Bienvenue",
-                'entreprise' => $this->getUser()->getEntreprise(),
-                'user' => $user,
-                'userUpdate' => $user
-            ]);
-
-            $errorResponse = $data['password'] !== $data['confirmPassword'] ?  $this->errorResponse($user, "Les mots de passe ne sont pas identiques") :  $this->errorResponse($user);
+            $errorResponse = $this->errorResponse($user);
             if ($errorResponse !== null) {
                 return $errorResponse;
             } else {
-
                 $userRepository->add($user, true);
+
+                // Notification de bienvenue
+                $sendMailService->sendNotification([
+                    'libelle' => "Bienvenue dans notre application",
+                    'titre' => "Bienvenue",
+                    'entreprise' => $this->getUser()->getEntreprise(),
+                    'user' => $user,
+                    'userUpdate' => $user
+                ]);
             }
 
-            $response = $this->responseData($entrepriseRepository, 'group1', ['Content-Type' => 'application/json']);
+            $response = $this->responseData($user, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Throwable $th) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la création du membre");
             $response = $this->response('[]');
         }
 
         return $response;
     }
 
-    #[Route('/update/profil/{id}', methods: ['PUT'])]
     /**
-     * Permet de mettre à jour les informations d'un utilisateur.
+     * Met à jour le profil d'un utilisateur
      */
+    #[Route('/update/profil/{id}', methods: ['PUT', 'POST'])]
     #[OA\Put(
-        summary: "Mise à jour des informations utilisateur",
-        description: "Permet de mettre à jour les informations d'un utilisateur",
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: "nom", type: "string"),
-                    new OA\Property(property: "prenoms", type: "string"),
-                    new OA\Property(property: "email", type: "string"),
-                ],
-                type: "object"
-            )
-        ),
-        responses: [
-            new OA\Response(response: 200, description: "Utilisateur mis à jour avec succès"),
-            new OA\Response(response: 404, description: "Utilisateur non trouvé")
-        ]
+        path: "/api/user/update/profil/{id}",
+        summary: "Mettre à jour le profil utilisateur",
+        description: "Permet de mettre à jour les informations personnelles d'un utilisateur (nom, prénoms, email). L'email doit rester unique.",
+        tags: ['user']
     )]
-    #[OA\Tag(name: 'user')]
+    #[OA\Parameter(
+        name: "id",
+        in: "path",
+        required: true,
+        description: "Identifiant unique de l'utilisateur à mettre à jour",
+        schema: new OA\Schema(type: "integer", example: 1)
+    )]
+    #[OA\RequestBody(
+        required: true,
+        description: "Nouvelles informations du profil",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(
+                    property: "nom",
+                    type: "string",
+                    example: "Kouassi",
+                    description: "Nouveau nom de famille"
+                ),
+                new OA\Property(
+                    property: "prenoms",
+                    type: "string",
+                    example: "Jean-Baptiste",
+                    description: "Nouveaux prénoms"
+                ),
+                new OA\Property(
+                    property: "email",
+                    type: "string",
+                    format: "email",
+                    example: "jean.kouassi@fashionci.com",
+                    description: "Nouvel email (doit être unique)"
+                )
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Utilisateur mis à jour avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "code", type: "integer", example: 200),
+                new OA\Property(property: "message", type: "string", example: "Utilisateur mis à jour avec succès"),
+                new OA\Property(
+                    property: "data",
+                    type: "object",
+                    properties: [
+                        new OA\Property(property: "id", type: "integer", example: 1),
+                        new OA\Property(property: "nom", type: "string", example: "Kouassi"),
+                        new OA\Property(property: "prenoms", type: "string", example: "Jean-Baptiste"),
+                        new OA\Property(property: "login", type: "string", example: "jean.kouassi@fashionci.com"),
+                        new OA\Property(property: "updatedAt", type: "string", format: "date-time")
+                    ]
+                )
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: "Email déjà utilisé par un autre utilisateur")]
+    #[OA\Response(response: 404, description: "Utilisateur non trouvé")]
+    #[OA\Response(response: 500, description: "Erreur lors de la mise à jour")]
     public function update(
         Request $request,
         UserRepository $userRepository,
@@ -464,7 +754,10 @@ class ApiUserController extends ApiInterface
             $data = json_decode($request->getContent(), true);
 
             if (!$user) {
-                return $this->errorResponse(null, "Utilisateur non trouvé", 404);
+                return $this->json([
+                    'code' => 404,
+                    'message' => "Utilisateur non trouvé"
+                ], 404);
             }
 
             // Mise à jour des champs
@@ -477,15 +770,18 @@ class ApiUserController extends ApiInterface
             }
 
             if (isset($data['email'])) {
-
+                // Vérification unicité email
                 $existingUser = $userRepository->findOneBy(['login' => $data['email']]);
                 if ($existingUser && $existingUser->getId() !== $user->getId()) {
-                    return $this->errorResponse(null, "Ce email est déjà utilisé par un autre utilisateur");
+                    return $this->json([
+                        'code' => 400,
+                        'message' => "Cet email est déjà utilisé par un autre utilisateur"
+                    ], 400);
                 }
                 $user->setLogin($data['email']);
             }
 
-
+            $user->setUpdatedAt(new \DateTime());
             $userRepository->add($user, true);
 
             $context = [AbstractNormalizer::GROUPS => 'group_pro'];
@@ -497,70 +793,97 @@ class ApiUserController extends ApiInterface
                 'data' => json_decode($json)
             ]);
         } catch (\Exception $exception) {
-            return $this->errorResponse($exception->getMessage(), "Une erreur est survenue lors de la mise à jour");
+            return $this->json([
+                'code' => 500,
+                'message' => "Une erreur est survenue lors de la mise à jour"
+            ], 500);
         }
     }
 
-
+    /**
+     * Met à jour la photo de profil d'un utilisateur
+     */
     #[Route('/profil/logo/{id}', methods: ['PUT', 'POST'])]
     #[OA\Post(
-        summary: "Modification user membre",
-        description: "Permet de modifier un user MEMBRE.",
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\MediaType(
-                mediaType: "multipart/form-data",
-                schema: new OA\Schema(
-                    properties: [
-
-                        new OA\Property(property: "logo", type: "string", format: "binary"),
-
-                    ],
-                    type: "object"
-                )
-            )
-
-        ),
-        responses: [
-            new OA\Response(response: 401, description: "Invalid credentials")
-        ]
+        path: "/api/user/profil/logo/{id}",
+        summary: "Mettre à jour la photo de profil",
+        description: "Permet de télécharger et mettre à jour la photo de profil (logo) d'un utilisateur. Le fichier est sauvegardé sur le serveur et le chemin est enregistré en base de données.",
+        tags: ['user']
     )]
-    #[OA\Tag(name: 'user')]
+    #[OA\Parameter(
+        name: "id",
+        in: "path",
+        required: true,
+        description: "Identifiant unique de l'utilisateur",
+        schema: new OA\Schema(type: "integer", example: 1)
+    )]
+    #[OA\RequestBody(
+        required: true,
+        description: "Fichier image de la photo de profil",
+        content: new OA\MediaType(
+            mediaType: "multipart/form-data",
+            schema: new OA\Schema(
+                type: "object",
+                required: ["logo"],
+                properties: [
+                    new OA\Property(
+                        property: "logo",
+                        type: "string",
+                        format: "binary",
+                        description: "Fichier image (JPG, PNG, formats acceptés)"
+                    )
+                ]
+            )
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Photo de profil mise à jour avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "id", type: "integer", example: 1),
+                new OA\Property(property: "nom", type: "string", example: "Kouassi"),
+                new OA\Property(property: "prenoms", type: "string", example: "Jean"),
+                new OA\Property(property: "logo", type: "string", example: "/uploads/users/document_01_abc123.jpg", description: "Chemin de la nouvelle photo")
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: "Fichier invalide ou format non supporté")]
+    #[OA\Response(response: 404, description: "Utilisateur non trouvé")]
+    #[OA\Response(response: 500, description: "Erreur lors du téléchargement")]
     public function updateLogo(Request $request, User $user, UserRepository $userRepository): Response
     {
         try {
-            $data = json_decode($request->getContent());
+            if ($user === null) {
+                $this->setMessage("Utilisateur non trouvé");
+                $this->setStatusCode(404);
+                return $this->response('[]');
+            }
+
             $names = 'document_' . '01';
-            $filePrefix  = str_slug($names);
+            $filePrefix = str_slug($names);
             $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
 
             $uploadedFile = $request->files->get('logo');
 
-
-            if ($user !== null) {
-
-                if ($uploadedFile) {
-                    if ($fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH)) {
-                        $user->setLogo($fichier);
-                    }
+            if ($uploadedFile) {
+                if ($fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH)) {
+                    $user->setLogo($fichier);
                 }
-
-                // Vérification des erreurs
-                if ($errorResponse = $this->errorResponse($user)) {
-                    return $errorResponse;
-                }
-
-                $userRepository->add($user, true);
-
-                // Retour de la réponse
-                return $this->responseData($user, 'group1', ['Content-Type' => 'application/json']);
-            } else {
-                $this->setMessage("Cette ressource est inexsitante");
-                $this->setStatusCode(300);
-                $response = $this->response('[]');
             }
+
+            // Vérification des erreurs
+            if ($errorResponse = $this->errorResponse($user)) {
+                return $errorResponse;
+            }
+
+            $user->setUpdatedAt(new \DateTime());
+            $userRepository->add($user, true);
+
+            return $this->responseData($user, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la mise à jour du logo");
             $response = $this->response('[]');
         }
         return $response;

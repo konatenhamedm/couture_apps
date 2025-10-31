@@ -1,6 +1,6 @@
 <?php
 
-namespace  App\Controller\Apis;
+namespace App\Controller\Apis;
 
 use App\Controller\Apis\Config\ApiInterface;
 use App\Entity\CategorieMesure;
@@ -29,58 +29,97 @@ use Nelmio\ApiDocBundle\Attribute\Model as AttributeModel;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
+/**
+ * Contrôleur pour la gestion des factures
+ * Permet de créer, lire, mettre à jour et supprimer des factures avec mesures, lignes de mesures et paiements associés
+ */
 #[Route('/api/facture')]
+#[OA\Tag(name: 'facture', description: 'Gestion des factures de couture avec mesures et paiements')]
 class ApiFactureController extends ApiInterface
 {
-
-
-
-    #[Route('/', methods: ['GET'])]
     /**
-     * Retourne la liste des factures.
-     * 
+     * Liste toutes les factures du système
      */
+    #[Route('/', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/facture/",
+        summary: "Lister toutes les factures",
+        description: "Retourne la liste paginée de toutes les factures disponibles dans le système",
+        tags: ['facture']
+    )]
     #[OA\Response(
         response: 200,
-        description: 'Returns the rewards of an user',
+        description: "Liste des factures récupérée avec succès",
         content: new OA\JsonContent(
             type: 'array',
-            items: new OA\Items(ref: new AttributeModel(type: Facture::class, groups: ['full']))
+            items: new OA\Items(
+                type: "object",
+                properties: [
+                    new OA\Property(property: "id", type: "integer", example: 1, description: "Identifiant unique de la facture"),
+                    new OA\Property(property: "reference", type: "string", example: "FACT-2025-001", description: "Référence unique de la facture"),
+                    new OA\Property(property: "montantTotal", type: "number", format: "float", example: 50000, description: "Montant total de la facture"),
+                    new OA\Property(property: "avance", type: "number", format: "float", example: 20000, description: "Montant de l'avance payée"),
+                    new OA\Property(property: "remise", type: "number", format: "float", example: 5000, description: "Montant de la remise"),
+                    new OA\Property(property: "resteArgent", type: "number", format: "float", example: 30000, description: "Reste à payer"),
+                    new OA\Property(property: "dateDepot", type: "string", format: "date-time", example: "2025-01-15T10:30:00+00:00", description: "Date de dépôt"),
+                    new OA\Property(property: "dateRetrait", type: "string", format: "date-time", example: "2025-01-22T10:30:00+00:00", description: "Date de retrait prévue"),
+                    new OA\Property(property: "signature", type: "string", nullable: true, example: "/uploads/signatures/sign_001.jpg", description: "Signature du client"),
+                    new OA\Property(property: "client", type: "object", description: "Informations du client"),
+                    new OA\Property(property: "entreprise", type: "object", description: "Entreprise"),
+                    new OA\Property(property: "mesures", type: "array", description: "Liste des mesures associées", items: new OA\Items(type: "object"))
+                ]
+            )
         )
     )]
-    #[OA\Tag(name: 'facture')]
-    // #[Security(name: 'Bearer')]
+    #[OA\Response(response: 500, description: "Erreur serveur lors de la récupération")]
     public function index(FactureRepository $factureRepository): Response
     {
         try {
-
             $factures = $this->paginationService->paginate($factureRepository->findAll());
-
-            $response =  $this->responseData($factures, 'group1', ['Content-Type' => 'application/json']);
+            $response = $this->responseData($factures, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la récupération des factures");
             $response = $this->response('[]');
         }
 
-        // On envoie la réponse
         return $response;
     }
 
-    #[Route('/entreprise', methods: ['GET'])]
     /**
-     * Retourne la liste des factures d'une entreprise.
-     * 
+     * Liste les factures d'une entreprise spécifique
      */
+    #[Route('/entreprise', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/facture/entreprise",
+        summary: "Lister les factures d'une entreprise",
+        description: "Retourne la liste paginée des factures de l'entreprise de l'utilisateur authentifié. Nécessite un abonnement actif.",
+        tags: ['facture']
+    )]
     #[OA\Response(
         response: 200,
-        description: 'Returns the rewards of an user',
+        description: "Liste des factures de l'entreprise récupérée avec succès",
         content: new OA\JsonContent(
             type: 'array',
-            items: new OA\Items(ref: new AttributeModel(type: Facture::class, groups: ['full']))
+            items: new OA\Items(
+                type: "object",
+                properties: [
+                    new OA\Property(property: "id", type: "integer", example: 1),
+                    new OA\Property(property: "reference", type: "string", example: "FACT-2025-001"),
+                    new OA\Property(property: "montantTotal", type: "number", format: "float", example: 50000),
+                    new OA\Property(property: "avance", type: "number", format: "float", example: 20000),
+                    new OA\Property(property: "resteArgent", type: "number", format: "float", example: 30000),
+                    new OA\Property(property: "dateDepot", type: "string", format: "date-time"),
+                    new OA\Property(property: "dateRetrait", type: "string", format: "date-time"),
+                    new OA\Property(property: "client", type: "object", description: "Client associé"),
+                    new OA\Property(property: "mesures", type: "array", description: "Mesures", items: new OA\Items(type: "object")),
+                    new OA\Property(property: "paiements", type: "array", description: "Paiements", items: new OA\Items(type: "object"))
+                ]
+            )
         )
     )]
-    #[OA\Tag(name: 'facture')]
-    // #[Security(name: 'Bearer')]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
     public function indexAll(FactureRepository $factureRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
@@ -88,44 +127,68 @@ class ApiFactureController extends ApiInterface
         }
 
         try {
-
             $factures = $this->paginationService->paginate($factureRepository->findBy(
                 ['entreprise' => $this->getUser()->getEntreprise()],
-                ['id' => 'ASC']
+                ['id' => 'DESC']
             ));
-            $response =  $this->responseData($factures, 'group1', ['Content-Type' => 'application/json']);
+            $response = $this->responseData($factures, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la récupération des factures de l'entreprise");
             $response = $this->response('[]');
         }
 
-        // On envoie la réponse
         return $response;
     }
 
-
-
-
-    #[Route('/get/one/{id}', methods: ['GET'])]
     /**
-     * Affiche un(e) facture en offrant un identifiant.
+     * Récupère les détails d'une facture spécifique
      */
-    #[OA\Response(
-        response: 200,
-        description: 'Affiche un(e) facture en offrant un identifiant',
-        content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new AttributeModel(type: Facture::class, groups: ['full']))
-        )
+    #[Route('/get/one/{id}', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/facture/get/one/{id}",
+        summary: "Détails d'une facture",
+        description: "Affiche les informations détaillées d'une facture spécifique avec toutes ses mesures, lignes de mesures et paiements. Nécessite un abonnement actif.",
+        tags: ['facture']
     )]
     #[OA\Parameter(
-        name: 'code',
-        in: 'query',
-        schema: new OA\Schema(type: 'string')
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: "Identifiant unique de la facture",
+        schema: new OA\Schema(type: 'integer', example: 1)
     )]
-    #[OA\Tag(name: 'facture')]
-    //#[Security(name: 'Bearer')]
-    public function getOne(?Facture $facture)
+    #[OA\Response(
+        response: 200,
+        description: "Facture trouvée avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "id", type: "integer", example: 1),
+                new OA\Property(property: "reference", type: "string", example: "FACT-2025-001"),
+                new OA\Property(property: "montantTotal", type: "number", format: "float", example: 50000),
+                new OA\Property(property: "avance", type: "number", format: "float", example: 20000),
+                new OA\Property(property: "remise", type: "number", format: "float", example: 5000),
+                new OA\Property(property: "resteArgent", type: "number", format: "float", example: 30000),
+                new OA\Property(property: "dateDepot", type: "string", format: "date-time"),
+                new OA\Property(property: "dateRetrait", type: "string", format: "date-time"),
+                new OA\Property(property: "signature", type: "string", nullable: true),
+                new OA\Property(property: "client", type: "object", description: "Client",
+                    properties: [
+                        new OA\Property(property: "id", type: "integer", example: 5),
+                        new OA\Property(property: "nom", type: "string", example: "Kouassi"),
+                        new OA\Property(property: "prenom", type: "string", example: "Yao"),
+                        new OA\Property(property: "numero", type: "string", example: "+225 0123456789")
+                    ]
+                ),
+                new OA\Property(property: "mesures", type: "array", description: "Mesures de couture", items: new OA\Items(type: "object")),
+                new OA\Property(property: "paiements", type: "array", description: "Historique des paiements", items: new OA\Items(type: "object"))
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 404, description: "Facture non trouvée")]
+    public function getOne(?Facture $facture): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
@@ -133,102 +196,225 @@ class ApiFactureController extends ApiInterface
 
         try {
             if ($facture) {
-
-                $response =  $this->responseData($facture, 'group1', ['Content-Type' => 'application/json']);
+                $response = $this->responseData($facture, 'group1', ['Content-Type' => 'application/json']);
             } else {
                 $this->setMessage('Cette ressource est inexistante');
-                $this->setStatusCode(300);
-                $response = $this->response($facture);
+                $this->setStatusCode(404);
+                $response = $this->response(null);
             }
         } catch (\Exception $exception) {
             $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
 
-
         return $response;
     }
 
-    #[Route('/create',  methods: ['POST'])]
     /**
-     * Crée une nouvelle facture avec les mesures associées.
+     * Crée une nouvelle facture avec mesures et paiement
      */
+    #[Route('/create', methods: ['POST'])]
     #[OA\Post(
-        summary: "Création d'une facture",
-        description: "Permet de créer une nouvelle facture avec les informations du client, les mesures et les lignes de mesures associées.",
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\MediaType(
-                mediaType: "multipart/form-data",
-                schema: new OA\Schema(
-                    properties: [
-                        new OA\Property(property: "clientId", type: "string", description: "ID du client existant (optionnel)"),
-                        new OA\Property(property: "nom", type: "string", description: "Nom du client (si nouveau client)"),
-                        new OA\Property(property: "numero", type: "string", description: "Numéro du client (si nouveau client)"),
-                        new OA\Property(property: "avance", type: "number", format: "float", description: "Montant de l'avance"),
-                        new OA\Property(property: "remise", type: "number", format: "float", description: "Montant de la remise"),
-                        new OA\Property(property: "montantTotal", type: "number", format: "float", description: "Montant total de la facture"),
-                        new OA\Property(property: "resteArgent", type: "number", format: "float", description: "Reste à payer"),
-                        new OA\Property(property: "dateRetrait", type: "string", format: "date-time", description: "Date de retrait prévue"),
-                        new OA\Property(property: "signature", type: "string", description: "Signature du client"),
-                        new OA\Property(
-                            property: "mesures",
-                            type: "array",
-                            items: new OA\Items(
-                                type: "object",
-                                properties: [
-                                    new OA\Property(property: "typeMesureId", type: "string", description: "ID du type de mesure"),
-                                    new OA\Property(property: "montant", type: "number", format: "float", description: "Montant de la mesure"),
-                                    new OA\Property(property: "remise", type: "number", format: "float", description: "Remise sur la mesure"),
-                                    new OA\Property(
-                                        property: "ligneMesures",
-                                        type: "array",
-                                        items: new OA\Items(
-                                            type: "object",
-                                            properties: [
-                                                new OA\Property(property: "categorieId", type: "string", description: "ID de la catégorie de mesure"),
-                                                new OA\Property(property: "taille", type: "string", description: "Taille de la mesure")
-                                            ]
-                                        ),
-                                        description: "Lignes de mesures détaillées"
-                                    ),
-                                    new OA\Property(property: "photoPagne", type: "string", format: "binary", description: "Photo du pagne (optionnel)"),
-                                    new OA\Property(property: "photoModele", type: "string", format: "binary", description: "Photo du modèle (optionnel)")
-                                ]
-                            ),
-                            description: "Liste des mesures associées à la facture"
-                        )
-                    ],
-                    required: ["montantTotal"]
-                )
-            )
-        ),
-        responses: [
-            new OA\Response(response: 200, description: "Facture créée avec succès"),
-            new OA\Response(response: 400, description: "Données invalides"),
-            new OA\Response(response: 401, description: "Non autorisé")
-        ]
+        path: "/api/facture/create",
+        summary: "Créer une nouvelle facture",
+        description: "Permet de créer une nouvelle facture complète avec client (nouveau ou existant), mesures de couture détaillées, lignes de mesures, photos (pagne et modèle), signature et paiement initial. La facture génère automatiquement un paiement et met à jour la caisse de la succursale si une avance est versée. Nécessite un abonnement actif.",
+        tags: ['facture']
     )]
-    #[OA\Tag(name: 'facture')]
-    public function create(Request $request,UserRepository $userRepository, CaisseSuccursaleRepository $caisseSuccursaleRepository, Utils $utils, TypeMesureRepository $typeMesureRepository, ClientRepository $clientRepository, CategorieMesureRepository $categorieMesureRepository, FactureRepository $factureRepository, EntrepriseRepository $entrepriseRepository): Response
-    {
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\MediaType(
+            mediaType: "multipart/form-data",
+            schema: new OA\Schema(
+                type: "object",
+                required: ["montantTotal"],
+                properties: [
+                    new OA\Property(
+                        property: "clientId",
+                        type: "integer",
+                        nullable: true,
+                        example: 5,
+                        description: "ID du client existant (optionnel, si null un nouveau client sera créé)"
+                    ),
+                    new OA\Property(
+                        property: "nom",
+                        type: "string",
+                        example: "Kouassi",
+                        description: "Nom du nouveau client (requis si clientId est null)"
+                    ),
+                    new OA\Property(
+                        property: "numero",
+                        type: "string",
+                        example: "+225 0123456789",
+                        description: "Numéro du nouveau client (requis si clientId est null)"
+                    ),
+                    new OA\Property(
+                        property: "avance",
+                        type: "number",
+                        format: "float",
+                        example: 20000,
+                        description: "Montant de l'avance payée (optionnel)"
+                    ),
+                    new OA\Property(
+                        property: "remise",
+                        type: "number",
+                        format: "float",
+                        example: 5000,
+                        description: "Montant de la remise accordée (optionnel)"
+                    ),
+                    new OA\Property(
+                        property: "montantTotal",
+                        type: "number",
+                        format: "float",
+                        example: 50000,
+                        description: "Montant total de la facture (obligatoire)"
+                    ),
+                    new OA\Property(
+                        property: "resteArgent",
+                        type: "number",
+                        format: "float",
+                        example: 30000,
+                        description: "Reste à payer après avance et remise"
+                    ),
+                    new OA\Property(
+                        property: "dateRetrait",
+                        type: "string",
+                        format: "date-time",
+                        example: "2025-02-01T14:00:00",
+                        description: "Date de retrait prévue de la commande"
+                    ),
+                    new OA\Property(
+                        property: "signature",
+                        type: "string",
+                        format: "binary",
+                        description: "Image de la signature du client (optionnel, formats: JPG, PNG)"
+                    ),
+                    new OA\Property(
+                        property: "mesures",
+                        type: "array",
+                        description: "Liste des mesures de couture à prendre (obligatoire)",
+                        items: new OA\Items(
+                            type: "object",
+                            required: ["typeMesureId", "montant"],
+                            properties: [
+                                new OA\Property(
+                                    property: "typeMesureId",
+                                    type: "integer",
+                                    example: 1,
+                                    description: "ID du type de mesure (ex: Robe, Pantalon, Chemise)"
+                                ),
+                                new OA\Property(
+                                    property: "montant",
+                                    type: "number",
+                                    format: "float",
+                                    example: 25000,
+                                    description: "Prix de cette mesure"
+                                ),
+                                new OA\Property(
+                                    property: "remise",
+                                    type: "number",
+                                    format: "float",
+                                    example: 2000,
+                                    description: "Remise sur cette mesure spécifique"
+                                ),
+                                new OA\Property(
+                                    property: "ligneMesures",
+                                    type: "array",
+                                    description: "Détails des mesures prises (tour de taille, longueur, etc.)",
+                                    items: new OA\Items(
+                                        type: "object",
+                                        required: ["categorieId", "taille"],
+                                        properties: [
+                                            new OA\Property(
+                                                property: "categorieId",
+                                                type: "integer",
+                                                example: 1,
+                                                description: "ID de la catégorie de mesure (ex: Tour de taille, Longueur)"
+                                            ),
+                                            new OA\Property(
+                                                property: "taille",
+                                                type: "string",
+                                                example: "85cm",
+                                                description: "Valeur de la mesure prise"
+                                            )
+                                        ]
+                                    )
+                                ),
+                                new OA\Property(
+                                    property: "photoPagne",
+                                    type: "string",
+                                    format: "binary",
+                                    description: "Photo du tissu/pagne choisi (optionnel)"
+                                ),
+                                new OA\Property(
+                                    property: "photoModele",
+                                    type: "string",
+                                    format: "binary",
+                                    description: "Photo du modèle à réaliser (optionnel)"
+                                )
+                            ]
+                        )
+                    )
+                ]
+            )
+        )
+    )]
+    #[OA\Response(
+        response: 201,
+        description: "Facture créée avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "id", type: "integer", example: 15),
+                new OA\Property(property: "reference", type: "string", example: "FACT-2025-015"),
+                new OA\Property(property: "montantTotal", type: "number", example: 50000),
+                new OA\Property(property: "avance", type: "number", example: 20000),
+                new OA\Property(property: "resteArgent", type: "number", example: 30000),
+                new OA\Property(property: "dateDepot", type: "string", format: "date-time"),
+                new OA\Property(property: "dateRetrait", type: "string", format: "date-time"),
+                new OA\Property(property: "client", type: "object"),
+                new OA\Property(property: "mesures", type: "array", items: new OA\Items(type: "object")),
+                new OA\Property(property: "paiements", type: "array", items: new OA\Items(type: "object"))
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: "Données invalides ou fichiers non acceptés")]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    public function create(
+        Request $request,
+        UserRepository $userRepository,
+        CaisseSuccursaleRepository $caisseSuccursaleRepository,
+        Utils $utils,
+        TypeMesureRepository $typeMesureRepository,
+        ClientRepository $clientRepository,
+        CategorieMesureRepository $categorieMesureRepository,
+        FactureRepository $factureRepository,
+        EntrepriseRepository $entrepriseRepository
+    ): Response {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         $names = 'document_' . '01';
-        $filePrefix  = str_slug($names);
+        $filePrefix = str_slug($names);
         $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
         $data = json_decode($request->getContent(), true);
+        
         $facture = new Facture();
+        $facture->setEntreprise($this->getUser()->getEntreprise());
         $admin = $userRepository->getUserByCodeType($this->getUser()->getEntreprise());
 
+        // Gestion du client (nouveau ou existant)
         if ($request->get('clientId') == null) {
             $client = new Client();
             $client->setNom($data['nom']);
             $client->setEntreprise($this->getUser()->getEntreprise());
             $client->setNumero($data['numero']);
             $client->setSurccursale($this->getUser()->getSurccursale());
+            $client->setCreatedBy($this->getUser());
+            $client->setUpdatedBy($this->getUser());
+            $client->setCreatedAtValue(new \DateTime());
+            $client->setUpdatedAt(new \DateTime());
             $facture->setClient($client);
         } else {
             $facture->setClient($clientRepository->find($request->get('clientId')));
@@ -236,23 +422,24 @@ class ApiFactureController extends ApiInterface
 
         $facture->setDateDepot(new \DateTime());
         $facture->setAvance($request->get('avance'));
+        
+        // Gestion de la signature
         $uploadedFichierSignature = $request->files->get('signature');
-
         if ($uploadedFichierSignature) {
-           $fichierSignature = $utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFichierSignature, self::UPLOAD_PATH);
+            $fichierSignature = $utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFichierSignature, self::UPLOAD_PATH);
             $facture->setSignature($fichierSignature);
         }
-         
 
-       /*  $facture->setSignature($request->get('signature')); */
         $facture->setRemise($request->get('remise'));
         $facture->setMontantTotal($request->get('montantTotal'));
         $facture->setResteArgent($request->get('resteArgent'));
-        $facture->setDateRetrait($request->get('dateRetrait'));
+        $facture->setDateRetrait($request->get('dateRetrait') ? new \DateTime($request->get('dateRetrait')) : null);
         $facture->setCreatedBy($this->getUser());
         $facture->setUpdatedBy($this->getUser());
-        $errorResponse = $this->errorResponse($facture);
-        // On vérifie si l'entreprise existe
+        $facture->setCreatedAtValue(new \DateTime());
+        $facture->setUpdatedAt(new \DateTime());
+
+        // Gestion des mesures
         $lignesMesure = $request->get('mesures');
         $uploadedFiles = $request->files->get('mesures');
 
@@ -261,14 +448,11 @@ class ApiFactureController extends ApiInterface
                 $mesure = new Mesure();
                 $mesure->setTypeMesure($typeMesureRepository->find($ligne['typeMesureId']));
                 $mesure->setMontant($ligne['montant']);
-                $mesure->setRemise($ligne['remise']);
+                $mesure->setRemise($ligne['remise'] ?? 0);
 
+                // Upload des photos (pagne et modèle)
                 if (isset($uploadedFiles[$index])) {
-                    $fileKeys = [
-                        'photoPagne',
-                        'photoModele',
-                    ];
-
+                    $fileKeys = ['photoPagne', 'photoModele'];
                     foreach ($fileKeys as $key) {
                         if (!empty($uploadedFiles[$index][$key])) {
                             $uploadedFile = $uploadedFiles[$index][$key];
@@ -281,143 +465,168 @@ class ApiFactureController extends ApiInterface
                     }
                 }
 
+                // Gestion des lignes de mesures détaillées
                 $ligneMesures = $ligne['ligneMesures'] ?? [];
-
                 if (isset($ligneMesures) && is_array($ligneMesures)) {
-                    foreach ($ligneMesures as $ligneMesure) {
+                    foreach ($ligneMesures as $ligneData) {
                         $ligneMesure = new LigneMesure();
-                        $ligneMesure->setCategorieMesure($categorieMesureRepository->find($ligneMesure['categorieId']));
-                        $ligneMesure->setTaille($ligneMesure['taille']);
-
+                        $ligneMesure->setCategorieMesure($categorieMesureRepository->find($ligneData['categorieId']));
+                        $ligneMesure->setTaille($ligneData['taille']);
                         $mesure->addLigneMesure($ligneMesure);
                     }
                 }
-
 
                 $facture->addMesure($mesure);
             }
         }
 
+        // Création automatique du paiement
         $paiement = new PaiementFacture();
-        $paiement->setMontant($facture->getMontantTotal());
+        $paiement->setMontant($facture->getAvance() ?? 0);
         $paiement->setType('paiementFacture');
         $paiement->setReference($utils->generateReference('PMT'));
         $paiement->setCreatedBy($this->getUser());
         $paiement->setUpdatedBy($this->getUser());
         $paiement->setCreatedAtValue(new \DateTime());
+        $paiement->setUpdatedAt(new \DateTime());
         $facture->addPaiementFacture($paiement);
 
-        if ($request->get('avance') != null) {
+        // Mise à jour de la caisse si avance
+        if ($request->get('avance') != null && $request->get('avance') > 0) {
+            $caisse = $caisseSuccursaleRepository->findOneBy(['surccursale' => $this->getUser()->getSurccursale()]);
+            if ($caisse) {
+                $caisse->setMontant((int)$caisse->getMontant() + (int)$request->get('avance'));
+                $caisse->setType('caisse_succursale');
+                $caisseSuccursaleRepository->add($caisse, true);
+            }
 
-            $caisse =  $caisseSuccursaleRepository->findOneBy(['surccursale' => $this->getUser()->getSurccursale()]);
+            // Envoi de notifications
+            if ($admin) {
+                $this->sendMailService->sendNotification([
+                    'entreprise' => $this->getUser()->getEntreprise(),
+                    "user" => $admin,
+                    "libelle" => sprintf(
+                        "Bonjour %s,\n\n" .
+                            "Nous vous informons qu'un nouveau paiement vient d'être enregistré dans la succursale **%s**.\n\n" .
+                            "- Montant : %s FCFA\n" .
+                            "- Effectué par : %s\n" .
+                            "- Date : %s\n\n" .
+                            "Cordialement,\nVotre application de gestion.",
+                        $admin->getLogin(),
+                        $this->getUser()->getSurccursale() ? $this->getUser()->getSurccursale()->getLibelle() : "N/A",
+                        number_format($request->get('avance'), 0, ',', ' '),
+                        $this->getUser()->getNom() && $this->getUser()->getPrenoms() 
+                            ? $this->getUser()->getNom() . " " . $this->getUser()->getPrenoms() 
+                            : $this->getUser()->getLogin(),
+                        (new \DateTime())->format('d/m/Y H:i')
+                    ),
+                    "titre" => "Paiement facture - " . ($this->getUser()->getSurccursale() ? $this->getUser()->getSurccursale()->getLibelle() : ""),
+                ]);
 
-            $caisse->setMontant((int)$caisse->getMontant() + (int)$request->get('avance'));
-            $caisse->setType('caisse_succursale');
-
-                   $this->sendMailService->sendNotification([
-                'entreprise' => $this->getUser()->getEntreprise(),
-                "user" => $admin,
-                "libelle" => sprintf(
-                    "Bonjour %s,\n\n" .
-                        "Nous vous informons qu'un nouveau paiement vient d'être enregistrée dans le surccursale **%s**.\n\n" .
-                        "- Montant : %s\n" .
-                        "- Effectuée par : %s\n" .
-                        "- Date : %s\n\n" .
-                        "Cordialement,\nVotre application de gestion.",
-                    $admin->getLogin(),
-                    $this->getUser()->getSurccursale(),
-                    $data['montant'] ?? "Non spécifié",
-                    $this->getUser()->getNom() && $this->getUser()->getPrenoms() ? $this->getUser()->getNom() . " " . $this->getUser()->getPrenoms() : $this->getUser()->getLogin(),
-                    (new \DateTime())->format('d/m/Y H:i')
-                ),
-                "titre" => "Paiemnet facture - " . $this->getUser()->getSurccursale(),
-
-            ]);
-
-
-            $this->sendMailService->send(
-                $this->sendMail,
-                $this->superAdmin,
-                "Paiement facture - " . $this->getUser()->getEntreprise(),
-                "paiement_email",
-                  [
-                    "boutique_libelle" => $this->getUser()->getEntreprise(),
-                    "montant" => $data['montant'],
-                    "date" => (new \DateTime())->format('d/m/Y H:i'),
-                ]
-            );
+                $this->sendMailService->send(
+                    $this->sendMail,
+                    $this->superAdmin,
+                    "Paiement facture - " . $this->getUser()->getEntreprise()->getNom(),
+                    "paiement_email",
+                    [
+                        "boutique_libelle" => $this->getUser()->getEntreprise()->getNom(),
+                        "montant" => number_format($request->get('avance'), 0, ',', ' ') . " FCFA",
+                        "date" => (new \DateTime())->format('d/m/Y H:i'),
+                    ]
+                );
+            }
         }
 
+        $errorResponse = $this->errorResponse($facture);
         if ($errorResponse !== null) {
-            return $errorResponse; 
+            return $errorResponse;
         } else {
-
             $factureRepository->add($facture, true);
         }
 
         return $this->responseData($facture, 'group1', ['Content-Type' => 'application/json']);
     }
 
-    #[Route('/update/{id}', methods: ['PUT', 'POST'])]
     /**
-     * Met à jour une facture existante.
+     * Met à jour une facture existante avec ses mesures
      */
-    #[OA\Post(
-        summary: "Mise à jour d'une facture",
-        description: "Permet de mettre à jour une facture existante avec les nouvelles informations.",
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\MediaType(
-                mediaType: "multipart/form-data",
-                schema: new OA\Schema(
-                    properties: [
-                        new OA\Property(property: "clientId", type: "string", description: "ID du client"),
-                        new OA\Property(property: "avance", type: "number", format: "float", description: "Montant de l'avance"),
-                        new OA\Property(property: "remise", type: "number", format: "float", description: "Montant de la remise"),
-                        new OA\Property(property: "montantTotal", type: "number", format: "float", description: "Montant total de la facture"),
-                        new OA\Property(property: "resteArgent", type: "number", format: "float", description: "Reste à payer"),
-                        new OA\Property(property: "dateRetrait", type: "string", format: "date-time", description: "Date de retrait prévue"),
-                        new OA\Property(
-                            property: "mesures",
-                            type: "array",
-                            items: new OA\Items(
-                                type: "object",
-                                properties: [
-                                    new OA\Property(property: "id", type: "string", description: "ID de la mesure (pour mise à jour)"),
-                                    new OA\Property(property: "typeMesureId", type: "string", description: "ID du type de mesure"),
-                                    new OA\Property(property: "montant", type: "number", format: "float", description: "Montant de la mesure"),
-                                    new OA\Property(property: "remise", type: "number", format: "float", description: "Remise sur la mesure"),
-                                    new OA\Property(
-                                        property: "ligneMesures",
-                                        type: "array",
-                                        items: new OA\Items(
-                                            type: "object",
-                                            properties: [
-                                                new OA\Property(property: "id", type: "string", description: "ID de la ligne de mesure (pour mise à jour)"),
-                                                new OA\Property(property: "categorieId", type: "string", description: "ID de la catégorie de mesure"),
-                                                new OA\Property(property: "taille", type: "string", description: "Taille de la mesure")
-                                            ]
-                                        ),
-                                        description: "Lignes de mesures détaillées"
-                                    ),
-                                    new OA\Property(property: "photoPagne", type: "string", format: "binary", description: "Nouvelle photo du pagne (optionnel)"),
-                                    new OA\Property(property: "photoModele", type: "string", format: "binary", description: "Nouvelle photo du modèle (optionnel)")
-                                ]
-                            ),
-                            description: "Liste des mesures à mettre à jour ou ajouter"
-                        )
-                    ]
-                )
-            )
-        ),
-        responses: [
-            new OA\Response(response: 200, description: "Facture mise à jour avec succès"),
-            new OA\Response(response: 400, description: "Données invalides"),
-            new OA\Response(response: 401, description: "Non autorisé"),
-            new OA\Response(response: 404, description: "Facture non trouvée")
-        ]
+    #[Route('/update/{id}', methods: ['PUT', 'POST'])]
+    #[OA\Put(
+        path: "/api/facture/update/{id}",
+        summary: "Mettre à jour une facture",
+        description: "Permet de mettre à jour une facture existante avec modification des informations client, mesures, lignes de mesures et photos. Les mesures et lignes existantes peuvent être modifiées, supprimées ou de nouvelles peuvent être ajoutées. Nécessite un abonnement actif.",
+        tags: ['facture']
     )]
-    #[OA\Tag(name: 'facture')]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: "Identifiant unique de la facture à mettre à jour",
+        schema: new OA\Schema(type: 'integer', example: 1)
+    )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\MediaType(
+            mediaType: "multipart/form-data",
+            schema: new OA\Schema(
+                type: "object",
+                properties: [
+                    new OA\Property(property: "clientId", type: "integer", example: 5, description: "Nouvel ID du client"),
+                    new OA\Property(property: "avance", type: "number", format: "float", example: 25000, description: "Nouveau montant de l'avance"),
+                    new OA\Property(property: "remise", type: "number", format: "float", example: 7000, description: "Nouvelle remise"),
+                    new OA\Property(property: "montantTotal", type: "number", format: "float", example: 55000, description: "Nouveau montant total"),
+                    new OA\Property(property: "resteArgent", type: "number", format: "float", example: 28000, description: "Nouveau reste à payer"),
+                    new OA\Property(property: "dateRetrait", type: "string", format: "date-time", example: "2025-02-05T15:00:00", description: "Nouvelle date de retrait"),
+                    new OA\Property(
+                        property: "mesures",
+                        type: "array",
+                        description: "Mesures à mettre à jour (inclure 'id' pour modifier, exclure pour ajouter)",
+                        items: new OA\Items(
+                            type: "object",
+                            properties: [
+                                new OA\Property(property: "id", type: "integer", nullable: true, example: 1, description: "ID de la mesure existante (pour mise à jour)"),
+                                new OA\Property(property: "typeMesureId", type: "integer", example: 1),
+                                new OA\Property(property: "montant", type: "number", format: "float", example: 27000),
+                                new OA\Property(property: "remise", type: "number", format: "float", example: 2500),
+                                new OA\Property(
+                                    property: "ligneMesures",
+                                    type: "array",
+                                    items: new OA\Items(
+                                        type: "object",
+                                        properties: [
+                                            new OA\Property(property: "id", type: "integer", nullable: true, example: 1, description: "ID de la ligne existante"),
+                                            new OA\Property(property: "categorieId", type: "integer", example: 1),
+                                            new OA\Property(property: "taille", type: "string", example: "90cm")
+                                        ]
+                                    )
+                                ),
+                                new OA\Property(property: "photoPagne", type: "string", format: "binary", description: "Nouvelle photo du pagne"),
+                                new OA\Property(property: "photoModele", type: "string", format: "binary", description: "Nouvelle photo du modèle")
+                            ]
+                        )
+                    )
+                ]
+            )
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Facture mise à jour avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "id", type: "integer", example: 1),
+                new OA\Property(property: "reference", type: "string", example: "FACT-2025-001"),
+                new OA\Property(property: "montantTotal", type: "number", example: 55000),
+                new OA\Property(property: "updatedAt", type: "string", format: "date-time")
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: "Données invalides")]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 404, description: "Facture non trouvée")]
+    #[OA\Response(response: 500, description: "Erreur lors de la mise à jour")]
     public function update(
         Request $request,
         Facture $facture,
@@ -427,11 +636,11 @@ class ApiFactureController extends ApiInterface
         CategorieMesureRepository $categorieMesureRepository,
         Utils $utils
     ): Response {
-        try {
-            if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
+        try {
             $data = json_decode($request->getContent(), true);
             $uploadedFiles = $request->files->get('mesures');
 
@@ -441,6 +650,7 @@ class ApiFactureController extends ApiInterface
                 return $this->response('[]');
             }
 
+            // Mise à jour des informations de base
             if (isset($data['clientId'])) {
                 $facture->setClient($clientRepository->find($data['clientId']));
             }
@@ -457,12 +667,14 @@ class ApiFactureController extends ApiInterface
             if (isset($data['mesures']) && is_array($data['mesures'])) {
                 $mesureIds = array_filter(array_column($data['mesures'], 'id'));
 
+                // Suppression des mesures non incluses
                 foreach ($facture->getMesures() as $existingMesure) {
                     if (!in_array($existingMesure->getId(), $mesureIds)) {
                         $facture->removeMesure($existingMesure);
                     }
                 }
 
+                // Mise à jour ou ajout de mesures
                 foreach ($data['mesures'] as $index => $mesureData) {
                     if (isset($mesureData['id'])) {
                         $mesure = $facture->getMesures()->filter(fn($m) => $m->getId() == $mesureData['id'])->first();
@@ -492,8 +704,9 @@ class ApiFactureController extends ApiInterface
                                 }
                             }
                         }
-                        if (isset($mesureData['ligneMesures']) && is_array($mesureData['ligneMesures'])) {
 
+                        // Gestion des lignes de mesures
+                        if (isset($mesureData['ligneMesures']) && is_array($mesureData['ligneMesures'])) {
                             $ligneIds = array_filter(array_column($mesureData['ligneMesures'], 'id'));
 
                             foreach ($mesure->getLigneMesures() as $existingLigne) {
@@ -528,26 +741,44 @@ class ApiFactureController extends ApiInterface
             $factureRepository->add($facture, true);
             return $this->responseData($facture, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage($exception->getMessage());
+            $this->setMessage("Erreur lors de la mise à jour de la facture: " . $exception->getMessage());
             $this->setStatusCode(500);
             return $this->response('[]');
         }
     }
 
-    #[Route('/delete/{id}',  methods: ['DELETE'])]
     /**
-     * permet de supprimer un(e) facture.
+     * Supprime une facture
      */
+    #[Route('/delete/{id}', methods: ['DELETE'])]
+    #[OA\Delete(
+        path: "/api/facture/delete/{id}",
+        summary: "Supprimer une facture",
+        description: "Permet de supprimer définitivement une facture par son identifiant, incluant toutes ses mesures, lignes de mesures et paiements associés. Nécessite un abonnement actif.",
+        tags: ['facture']
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: "Identifiant unique de la facture à supprimer",
+        schema: new OA\Schema(type: 'integer', example: 1)
+    )]
     #[OA\Response(
         response: 200,
-        description: 'permet de supprimer un(e) facture',
+        description: "Facture supprimée avec succès",
         content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new AttributeModel(type: Facture::class, groups: ['full']))
+            type: "object",
+            properties: [
+                new OA\Property(property: "message", type: "string", example: "Operation effectuées avec succès"),
+                new OA\Property(property: "deleted", type: "boolean", example: true)
+            ]
         )
     )]
-    #[OA\Tag(name: 'facture')]
-    //#[Security(name: 'Bearer')]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 404, description: "Facture non trouvée")]
+    #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
     public function delete(Request $request, Facture $facture, FactureRepository $villeRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
@@ -555,44 +786,64 @@ class ApiFactureController extends ApiInterface
         }
 
         try {
-
             if ($facture != null) {
-
                 $villeRepository->remove($facture, true);
-
-                // On retourne la confirmation
-                $this->setMessage("Operation effectuées avec success");
+                $this->setMessage("Operation effectuées avec succès");
                 $response = $this->response($facture);
             } else {
                 $this->setMessage("Cette ressource est inexistante");
-                $this->setStatusCode(300);
+                $this->setStatusCode(404);
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la suppression de la facture");
             $response = $this->response('[]');
         }
         return $response;
     }
 
-    #[Route('/delete/all',  methods: ['DELETE'])]
     /**
-     * Permet de supprimer plusieurs facture.
+     * Supprime plusieurs factures en masse
      */
-     #[OA\RequestBody(
+    #[Route('/delete/all', methods: ['DELETE'])]
+    #[OA\Delete(
+        path: "/api/facture/delete/all",
+        summary: "Supprimer plusieurs factures",
+        description: "Permet de supprimer plusieurs factures en une seule opération en fournissant un tableau d'identifiants. Toutes les mesures et paiements associés seront également supprimés. Nécessite un abonnement actif.",
+        tags: ['facture']
+    )]
+    #[OA\RequestBody(
         required: true,
-        description: 'Tableau d’identifiants à supprimer',
+        description: "Tableau des identifiants des factures à supprimer",
         content: new OA\JsonContent(
+            type: "object",
+            required: ["ids"],
             properties: [
                 new OA\Property(
                     property: 'ids',
                     type: 'array',
-                    items: new OA\Items(type: 'integer', example: 1)
+                    description: "Liste des identifiants des factures à supprimer",
+                    items: new OA\Items(type: 'integer', example: 1),
+                    example: [1, 2, 3, 5, 8]
                 )
             ]
         )
     )]
-    #[OA\Tag(name: 'facture')]
+    #[OA\Response(
+        response: 200,
+        description: "Factures supprimées avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "message", type: "string", example: "Operation effectuées avec succès"),
+                new OA\Property(property: "deletedCount", type: "integer", example: 5, description: "Nombre de factures supprimées")
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: "Données invalides")]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
     public function deleteAll(Request $request, FactureRepository $villeRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
@@ -600,7 +851,7 @@ class ApiFactureController extends ApiInterface
         }
 
         try {
-            $data = json_decode($request->getContent());
+            $data = json_decode($request->getContent(), true);
 
             foreach ($data['ids'] as $id) {
                 $facture = $villeRepository->find($id);
@@ -609,10 +860,10 @@ class ApiFactureController extends ApiInterface
                     $villeRepository->remove($facture);
                 }
             }
-            $this->setMessage("Operation effectuées avec success");
+            $this->setMessage("Operation effectuées avec succès");
             $response = $this->response('[]');
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la suppression des factures");
             $response = $this->response('[]');
         }
         return $response;

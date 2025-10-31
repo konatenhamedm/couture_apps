@@ -1,6 +1,6 @@
 <?php
 
-namespace  App\Controller\Apis;
+namespace App\Controller\Apis;
 
 use App\Controller\Apis\Config\ApiInterface;
 use App\DTO\PaysDTO;
@@ -12,149 +12,239 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use OpenApi\Attributes as OA;
 use Nelmio\ApiDocBundle\Attribute\Model as Model;
-
 use Nelmio\ApiDocBundle\Annotation\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
+/**
+ * Contrôleur pour la gestion des pays
+ * Permet de gérer les pays avec leurs indicatifs téléphoniques et leurs opérateurs associés
+ */
 #[Route('/api/pays')]
+#[OA\Tag(name: 'pays', description: 'Gestion des pays avec indicatifs téléphoniques et opérateurs mobiles')]
 class ApiPaysController extends ApiInterface
 {
-
-
-
-    #[Route('/', methods: ['GET'])]
     /**
-     * Retourne la liste des pays.
-     * 
+     * Liste tous les pays du système
      */
+    #[Route('/', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/pays/",
+        summary: "Lister tous les pays",
+        description: "Retourne la liste paginée de tous les pays disponibles dans le système, incluant leurs codes ISO, indicatifs téléphoniques et opérateurs associés.",
+        tags: ['pays']
+    )]
     #[OA\Response(
         response: 200,
-        description: 'Returns the rewards of an user',
+        description: "Liste des pays récupérée avec succès",
         content: new OA\JsonContent(
             type: 'array',
-            items: new OA\Items(ref: new Model(type: Pays::class, groups: ['full']))
+            items: new OA\Items(
+                type: "object",
+                properties: [
+                    new OA\Property(property: "id", type: "integer", example: 1, description: "Identifiant unique du pays"),
+                    new OA\Property(property: "libelle", type: "string", example: "Côte d'Ivoire", description: "Nom complet du pays"),
+                    new OA\Property(property: "code", type: "string", example: "CI", description: "Code ISO du pays (2 lettres)"),
+                    new OA\Property(property: "indicatif", type: "string", example: "+225", description: "Indicatif téléphonique international"),
+                    new OA\Property(property: "actif", type: "boolean", example: true, description: "Statut actif/inactif du pays"),
+                    new OA\Property(property: "operateurs", type: "array", description: "Liste des opérateurs téléphoniques du pays",
+                        items: new OA\Items(
+                            type: "object",
+                            properties: [
+                                new OA\Property(property: "id", type: "integer", example: 1),
+                                new OA\Property(property: "libelle", type: "string", example: "Orange CI"),
+                                new OA\Property(property: "code", type: "string", example: "ORANGE_CI")
+                            ]
+                        )
+                    ),
+                    new OA\Property(property: "createdAt", type: "string", format: "date-time", example: "2025-01-15T10:30:00+00:00")
+                ]
+            )
         )
     )]
-    #[OA\Tag(name: 'pays')]
+    #[OA\Response(response: 500, description: "Erreur serveur lors de la récupération")]
     public function index(PaysRepository $paysRepository): Response
     {
         try {
-
             $pays = $this->paginationService->paginate($paysRepository->findAll());
-
-          
-
-            $response =  $this->responseData($pays, 'group1', ['Content-Type' => 'application/json']);
+            $response = $this->responseData($pays, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la récupération des pays");
             $response = $this->response('[]');
         }
 
-        // On envoie la réponse
         return $response;
     }
-    #[Route('/actif', methods: ['GET'])]
+
     /**
-     * Retourne la liste des pays actif.
-     * 
+     * Liste uniquement les pays actifs
      */
+    #[Route('/actif', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/pays/actif",
+        summary: "Lister les pays actifs",
+        description: "Retourne la liste paginée uniquement des pays actifs dans le système. Utile pour afficher les pays disponibles dans les formulaires de sélection.",
+        tags: ['pays']
+    )]
     #[OA\Response(
         response: 200,
-        description: 'Returns the rewards of an user',
+        description: "Liste des pays actifs récupérée avec succès",
         content: new OA\JsonContent(
             type: 'array',
-            items: new OA\Items(ref: new Model(type: Pays::class, groups: ['full']))
+            items: new OA\Items(
+                type: "object",
+                properties: [
+                    new OA\Property(property: "id", type: "integer", example: 1),
+                    new OA\Property(property: "libelle", type: "string", example: "Côte d'Ivoire"),
+                    new OA\Property(property: "code", type: "string", example: "CI"),
+                    new OA\Property(property: "indicatif", type: "string", example: "+225"),
+                    new OA\Property(property: "actif", type: "boolean", example: true, description: "Toujours true dans cet endpoint"),
+                    new OA\Property(property: "operateurs", type: "array", description: "Opérateurs téléphoniques disponibles", items: new OA\Items(type: "object"))
+                ]
+            )
         )
     )]
-    #[OA\Tag(name: 'pays')]
+    #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
     public function indexActif(PaysRepository $paysRepository): Response
     {
         try {
+            $pays = $this->paginationService->paginate($paysRepository->findBy(
+                ['actif' => true],
+                ['libelle' => 'ASC']
+            ));
 
-            $pays = $this->paginationService->paginate($paysRepository->findBy(['actif' => true]));
-
-          
-
-            $response =  $this->responseData($pays, 'group1', ['Content-Type' => 'application/json']);
+            $response = $this->responseData($pays, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la récupération des pays actifs");
             $response = $this->response('[]');
         }
 
-        // On envoie la réponse
         return $response;
     }
 
-
-    #[Route('/get/one/{id}', methods: ['GET'])]
     /**
-     * Affiche un(e) pays en offrant un identifiant.
+     * Récupère les détails d'un pays spécifique
      */
-    #[OA\Response(
-        response: 200,
-        description: 'Affiche un(e) pays en offrant un identifiant',
-        content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new Model(type: Pays::class, groups: ['full']))
-        )
+    #[Route('/get/one/{id}', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/pays/get/one/{id}",
+        summary: "Détails d'un pays",
+        description: "Affiche les informations détaillées d'un pays spécifique, incluant son code ISO, son indicatif téléphonique et la liste de tous ses opérateurs mobiles.",
+        tags: ['pays']
     )]
     #[OA\Parameter(
-        name: 'code',
-        in: 'query',
-        schema: new OA\Schema(type: 'string')
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: "Identifiant unique du pays",
+        schema: new OA\Schema(type: 'integer', example: 1)
     )]
-    #[OA\Tag(name: 'pays')]
-    //#[Security(name: 'Bearer')]
-    public function getOne(?Pays $pays)
+    #[OA\Response(
+        response: 200,
+        description: "Pays trouvé avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "id", type: "integer", example: 1),
+                new OA\Property(property: "libelle", type: "string", example: "Côte d'Ivoire"),
+                new OA\Property(property: "code", type: "string", example: "CI", description: "Code ISO 3166-1 alpha-2"),
+                new OA\Property(property: "indicatif", type: "string", example: "+225", description: "Indicatif téléphonique avec le signe +"),
+                new OA\Property(property: "actif", type: "boolean", example: true),
+                new OA\Property(property: "operateurs", type: "array", description: "Liste complète des opérateurs téléphoniques du pays",
+                    items: new OA\Items(
+                        type: "object",
+                        properties: [
+                            new OA\Property(property: "id", type: "integer", example: 1),
+                            new OA\Property(property: "libelle", type: "string", example: "Orange Côte d'Ivoire"),
+                            new OA\Property(property: "code", type: "string", example: "ORANGE_CI"),
+                            new OA\Property(property: "photo", type: "string", nullable: true, example: "/uploads/operateurs/orange_logo.png"),
+                            new OA\Property(property: "actif", type: "boolean", example: true)
+                        ]
+                    )
+                ),
+                new OA\Property(property: "createdAt", type: "string", format: "date-time"),
+                new OA\Property(property: "updatedAt", type: "string", format: "date-time")
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: "Pays non trouvé")]
+    public function getOne(?Pays $pays): Response
     {
         try {
             if ($pays) {
                 $response = $this->response($pays);
             } else {
                 $this->setMessage('Cette ressource est inexistante');
-                $this->setStatusCode(300);
-                $response = $this->response($pays);
+                $this->setStatusCode(404);
+                $response = $this->response(null);
             }
         } catch (\Exception $exception) {
             $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
 
-
         return $response;
     }
 
-
-    #[Route('/create',  methods: ['POST'])]
     /**
-     * Permet de créer un(e) pays.
+     * Crée un nouveau pays
      */
+    #[Route('/create', methods: ['POST'])]
     #[OA\Post(
-        summary: "Permet de créer un(e) pays",
-        description: "Permet de créer un(e) pays.",
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: "libelle", type: "string"),
-                    new OA\Property(property: "code", type: "string"),
-                    new OA\Property(property: "indicatif", type: "string"),
-                  
-
-                ],
-                type: "object"
-            )
-        ),
-        responses: [
-            new OA\Response(response: 401, description: "Invalid credentials")
-        ]
+        path: "/api/pays/create",
+        summary: "Créer un nouveau pays",
+        description: "Permet de créer un nouveau pays avec son nom, son code ISO et son indicatif téléphonique. Le pays sera créé avec le statut actif par défaut.",
+        tags: ['pays']
     )]
-    #[OA\Tag(name: 'pays')]
+    #[OA\RequestBody(
+        required: true,
+        description: "Données du pays à créer",
+        content: new OA\JsonContent(
+            type: "object",
+            required: ["libelle", "code", "indicatif"],
+            properties: [
+                new OA\Property(
+                    property: "libelle",
+                    type: "string",
+                    example: "Sénégal",
+                    description: "Nom complet du pays (obligatoire)"
+                ),
+                new OA\Property(
+                    property: "code",
+                    type: "string",
+                    example: "SN",
+                    description: "Code ISO 3166-1 alpha-2 du pays (obligatoire, 2 lettres majuscules)"
+                ),
+                new OA\Property(
+                    property: "indicatif",
+                    type: "string",
+                    example: "+221",
+                    description: "Indicatif téléphonique international avec le signe + (obligatoire)"
+                )
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 201,
+        description: "Pays créé avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "id", type: "integer", example: 15),
+                new OA\Property(property: "libelle", type: "string", example: "Sénégal"),
+                new OA\Property(property: "code", type: "string", example: "SN"),
+                new OA\Property(property: "indicatif", type: "string", example: "+221"),
+                new OA\Property(property: "actif", type: "boolean", example: true),
+                new OA\Property(property: "createdAt", type: "string", format: "date-time")
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: "Données invalides ou code pays déjà existant")]
+    #[OA\Response(response: 401, description: "Non authentifié")]
     public function create(Request $request, PaysRepository $paysRepository): Response
     {
-
         $data = json_decode($request->getContent(), true);
+
         $pays = new Pays();
         $pays->setLibelle($data['libelle']);
         $pays->setCode($data['code']);
@@ -162,149 +252,239 @@ class ApiPaysController extends ApiInterface
         $pays->setIndicatif($data['indicatif']);
         $pays->setCreatedBy($this->getUser());
         $pays->setUpdatedBy($this->getUser());
+        $pays->setCreatedAtValue(new \DateTime());
+        $pays->setUpdatedAt(new \DateTime());
+
         $errorResponse = $this->errorResponse($pays);
         if ($errorResponse !== null) {
-            return $errorResponse; 
+            return $errorResponse;
         } else {
-
             $paysRepository->add($pays, true);
         }
 
         return $this->responseData($pays, 'group1', ['Content-Type' => 'application/json']);
     }
 
-
+    /**
+     * Met à jour un pays existant
+     */
     #[Route('/update/{id}', methods: ['PUT', 'POST'])]
-    #[OA\Post(
-        summary: "Creation de pays",
-        description: "Permet de créer un pays.",
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: "libelle", type: "string"),
-                    new OA\Property(property: "code", type: "string"),
-                    new OA\Property(property: "indicatif", type: "string"),
-                    new OA\Property(property: "actif", type: "boolean"),
-
-                ],
-                type: "object"
-            )
-        ),
-        responses: [
-            new OA\Response(response: 401, description: "Invalid credentials")
-        ]
+    #[OA\Put(
+        path: "/api/pays/update/{id}",
+        summary: "Mettre à jour un pays",
+        description: "Permet de mettre à jour les informations d'un pays, incluant son nom, son code ISO, son indicatif téléphonique et son statut actif/inactif.",
+        tags: ['pays']
     )]
-    #[OA\Tag(name: 'pays')]
-    public function update(Request $request, Pays $pays, PaysRepository $paysRepository): Response
-    {
-        try {
-            $data = json_decode($request->getContent());
-            if ($pays != null) {
-
-                $pays->setLibelle($data->libelle);
-                $pays->setCode($data->code);
-                $pays->setActif($data->actif);
-                $pays->setIndicatif($data->indicatif);
-                $pays->setUpdatedBy($this->getUser());
-                $pays->setUpdatedAt(new \DateTime());
-                $errorResponse = $this->errorResponse($pays);
-
-                if ($errorResponse !== null) {
-                    return $errorResponse; 
-                } else {
-                    $paysRepository->add($pays, true);
-                }
-
-
-
-                // On retourne la confirmation
-                $response = $this->responseData($pays, 'group1', ['Content-Type' => 'application/json']);
-            } else {
-                $this->setMessage("Cette ressource est inexsitante");
-                $this->setStatusCode(300);
-                $response = $this->response('[]');
-            }
-        } catch (\Exception $exception) {
-            $this->setMessage("");
-            $response = $this->response('[]');
-        }
-        return $response;
-    }
-
-    //const TAB_ID = 'parametre-tabs';
-
-    #[Route('/delete/{id}',  methods: ['DELETE'])]
-    /**
-     * permet de supprimer un(e) pays.
-     */
-    #[OA\Response(
-        response: 200,
-        description: 'permet de supprimer un(e) pays',
-        content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new Model(type: Pays::class, groups: ['full']))
-        )
-    )]
-    #[OA\Tag(name: 'pays')]
-    //#[Security(name: 'Bearer')]
-    public function delete(Request $request, Pays $pays, PaysRepository $villeRepository): Response
-    {
-        try {
-
-            if ($pays != null) {
-
-                $villeRepository->remove($pays, true);
-
-                // On retourne la confirmation
-                $this->setMessage("Operation effectuées avec success");
-                $response = $this->response($pays);
-            } else {
-                $this->setMessage("Cette ressource est inexistante");
-                $this->setStatusCode(300);
-                $response = $this->response('[]');
-            }
-        } catch (\Exception $exception) {
-            $this->setMessage("");
-            $response = $this->response('[]');
-        }
-        return $response;
-    }
-
-    #[Route('/delete/all',  methods: ['DELETE'])]
-    /**
-     * Permet de supprimer plusieurs pays.
-     */
-      #[OA\RequestBody(
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
         required: true,
-        description: 'Tableau d’identifiants à supprimer',
+        description: "Identifiant unique du pays à mettre à jour",
+        schema: new OA\Schema(type: 'integer', example: 1)
+    )]
+    #[OA\RequestBody(
+        required: true,
+        description: "Nouvelles données du pays",
         content: new OA\JsonContent(
+            type: "object",
+            required: ["libelle", "code", "indicatif", "actif"],
             properties: [
                 new OA\Property(
-                    property: 'ids',
-                    type: 'array',
-                    items: new OA\Items(type: 'integer', example: 1)
+                    property: "libelle",
+                    type: "string",
+                    example: "République de Côte d'Ivoire",
+                    description: "Nouveau nom complet du pays (obligatoire)"
+                ),
+                new OA\Property(
+                    property: "code",
+                    type: "string",
+                    example: "CI",
+                    description: "Code ISO du pays (obligatoire)"
+                ),
+                new OA\Property(
+                    property: "indicatif",
+                    type: "string",
+                    example: "+225",
+                    description: "Indicatif téléphonique (obligatoire)"
+                ),
+                new OA\Property(
+                    property: "actif",
+                    type: "boolean",
+                    example: true,
+                    description: "Statut actif (true) ou inactif (false)"
                 )
             ]
         )
     )]
-    #[OA\Tag(name: 'pays')]
+    #[OA\Response(
+        response: 200,
+        description: "Pays mis à jour avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "id", type: "integer", example: 1),
+                new OA\Property(property: "libelle", type: "string", example: "République de Côte d'Ivoire"),
+                new OA\Property(property: "code", type: "string", example: "CI"),
+                new OA\Property(property: "indicatif", type: "string", example: "+225"),
+                new OA\Property(property: "actif", type: "boolean", example: true),
+                new OA\Property(property: "updatedAt", type: "string", format: "date-time")
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: "Données invalides")]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 404, description: "Pays non trouvé")]
+    public function update(Request $request, Pays $pays, PaysRepository $paysRepository): Response
+    {
+        try {
+            $data = json_decode($request->getContent(), true);
+
+            if ($pays != null) {
+                if (isset($data['libelle'])) {
+                    $pays->setLibelle($data['libelle']);
+                }
+                if (isset($data['code'])) {
+                    $pays->setCode($data['code']);
+                }
+                if (isset($data['actif']) !== null) {
+                    $pays->setActif($data['actif']);
+                }
+                if (isset($data['indicatif'])) {
+                    $pays->setIndicatif($data['indicatif']);
+                }
+
+                $pays->setUpdatedBy($this->getUser());
+                $pays->setUpdatedAt(new \DateTime());
+
+                $errorResponse = $this->errorResponse($pays);
+                if ($errorResponse !== null) {
+                    return $errorResponse;
+                } else {
+                    $paysRepository->add($pays, true);
+                }
+
+                $response = $this->responseData($pays, 'group1', ['Content-Type' => 'application/json']);
+            } else {
+                $this->setMessage("Cette ressource est inexistante");
+                $this->setStatusCode(404);
+                $response = $this->response('[]');
+            }
+        } catch (\Exception $exception) {
+            $this->setMessage("Erreur lors de la mise à jour du pays");
+            $response = $this->response('[]');
+        }
+        return $response;
+    }
+
+    /**
+     * Supprime un pays
+     */
+    #[Route('/delete/{id}', methods: ['DELETE'])]
+    #[OA\Delete(
+        path: "/api/pays/delete/{id}",
+        summary: "Supprimer un pays",
+        description: "Permet de supprimer définitivement un pays par son identifiant. Attention : cette action supprime également tous les opérateurs téléphoniques associés à ce pays.",
+        tags: ['pays']
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: "Identifiant unique du pays à supprimer",
+        schema: new OA\Schema(type: 'integer', example: 1)
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Pays supprimé avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "message", type: "string", example: "Operation effectuées avec succès"),
+                new OA\Property(property: "deleted", type: "boolean", example: true)
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 404, description: "Pays non trouvé")]
+    #[OA\Response(response: 500, description: "Erreur lors de la suppression (peut-être des dépendances)")]
+    public function delete(Request $request, Pays $pays, PaysRepository $villeRepository): Response
+    {
+        try {
+            if ($pays != null) {
+                $villeRepository->remove($pays, true);
+                $this->setMessage("Operation effectuées avec succès");
+                $response = $this->response($pays);
+            } else {
+                $this->setMessage("Cette ressource est inexistante");
+                $this->setStatusCode(404);
+                $response = $this->response('[]');
+            }
+        } catch (\Exception $exception) {
+            $this->setMessage("Erreur lors de la suppression du pays");
+            $response = $this->response('[]');
+        }
+        return $response;
+    }
+
+    /**
+     * Supprime plusieurs pays en masse
+     */
+    #[Route('/delete/all', methods: ['DELETE'])]
+    #[OA\Delete(
+        path: "/api/pays/delete/all",
+        summary: "Supprimer plusieurs pays",
+        description: "Permet de supprimer plusieurs pays en une seule opération en fournissant un tableau d'identifiants. Attention : tous les opérateurs téléphoniques associés seront également supprimés.",
+        tags: ['pays']
+    )]
+    #[OA\RequestBody(
+        required: true,
+        description: "Tableau des identifiants des pays à supprimer",
+        content: new OA\JsonContent(
+            type: "object",
+            required: ["ids"],
+            properties: [
+                new OA\Property(
+                    property: 'ids',
+                    type: 'array',
+                    description: "Liste des identifiants des pays à supprimer",
+                    items: new OA\Items(type: 'integer', example: 1),
+                    example: [1, 2, 3, 5, 8]
+                )
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Pays supprimés avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "message", type: "string", example: "Operation effectuées avec succès"),
+                new OA\Property(property: "deletedCount", type: "integer", example: 5, description: "Nombre de pays supprimés")
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: "Données invalides")]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
     public function deleteAll(Request $request, PaysRepository $villeRepository): Response
     {
         try {
-            $data = json_decode($request->getContent());
+            $data = json_decode($request->getContent(), true);
 
+            $count = 0;
             foreach ($data['ids'] as $id) {
                 $pays = $villeRepository->find($id);
 
                 if ($pays != null) {
                     $villeRepository->remove($pays);
+                    $count++;
                 }
             }
-            $this->setMessage("Operation effectuées avec success");
-            $response = $this->response('[]');
+            $this->setMessage("Operation effectuées avec succès");
+            $response = $this->json(['message' => 'Operation effectuées avec succès', 'deletedCount' => $count]);
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la suppression des pays");
             $response = $this->response('[]');
         }
         return $response;

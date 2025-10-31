@@ -1,6 +1,6 @@
 <?php
 
-namespace  App\Controller\Apis;
+namespace App\Controller\Apis;
 
 use App\Controller\Apis\Config\ApiInterface;
 use App\DTO\ModeleBoutiqueDTO;
@@ -20,98 +20,163 @@ use Nelmio\ApiDocBundle\Annotation\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
+/**
+ * Contrôleur pour la gestion des modèles de boutique
+ * Gère l'association entre les modèles de vêtements et les boutiques avec prix et quantités spécifiques
+ */
 #[Route('/api/modeleBoutique')]
+#[OA\Tag(name: 'modeleBoutique', description: 'Gestion des modèles de vêtements dans les boutiques (prix et stock par boutique)')]
 class ApiModeleBoutiqueController extends ApiInterface
 {
-
-
-
-    #[Route('/', methods: ['GET'])]
     /**
-     * Retourne la liste des modeleBoutiques.
-     * 
+     * Liste tous les modèles de boutique du système
      */
+    #[Route('/', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/modeleBoutique/",
+        summary: "Lister tous les modèles de boutique",
+        description: "Retourne la liste paginée de tous les modèles de boutique disponibles dans le système, incluant les prix et quantités spécifiques à chaque boutique.",
+        tags: ['modeleBoutique']
+    )]
     #[OA\Response(
         response: 200,
-        description: 'Returns the rewards of an user',
+        description: "Liste des modèles de boutique récupérée avec succès",
         content: new OA\JsonContent(
             type: 'array',
-            items: new OA\Items(ref: new Model(type: ModeleBoutique::class, groups: ['full']))
+            items: new OA\Items(
+                type: "object",
+                properties: [
+                    new OA\Property(property: "id", type: "integer", example: 1, description: "Identifiant unique du modèle de boutique"),
+                    new OA\Property(property: "prix", type: "number", format: "float", example: 15000, description: "Prix de vente du modèle dans cette boutique"),
+                    new OA\Property(property: "quantite", type: "integer", example: 50, description: "Quantité en stock dans cette boutique"),
+                    new OA\Property(property: "modele", type: "object", description: "Modèle de vêtement associé",
+                        properties: [
+                            new OA\Property(property: "id", type: "integer", example: 3),
+                            new OA\Property(property: "libelle", type: "string", example: "Robe Wax Élégante"),
+                            new OA\Property(property: "reference", type: "string", example: "MOD-2025-003"),
+                            new OA\Property(property: "quantiteGlobale", type: "integer", example: 150, description: "Stock total tous établissements confondus")
+                        ]
+                    ),
+                    new OA\Property(property: "boutique", type: "object", description: "Boutique concernée",
+                        properties: [
+                            new OA\Property(property: "id", type: "integer", example: 1),
+                            new OA\Property(property: "libelle", type: "string", example: "Boutique Centre-Ville")
+                        ]
+                    ),
+                    new OA\Property(property: "createdAt", type: "string", format: "date-time")
+                ]
+            )
         )
     )]
-    #[OA\Tag(name: 'modeleBoutique')]
-    // #[Security(name: 'Bearer')]
+    #[OA\Response(response: 500, description: "Erreur serveur lors de la récupération")]
     public function index(ModeleBoutiqueRepository $modeleBoutiqueRepository): Response
     {
         try {
-
-            $modeleBoutiques =  $this->paginationService->paginate($modeleBoutiqueRepository->findAll());
-
-
-
-            $response =  $this->responseData($modeleBoutiques, 'group1', ['Content-Type' => 'application/json']);
+            $modeleBoutiques = $this->paginationService->paginate($modeleBoutiqueRepository->findAll());
+            $response = $this->responseData($modeleBoutiques, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la récupération des modèles de boutique");
             $response = $this->response('[]');
         }
 
-        // On envoie la réponse
         return $response;
     }
-    #[Route('/modele/by/boutique/{id}', methods: ['GET'])]
+
     /**
-     * Retourne la liste des modeles d'une boutique.
-     * 
+     * Liste tous les modèles disponibles dans une boutique spécifique
      */
+    #[Route('/modele/by/boutique/{id}', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/modeleBoutique/modele/by/boutique/{id}",
+        summary: "Lister les modèles d'une boutique",
+        description: "Retourne la liste paginée de tous les modèles de vêtements disponibles dans une boutique spécifique avec leurs prix et quantités. Nécessite un abonnement actif.",
+        tags: ['modeleBoutique']
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: "Identifiant unique de la boutique",
+        schema: new OA\Schema(type: 'integer', example: 1)
+    )]
     #[OA\Response(
         response: 200,
-        description: 'Returns the rewards of an user',
+        description: "Liste des modèles de la boutique récupérée avec succès",
         content: new OA\JsonContent(
             type: 'array',
-            items: new OA\Items(ref: new Model(type: ModeleBoutique::class, groups: ['full']))
+            items: new OA\Items(
+                type: "object",
+                properties: [
+                    new OA\Property(property: "id", type: "integer", example: 1),
+                    new OA\Property(property: "prix", type: "number", format: "float", example: 15000),
+                    new OA\Property(property: "quantite", type: "integer", example: 50),
+                    new OA\Property(property: "modele", type: "object", description: "Détails du modèle"),
+                    new OA\Property(property: "boutique", type: "object", description: "Boutique")
+                ]
+            )
         )
     )]
-    #[OA\Tag(name: 'modele')]
-    // #[Security(name: 'Bearer')]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 404, description: "Boutique non trouvée")]
     public function indexByBoutique(ModeleRepository $modeleRepository, Boutique $boutique, BoutiqueRepository $boutiqueRepository): Response
     {
-        try {
-             if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
+        try {
             $modeles = $this->paginationService->paginate($modeleRepository->findBy(
                 ['boutique' => $boutique->getId()],
-                ['id' => 'ASC']
+                ['id' => 'DESC']
             ));
 
-            $response =  $this->responseData($modeles, 'group1', ['Content-Type' => 'application/json']);
+            $response = $this->responseData($modeles, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la récupération des modèles de la boutique");
             $response = $this->response('[]');
         }
 
-        // On envoie la réponse
         return $response;
     }
 
-
-    #[Route('/entreprise/{boutique}', methods: ['GET'])]
     /**
-     * Retourne la liste des ModeleBoutiques d'une entreprise.
-     * 
+     * Liste les modèles de boutique selon les droits de l'utilisateur
      */
+    #[Route('/entreprise/{boutique}', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/modeleBoutique/entreprise/{boutique}",
+        summary: "Lister les modèles selon les droits utilisateur",
+        description: "Retourne la liste des modèles de boutique filtrée selon le type d'utilisateur : Super-admin peut spécifier une boutique, autres utilisateurs voient uniquement leur boutique. Nécessite un abonnement actif.",
+        tags: ['modeleBoutique']
+    )]
+    #[OA\Parameter(
+        name: 'boutique',
+        in: 'path',
+        required: true,
+        description: "Identifiant de la boutique (utilisé uniquement pour les super-admins)",
+        schema: new OA\Schema(type: 'integer', example: 1)
+    )]
     #[OA\Response(
         response: 200,
-        description: 'Returns the rewards of an user',
+        description: "Liste des modèles de boutique récupérée avec succès",
         content: new OA\JsonContent(
             type: 'array',
-            items: new OA\Items(ref: new Model(type: ModeleBoutique::class, groups: ['full']))
+            items: new OA\Items(
+                type: "object",
+                properties: [
+                    new OA\Property(property: "id", type: "integer", example: 1),
+                    new OA\Property(property: "prix", type: "number", format: "float", example: 15000),
+                    new OA\Property(property: "quantite", type: "integer", example: 50),
+                    new OA\Property(property: "modele", type: "object"),
+                    new OA\Property(property: "boutique", type: "object")
+                ]
+            )
         )
     )]
-    #[OA\Tag(name: 'modeleBoutique')]
-    // #[Security(name: 'Bearer')]
-    public function indexAll(ModeleBoutiqueRepository $modeleBoutiqueRepository, TypeUserRepository $typeUserRepository,$boutique): Response
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    public function indexAll(ModeleBoutiqueRepository $modeleBoutiqueRepository, TypeUserRepository $typeUserRepository, $boutique): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
@@ -119,50 +184,71 @@ class ApiModeleBoutiqueController extends ApiInterface
 
         try {
             if ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'SADM'])) {
-
                 $modeleBoutiques = $this->paginationService->paginate($modeleBoutiqueRepository->findBy(
                     ['boutique' => $boutique],
-                    ['id' => 'ASC']
+                    ['id' => 'DESC']
                 ));
             } else {
                 $modeleBoutiques = $this->paginationService->paginate($modeleBoutiqueRepository->findBy(
                     ['boutique' => $this->getUser()->getBoutique()],
-                    ['id' => 'ASC']
+                    ['id' => 'DESC']
                 ));
             }
 
-
-            $response =  $this->responseData($modeleBoutiques, 'group1', ['Content-Type' => 'application/json']);
+            $response = $this->responseData($modeleBoutiques, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la récupération des modèles de boutique");
             $response = $this->response('[]');
         }
 
-        // On envoie la réponse
         return $response;
     }
 
-
-    #[Route('/get/one/{id}', methods: ['GET'])]
     /**
-     * Affiche un(e) modeleBoutique en offrant un identifiant.
+     * Récupère les détails d'un modèle de boutique spécifique
      */
-    #[OA\Response(
-        response: 200,
-        description: 'Affiche un(e) modeleBoutique en offrant un identifiant',
-        content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new Model(type: ModeleBoutique::class, groups: ['full']))
-        )
+    #[Route('/get/one/{id}', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/modeleBoutique/get/one/{id}",
+        summary: "Détails d'un modèle de boutique",
+        description: "Affiche les informations détaillées d'un modèle de boutique spécifique, incluant le prix, la quantité en stock et les informations du modèle parent. Nécessite un abonnement actif.",
+        tags: ['modeleBoutique']
     )]
     #[OA\Parameter(
-        name: 'code',
-        in: 'query',
-        schema: new OA\Schema(type: 'string')
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: "Identifiant unique du modèle de boutique",
+        schema: new OA\Schema(type: 'integer', example: 1)
     )]
-    #[OA\Tag(name: 'modeleBoutique')]
-    //#[Security(name: 'Bearer')]
-    public function getOne(?ModeleBoutique $modeleBoutique)
+    #[OA\Response(
+        response: 200,
+        description: "Modèle de boutique trouvé avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "id", type: "integer", example: 1),
+                new OA\Property(property: "prix", type: "number", format: "float", example: 15000, description: "Prix de vente dans cette boutique"),
+                new OA\Property(property: "quantite", type: "integer", example: 50, description: "Quantité disponible en stock"),
+                new OA\Property(property: "modele", type: "object", description: "Modèle de vêtement",
+                    properties: [
+                        new OA\Property(property: "id", type: "integer", example: 3),
+                        new OA\Property(property: "libelle", type: "string", example: "Robe Wax Élégante"),
+                        new OA\Property(property: "reference", type: "string", example: "MOD-2025-003"),
+                        new OA\Property(property: "description", type: "string", example: "Belle robe en tissu wax"),
+                        new OA\Property(property: "quantiteGlobale", type: "integer", example: 150)
+                    ]
+                ),
+                new OA\Property(property: "boutique", type: "object", description: "Boutique"),
+                new OA\Property(property: "createdAt", type: "string", format: "date-time"),
+                new OA\Property(property: "updatedAt", type: "string", format: "date-time")
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 404, description: "Modèle de boutique non trouvé")]
+    public function getOne(?ModeleBoutique $modeleBoutique): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
@@ -173,44 +259,80 @@ class ApiModeleBoutiqueController extends ApiInterface
                 $response = $this->response($modeleBoutique);
             } else {
                 $this->setMessage('Cette ressource est inexistante');
-                $this->setStatusCode(300);
-                $response = $this->response($modeleBoutique);
+                $this->setStatusCode(404);
+                $response = $this->response(null);
             }
         } catch (\Exception $exception) {
             $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
 
-
         return $response;
     }
 
-
-    #[Route('/create', methods: ['POST'])]
     /**
-     * Permet de créer un(e) modeleBoutique.
+     * Crée un nouveau modèle de boutique (association modèle-boutique avec prix et quantité)
      */
+    #[Route('/create', methods: ['POST'])]
     #[OA\Post(
-        summary: "Authentification admin",
-        description: "Génère un token JWT pour les administrateurs.",
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: "prix", type: "string"),
-                    new OA\Property(property: "qauntite", type: "string"),
-                    new OA\Property(property: "modele", type: "string"),
-                    new OA\Property(property: "boutique", type: "string"),
-
-                ],
-                type: "object"
-            )
-        ),
-        responses: [
-            new OA\Response(response: 401, description: "Invalid credentials")
-        ]
+        path: "/api/modeleBoutique/create",
+        summary: "Créer un modèle de boutique",
+        description: "Permet d'associer un modèle de vêtement à une boutique avec un prix de vente et une quantité en stock spécifiques. Met automatiquement à jour la quantité globale du modèle. Nécessite un abonnement actif.",
+        tags: ['modeleBoutique']
     )]
-    #[OA\Tag(name: 'modeleBoutique')]
+    #[OA\RequestBody(
+        required: true,
+        description: "Données du modèle de boutique à créer",
+        content: new OA\JsonContent(
+            type: "object",
+            required: ["prix", "quantite", "modele", "boutique"],
+            properties: [
+                new OA\Property(
+                    property: "prix",
+                    type: "number",
+                    format: "float",
+                    example: 15000,
+                    description: "Prix de vente du modèle dans cette boutique en FCFA (obligatoire)"
+                ),
+                new OA\Property(
+                    property: "quantite",
+                    type: "integer",
+                    example: 50,
+                    description: "Quantité initiale en stock dans cette boutique (obligatoire)"
+                ),
+                new OA\Property(
+                    property: "modele",
+                    type: "integer",
+                    example: 3,
+                    description: "ID du modèle de vêtement à associer (obligatoire)"
+                ),
+                new OA\Property(
+                    property: "boutique",
+                    type: "integer",
+                    example: 1,
+                    description: "ID de la boutique concernée (obligatoire)"
+                )
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 201,
+        description: "Modèle de boutique créé avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "id", type: "integer", example: 15),
+                new OA\Property(property: "prix", type: "number", example: 15000),
+                new OA\Property(property: "quantite", type: "integer", example: 50),
+                new OA\Property(property: "modele", type: "object"),
+                new OA\Property(property: "boutique", type: "object"),
+                new OA\Property(property: "createdAt", type: "string", format: "date-time")
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: "Données invalides ou modèle/boutique non trouvé")]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     public function create(Request $request, ModeleRepository $modeleRepository, BoutiqueRepository $boutiqueRepository, ModeleBoutiqueRepository $modeleBoutiqueRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
@@ -220,20 +342,34 @@ class ApiModeleBoutiqueController extends ApiInterface
         $data = json_decode($request->getContent(), true);
 
         $modele = $modeleRepository->find($data['modele']);
+        if (!$modele) {
+            $this->setMessage("Modèle non trouvé avec l'ID: " . $data['modele']);
+            return $this->response('[]', 400);
+        }
+
+        $boutique = $boutiqueRepository->find($data['boutique']);
+        if (!$boutique) {
+            $this->setMessage("Boutique non trouvée avec l'ID: " . $data['boutique']);
+            return $this->response('[]', 400);
+        }
+
         $modeleBoutique = new ModeleBoutique();
         $modeleBoutique->setPrix($data['prix']);
         $modeleBoutique->setQuantite($data['quantite']);
-        $modeleBoutique->setBoutique($boutiqueRepository->find($data['boutique']));
+        $modeleBoutique->setBoutique($boutique);
         $modeleBoutique->setModele($modele);
-
         $modeleBoutique->setCreatedBy($this->getUser());
         $modeleBoutique->setUpdatedBy($this->getUser());
+        $modeleBoutique->setCreatedAtValue(new \DateTime());
+        $modeleBoutique->setUpdatedAt(new \DateTime());
+
         $errorResponse = $this->errorResponse($modeleBoutique);
         if ($errorResponse !== null) {
-            return $errorResponse; 
+            return $errorResponse;
         } else {
-
             $modeleBoutiqueRepository->add($modeleBoutique, true);
+            
+            // Mise à jour de la quantité globale du modèle
             $modele->setQuantiteGlobale($modele->getQuantiteGlobale() + $modeleBoutique->getQuantite());
             $modeleRepository->add($modele, true);
         }
@@ -241,28 +377,68 @@ class ApiModeleBoutiqueController extends ApiInterface
         return $this->responseData($modeleBoutique, 'group1', ['Content-Type' => 'application/json']);
     }
 
+    /**
+     * Met à jour un modèle de boutique existant
+     */
     #[Route('/update/{id}', methods: ['PUT', 'POST'])]
-    #[OA\Post(
-        summary: "Permet de modifier un(e) modeleBoutique.",
-        description: "Permet de modifier un(e) modeleBoutique.",
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: "prix", type: "string"),
-                   /*  new OA\Property(property: "qauntite", type: "string"), */
-                    new OA\Property(property: "modele", type: "string"),
-                    new OA\Property(property: "boutique", type: "string"),
-
-                ],
-                type: "object"
-            )
-        ),
-        responses: [
-            new OA\Response(response: 401, description: "Invalid credentials")
-        ]
+    #[OA\Put(
+        path: "/api/modeleBoutique/update/{id}",
+        summary: "Mettre à jour un modèle de boutique",
+        description: "Permet de mettre à jour les informations d'un modèle de boutique (prix, modèle associé, boutique). Note : La quantité ne peut pas être modifiée directement ici, utilisez les endpoints de gestion de stock. Nécessite un abonnement actif.",
+        tags: ['modeleBoutique']
     )]
-    #[OA\Tag(name: 'modeleBoutique')]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: "Identifiant unique du modèle de boutique à mettre à jour",
+        schema: new OA\Schema(type: 'integer', example: 1)
+    )]
+    #[OA\RequestBody(
+        required: true,
+        description: "Nouvelles données du modèle de boutique",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(
+                    property: "prix",
+                    type: "number",
+                    format: "float",
+                    example: 18000,
+                    description: "Nouveau prix de vente en FCFA"
+                ),
+                new OA\Property(
+                    property: "modele",
+                    type: "integer",
+                    example: 5,
+                    description: "Nouvel ID du modèle à associer"
+                ),
+                new OA\Property(
+                    property: "boutique",
+                    type: "integer",
+                    example: 2,
+                    description: "Nouvel ID de la boutique"
+                )
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Modèle de boutique mis à jour avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "id", type: "integer", example: 1),
+                new OA\Property(property: "prix", type: "number", example: 18000),
+                new OA\Property(property: "quantite", type: "integer", example: 50, description: "Quantité inchangée"),
+                new OA\Property(property: "updatedAt", type: "string", format: "date-time")
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: "Données invalides")]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 404, description: "Modèle de boutique non trouvé")]
     public function update(Request $request, ModeleBoutique $modeleBoutique, ModeleRepository $modeleRepository, BoutiqueRepository $boutiqueRepository, ModeleBoutiqueRepository $modeleBoutiqueRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
@@ -270,54 +446,86 @@ class ApiModeleBoutiqueController extends ApiInterface
         }
 
         try {
-            $data = json_decode($request->getContent());
+            $data = json_decode($request->getContent(), true);
 
             if ($modeleBoutique != null) {
+                if (isset($data['modele'])) {
+                    $modele = $modeleRepository->find($data['modele']);
+                    if (!$modele) {
+                        $this->setMessage("Modèle non trouvé avec l'ID: " . $data['modele']);
+                        return $this->response('[]', 400);
+                    }
+                    $modeleBoutique->setModele($modele);
+                }
 
-                $modele = $modeleRepository->find($data->modele);
-                $modeleBoutique->setPrix($data->prix);
-                /* $modeleBoutique->setQuantite($data->quantite); */
-                $modeleBoutique->setBoutique($boutiqueRepository->find($data->boutique));
-                $modeleBoutique->setModele($modele);
+                if (isset($data['prix'])) {
+                    $modeleBoutique->setPrix($data['prix']);
+                }
+
+                if (isset($data['boutique'])) {
+                    $boutique = $boutiqueRepository->find($data['boutique']);
+                    if (!$boutique) {
+                        $this->setMessage("Boutique non trouvée avec l'ID: " . $data['boutique']);
+                        return $this->response('[]', 400);
+                    }
+                    $modeleBoutique->setBoutique($boutique);
+                }
+
                 $modeleBoutique->setUpdatedBy($this->getUser());
                 $modeleBoutique->setUpdatedAt(new \DateTime());
-                $errorResponse = $this->errorResponse($modeleBoutique);
 
+                $errorResponse = $this->errorResponse($modeleBoutique);
                 if ($errorResponse !== null) {
-                    return $errorResponse; 
+                    return $errorResponse;
                 } else {
                     $modeleBoutiqueRepository->add($modeleBoutique, true);
                 }
-                // On retourne la confirmation
+
                 $response = $this->responseData($modeleBoutique, 'group1', ['Content-Type' => 'application/json']);
             } else {
-                $this->setMessage("Cette ressource est inexsitante");
-                $this->setStatusCode(300);
+                $this->setMessage("Cette ressource est inexistante");
+                $this->setStatusCode(404);
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la mise à jour du modèle de boutique");
             $response = $this->response('[]');
         }
         return $response;
     }
 
-    //const TAB_ID = 'parametre-tabs';
-
-    #[Route('/delete/{id}',  methods: ['DELETE'])]
     /**
-     * permet de supprimer un(e) modeleBoutique.
+     * Supprime un modèle de boutique
      */
+    #[Route('/delete/{id}', methods: ['DELETE'])]
+    #[OA\Delete(
+        path: "/api/modeleBoutique/delete/{id}",
+        summary: "Supprimer un modèle de boutique",
+        description: "Permet de supprimer définitivement l'association entre un modèle et une boutique. Attention : cette action supprime également l'historique de stock lié à ce modèle dans cette boutique. Nécessite un abonnement actif.",
+        tags: ['modeleBoutique']
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: "Identifiant unique du modèle de boutique à supprimer",
+        schema: new OA\Schema(type: 'integer', example: 1)
+    )]
     #[OA\Response(
         response: 200,
-        description: 'permet de supprimer un(e) modeleBoutique',
+        description: "Modèle de boutique supprimé avec succès",
         content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new Model(type: ModeleBoutique::class, groups: ['full']))
+            type: "object",
+            properties: [
+                new OA\Property(property: "message", type: "string", example: "Operation effectuées avec succès"),
+                new OA\Property(property: "deleted", type: "boolean", example: true)
+            ]
         )
     )]
-    #[OA\Tag(name: 'modeleBoutique')]
-    //#[Security(name: 'Bearer')]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 404, description: "Modèle de boutique non trouvé")]
+    #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
     public function delete(Request $request, ModeleBoutique $modeleBoutique, ModeleBoutiqueRepository $villeRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
@@ -325,44 +533,64 @@ class ApiModeleBoutiqueController extends ApiInterface
         }
 
         try {
-
             if ($modeleBoutique != null) {
-
                 $villeRepository->remove($modeleBoutique, true);
-
-                // On retourne la confirmation
-                $this->setMessage("Operation effectuées avec success");
+                $this->setMessage("Operation effectuées avec succès");
                 $response = $this->response($modeleBoutique);
             } else {
                 $this->setMessage("Cette ressource est inexistante");
-                $this->setStatusCode(300);
+                $this->setStatusCode(404);
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la suppression du modèle de boutique");
             $response = $this->response('[]');
         }
         return $response;
     }
 
-    #[Route('/delete/all',  methods: ['DELETE'])]
     /**
-     * Permet de supprimer plusieurs modeleBoutique.
+     * Supprime plusieurs modèles de boutique en masse
      */
-     #[OA\RequestBody(
+    #[Route('/delete/all', methods: ['DELETE'])]
+    #[OA\Delete(
+        path: "/api/modeleBoutique/delete/all",
+        summary: "Supprimer plusieurs modèles de boutique",
+        description: "Permet de supprimer plusieurs associations modèle-boutique en une seule opération en fournissant un tableau d'identifiants. Nécessite un abonnement actif.",
+        tags: ['modeleBoutique']
+    )]
+    #[OA\RequestBody(
         required: true,
-        description: 'Tableau d’identifiants à supprimer',
+        description: "Tableau des identifiants des modèles de boutique à supprimer",
         content: new OA\JsonContent(
+            type: "object",
+            required: ["ids"],
             properties: [
                 new OA\Property(
                     property: 'ids',
                     type: 'array',
-                    items: new OA\Items(type: 'integer', example: 1)
+                    description: "Liste des identifiants des modèles de boutique à supprimer",
+                    items: new OA\Items(type: 'integer', example: 1),
+                    example: [1, 2, 3, 5, 8]
                 )
             ]
         )
     )]
-    #[OA\Tag(name: 'modeleBoutique')]
+    #[OA\Response(
+        response: 200,
+        description: "Modèles de boutique supprimés avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "message", type: "string", example: "Operation effectuées avec succès"),
+                new OA\Property(property: "deletedCount", type: "integer", example: 5, description: "Nombre de modèles supprimés")
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: "Données invalides")]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
     public function deleteAll(Request $request, ModeleBoutiqueRepository $villeRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
@@ -370,7 +598,7 @@ class ApiModeleBoutiqueController extends ApiInterface
         }
 
         try {
-            $data = json_decode($request->getContent());
+            $data = json_decode($request->getContent(), true);
 
             foreach ($data['ids'] as $id) {
                 $modeleBoutique = $villeRepository->find($id);
@@ -379,10 +607,10 @@ class ApiModeleBoutiqueController extends ApiInterface
                     $villeRepository->remove($modeleBoutique);
                 }
             }
-            $this->setMessage("Operation effectuées avec success");
+            $this->setMessage("Operation effectuées avec succès");
             $response = $this->response('[]');
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la suppression des modèles de boutique");
             $response = $this->response('[]');
         }
         return $response;

@@ -1,6 +1,6 @@
 <?php
 
-namespace  App\Controller\Apis;
+namespace App\Controller\Apis;
 
 use App\Controller\Apis\Config\ApiInterface;
 use App\DTO\ClientDTO;
@@ -19,177 +19,266 @@ use Nelmio\ApiDocBundle\Annotation\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
+/**
+ * Contrôleur pour la gestion des clients
+ * Permet de créer, lire, mettre à jour et supprimer des clients avec gestion de photos
+ */
 #[Route('/api/client')]
+#[OA\Tag(name: 'client', description: 'Gestion des clients (boutiques et succursales)')]
 class ApiClientController extends ApiInterface
 {
-
-
-
-    #[Route('/', methods: ['GET'])]
     /**
-     * Retourne la liste des clients.
-     * 
+     * Liste tous les clients du système
      */
+    #[Route('/', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/client/",
+        summary: "Lister tous les clients",
+        description: "Retourne la liste paginée de tous les clients disponibles dans le système",
+        tags: ['client']
+    )]
     #[OA\Response(
         response: 200,
-        description: 'Returns the rewards of an user',
+        description: "Liste des clients récupérée avec succès",
         content: new OA\JsonContent(
             type: 'array',
-            items: new OA\Items(ref: new Model(type: Client::class, groups: ['full']))
+            items: new OA\Items(
+                type: "object",
+                properties: [
+                    new OA\Property(property: "id", type: "integer", example: 1, description: "Identifiant unique du client"),
+                    new OA\Property(property: "nom", type: "string", example: "Kouassi", description: "Nom du client"),
+                    new OA\Property(property: "prenom", type: "string", example: "Yao", description: "Prénom du client"),
+                    new OA\Property(property: "numero", type: "string", example: "+225 0123456789", description: "Numéro de téléphone"),
+                    new OA\Property(property: "photo", type: "string", nullable: true, example: "/uploads/clients/photo_001.jpg", description: "Chemin de la photo"),
+                    new OA\Property(property: "boutique", type: "object", nullable: true, description: "Boutique associée"),
+                    new OA\Property(property: "surccursale", type: "object", nullable: true, description: "Succursale associée"),
+                    new OA\Property(property: "entreprise", type: "object", description: "Entreprise associée"),
+                    new OA\Property(property: "createdAt", type: "string", format: "date-time", example: "2025-01-15T10:30:00+00:00")
+                ]
+            )
         )
     )]
-    #[OA\Tag(name: 'client')]
-    // #[Security(name: 'Bearer')]
+    #[OA\Response(response: 500, description: "Erreur serveur lors de la récupération")]
     public function index(ClientRepository $clientRepository): Response
     {
         try {
-
             $clients = $this->paginationService->paginate($clientRepository->findAll());
-
-
-
-            $response =  $this->responseData($clients, 'group1', ['Content-Type' => 'application/json']);
+            $response = $this->responseData($clients, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la récupération des clients");
             $response = $this->response('[]');
         }
 
-        // On envoie la réponse
         return $response;
     }
 
-
-    #[Route('/entreprise', methods: ['GET'])]
     /**
-     * Retourne la liste des clients d'une entreprise.
-     * 
+     * Liste les clients selon les droits de l'utilisateur (entreprise, boutique ou succursale)
      */
+    #[Route('/entreprise', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/client/entreprise",
+        summary: "Lister les clients selon les droits utilisateur",
+        description: "Retourne la liste des clients filtrée selon le type d'utilisateur : Super-admin voit tous les clients de l'entreprise, Admin boutique voit les clients de sa boutique, autres voient les clients de leur succursale. Nécessite un abonnement actif.",
+        tags: ['client']
+    )]
     #[OA\Response(
         response: 200,
-        description: 'Returns the rewards of an user',
+        description: "Liste des clients récupérée avec succès",
         content: new OA\JsonContent(
             type: 'array',
-            items: new OA\Items(ref: new Model(type: Client::class, groups: ['full']))
+            items: new OA\Items(
+                type: "object",
+                properties: [
+                    new OA\Property(property: "id", type: "integer", example: 1),
+                    new OA\Property(property: "nom", type: "string", example: "Kouassi"),
+                    new OA\Property(property: "prenom", type: "string", example: "Yao"),
+                    new OA\Property(property: "numero", type: "string", example: "+225 0123456789"),
+                    new OA\Property(property: "photo", type: "string", nullable: true, example: "/uploads/clients/photo_001.jpg"),
+                    new OA\Property(property: "boutique", type: "object", nullable: true),
+                    new OA\Property(property: "surccursale", type: "object", nullable: true),
+                    new OA\Property(property: "entreprise", type: "object")
+                ]
+            )
         )
     )]
-    #[OA\Tag(name: 'client')]
-    // #[Security(name: 'Bearer')]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
     public function indexAll(ClientRepository $clientRepository, TypeUserRepository $typeUserRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
+
         try {
             if ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'SADM'])) {
-
                 $clients = $this->paginationService->paginate($clientRepository->findBy(
                     ['entreprise' => $this->getUser()->getEntreprise()],
                     ['id' => 'ASC']
                 ));
-            } elseif($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'ADB'])){
+            } elseif ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'ADB'])) {
                 $clients = $this->paginationService->paginate($clientRepository->findBy(
                     ['boutique' => $this->getUser()->getBoutique()],
                     ['id' => 'ASC']
                 ));
-            }else{
+            } else {
                 $clients = $this->paginationService->paginate($clientRepository->findBy(
                     ['surccursale' => $this->getUser()->getSurccursale()],
                     ['id' => 'ASC']
                 ));
             }
 
-
-            $response =  $this->responseData($clients, 'group1', ['Content-Type' => 'application/json']);
+            $response = $this->responseData($clients, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la récupération des clients");
             $response = $this->response('[]');
         }
 
-        // On envoie la réponse
         return $response;
     }
 
-
-    #[Route('/get/one/{id}', methods: ['GET'])]
     /**
-     * Affiche un(e) client en offrant un identifiant.
+     * Récupère les détails d'un client spécifique
      */
-    #[OA\Response(
-        response: 200,
-        description: 'Affiche un(e) client en offrant un identifiant',
-        content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new Model(type: Client::class, groups: ['full']))
-        )
+    #[Route('/get/one/{id}', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/client/get/one/{id}",
+        summary: "Détails d'un client",
+        description: "Affiche les informations détaillées d'un client spécifique par son identifiant. Nécessite un abonnement actif.",
+        tags: ['client']
     )]
     #[OA\Parameter(
-        name: 'code',
-        in: 'query',
-        schema: new OA\Schema(type: 'string')
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: "Identifiant unique du client",
+        schema: new OA\Schema(type: 'integer', example: 1)
     )]
-    #[OA\Tag(name: 'client')]
-    //#[Security(name: 'Bearer')]
-    public function getOne(?Client $client)
+    #[OA\Response(
+        response: 200,
+        description: "Client trouvé avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "id", type: "integer", example: 1),
+                new OA\Property(property: "nom", type: "string", example: "Kouassi"),
+                new OA\Property(property: "prenom", type: "string", example: "Yao"),
+                new OA\Property(property: "numero", type: "string", example: "+225 0123456789"),
+                new OA\Property(property: "photo", type: "string", nullable: true, example: "/uploads/clients/photo_001.jpg"),
+                new OA\Property(property: "boutique", type: "object", nullable: true, description: "Boutique associée"),
+                new OA\Property(property: "surccursale", type: "object", nullable: true, description: "Succursale associée"),
+                new OA\Property(property: "entreprise", type: "object", description: "Entreprise"),
+                new OA\Property(property: "createdAt", type: "string", format: "date-time"),
+                new OA\Property(property: "updatedAt", type: "string", format: "date-time")
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 404, description: "Client non trouvé")]
+    public function getOne(?Client $client): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
+
         try {
             if ($client) {
                 $response = $this->response($client);
             } else {
                 $this->setMessage('Cette ressource est inexistante');
-                $this->setStatusCode(300);
-                $response = $this->response($client);
+                $this->setStatusCode(404);
+                $response = $this->response(null);
             }
         } catch (\Exception $exception) {
             $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
 
-
         return $response;
     }
 
-
-    #[Route('/create', methods: ['POST'])]
     /**
-     * Permet de créer un(e) client.
+     * Crée un nouveau client pour une succursale avec photo optionnelle
      */
+    #[Route('/create', methods: ['POST'])]
     #[OA\Post(
-        summary: "Permet de créer un(e) client pour un surccursale",
-        description: "Permet de créer un(e) client.",
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\MediaType(
-                mediaType: "multipart/form-data",
-                schema: new OA\Schema(
-                    type: "object",
-                    properties: [
-                        new OA\Property(property: "nom", type: "string"),
-                        new OA\Property(property: "prenoms", type: "string"),
-                        new OA\Property(property: "numero", type: "string"),
-                        new OA\Property(property: "surccursale", type: "string"),
-                        new OA\Property(property: "photo", type: "string", format: "binary"),
-                    ],
-
-                )
-            )
-        ),
-        responses: [
-            new OA\Response(response: 401, description: "Invalid credentials")
-        ]
+        path: "/api/client/create",
+        summary: "Créer un client pour une succursale",
+        description: "Permet de créer un nouveau client associé à une succursale avec possibilité d'uploader une photo. Nécessite un abonnement actif.",
+        tags: ['client']
     )]
-    #[OA\Tag(name: 'client')]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\MediaType(
+            mediaType: "multipart/form-data",
+            schema: new OA\Schema(
+                type: "object",
+                required: ["nom", "prenoms", "numero", "surccursale"],
+                properties: [
+                    new OA\Property(
+                        property: "nom",
+                        type: "string",
+                        example: "Kouassi",
+                        description: "Nom du client (obligatoire)"
+                    ),
+                    new OA\Property(
+                        property: "prenoms",
+                        type: "string",
+                        example: "Yao Jean",
+                        description: "Prénom(s) du client (obligatoire)"
+                    ),
+                    new OA\Property(
+                        property: "numero",
+                        type: "string",
+                        example: "+225 0123456789",
+                        description: "Numéro de téléphone du client (obligatoire)"
+                    ),
+                    new OA\Property(
+                        property: "surccursale",
+                        type: "integer",
+                        example: 1,
+                        description: "ID de la succursale à laquelle associer le client (obligatoire)"
+                    ),
+                    new OA\Property(
+                        property: "photo",
+                        type: "string",
+                        format: "binary",
+                        description: "Photo du client (optionnel, formats acceptés: JPG, PNG)"
+                    )
+                ]
+            )
+        )
+    )]
+    #[OA\Response(
+        response: 201,
+        description: "Client créé avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "id", type: "integer", example: 5),
+                new OA\Property(property: "nom", type: "string", example: "Kouassi"),
+                new OA\Property(property: "prenom", type: "string", example: "Yao Jean"),
+                new OA\Property(property: "numero", type: "string", example: "+225 0123456789"),
+                new OA\Property(property: "photo", type: "string", nullable: true, example: "/uploads/clients/document_01_abc123.jpg"),
+                new OA\Property(property: "surccursale", type: "object"),
+                new OA\Property(property: "entreprise", type: "object")
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: "Données invalides ou fichier non accepté")]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     public function create(Request $request, ClientRepository $clientRepository, SurccursaleRepository $surccursaleRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
+
         $names = 'document_' . '01';
-        $filePrefix  = str_slug($names);
+        $filePrefix = str_slug($names);
         $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
-        $data = json_decode($request->getContent(), true);
 
         $uploadedFile = $request->files->get('photo');
 
@@ -208,54 +297,99 @@ class ApiClientController extends ApiInterface
 
         $client->setCreatedBy($this->getUser());
         $client->setUpdatedBy($this->getUser());
+        $client->setCreatedAtValue(new \DateTime());
+        $client->setUpdatedAt(new \DateTime());
+
         $errorResponse = $this->errorResponse($client);
         if ($errorResponse !== null) {
-            return $errorResponse; 
+            return $errorResponse;
         } else {
-
             $clientRepository->add($client, true);
         }
 
         return $this->responseData($client, 'group1', ['Content-Type' => 'application/json']);
     }
-    #[Route('/create/boutique', methods: ['POST'])]
-    /**
-     * Permet de créer un(e) client boutique.
-     */
-    #[OA\Post(
-        summary: "Permet de créer un(e) client pour une boutique",
-        description: "Permet de créer un(e) client.",
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\MediaType(
-                mediaType: "multipart/form-data",
-                schema: new OA\Schema(
-                    type: "object",
-                    properties: [
-                        new OA\Property(property: "nom", type: "string"),
-                        new OA\Property(property: "prenom", type: "string"),
-                        new OA\Property(property: "numero", type: "string"),
-                        new OA\Property(property: "boutique", type: "string"),
-                        new OA\Property(property: "photo", type: "string", format: "binary"),
-                    ],
 
-                )
-            )
-        ),
-        responses: [
-            new OA\Response(response: 401, description: "Invalid credentials")
-        ]
+    /**
+     * Crée un nouveau client pour une boutique avec photo optionnelle
+     */
+    #[Route('/create/boutique', methods: ['POST'])]
+    #[OA\Post(
+        path: "/api/client/create/boutique",
+        summary: "Créer un client pour une boutique",
+        description: "Permet de créer un nouveau client associé à une boutique avec possibilité d'uploader une photo. Nécessite un abonnement actif.",
+        tags: ['client']
     )]
-    #[OA\Tag(name: 'client')]
-    public function createBoutique(Request $request, ClientRepository $clientRepository,BoutiqueRepository $boutiqueRepository): Response
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\MediaType(
+            mediaType: "multipart/form-data",
+            schema: new OA\Schema(
+                type: "object",
+                required: ["nom", "prenoms", "numero", "boutique"],
+                properties: [
+                    new OA\Property(
+                        property: "nom",
+                        type: "string",
+                        example: "Kouassi",
+                        description: "Nom du client (obligatoire)"
+                    ),
+                    new OA\Property(
+                        property: "prenoms",
+                        type: "string",
+                        example: "Yao Jean",
+                        description: "Prénom(s) du client (obligatoire)"
+                    ),
+                    new OA\Property(
+                        property: "numero",
+                        type: "string",
+                        example: "+225 0123456789",
+                        description: "Numéro de téléphone du client (obligatoire)"
+                    ),
+                    new OA\Property(
+                        property: "boutique",
+                        type: "integer",
+                        example: 1,
+                        description: "ID de la boutique à laquelle associer le client (obligatoire)"
+                    ),
+                    new OA\Property(
+                        property: "photo",
+                        type: "string",
+                        format: "binary",
+                        description: "Photo du client (optionnel, formats acceptés: JPG, PNG)"
+                    )
+                ]
+            )
+        )
+    )]
+    #[OA\Response(
+        response: 201,
+        description: "Client créé avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "id", type: "integer", example: 5),
+                new OA\Property(property: "nom", type: "string", example: "Kouassi"),
+                new OA\Property(property: "prenom", type: "string", example: "Yao Jean"),
+                new OA\Property(property: "numero", type: "string", example: "+225 0123456789"),
+                new OA\Property(property: "photo", type: "string", nullable: true, example: "/uploads/clients/document_01_xyz789.jpg"),
+                new OA\Property(property: "boutique", type: "object"),
+                new OA\Property(property: "entreprise", type: "object")
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: "Données invalides ou fichier non accepté")]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    public function createBoutique(Request $request, ClientRepository $clientRepository, BoutiqueRepository $boutiqueRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
+
         $names = 'document_' . '01';
-        $filePrefix  = str_slug($names);
+        $filePrefix = str_slug($names);
         $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
-        $data = json_decode($request->getContent(), true);
 
         $uploadedFile = $request->files->get('photo');
 
@@ -274,155 +408,256 @@ class ApiClientController extends ApiInterface
 
         $client->setCreatedBy($this->getUser());
         $client->setUpdatedBy($this->getUser());
+        $client->setCreatedAtValue(new \DateTime());
+        $client->setUpdatedAt(new \DateTime());
+
         $errorResponse = $this->errorResponse($client);
         if ($errorResponse !== null) {
-            return $errorResponse; 
+            return $errorResponse;
         } else {
-
             $clientRepository->add($client, true);
         }
 
         return $this->responseData($client, 'group1', ['Content-Type' => 'application/json']);
     }
 
+    /**
+     * Met à jour un client existant avec possibilité de changer la photo
+     */
     #[Route('/update/{id}', methods: ['PUT', 'POST'])]
-    #[OA\Post(
-        summary: "Permet de mettre a jour un client.",
-        description: "Permet de mettre a jour un client.",
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\MediaType(
-                mediaType: "multipart/form-data",
-                schema: new OA\Schema(
-                    type: "object",
-                    properties: [
-                        new OA\Property(property: "nom", type: "string"),
-                        new OA\Property(property: "numero", type: "string"),
-                        new OA\Property(property: "surccursale", type: "string"),
-                        new OA\Property(property: "photo", type: "string", format: "binary"),
-                    ],
-
-                )
-            )
-        ),
-        responses: [
-            new OA\Response(response: 401, description: "Invalid credentials")
-        ]
+    #[OA\Put(
+        path: "/api/client/update/{id}",
+        summary: "Mettre à jour un client",
+        description: "Permet de mettre à jour les informations d'un client existant, y compris sa photo. Nécessite un abonnement actif.",
+        tags: ['client']
     )]
-    #[OA\Tag(name: 'client')]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: "Identifiant unique du client à mettre à jour",
+        schema: new OA\Schema(type: 'integer', example: 1)
+    )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\MediaType(
+            mediaType: "multipart/form-data",
+            schema: new OA\Schema(
+                type: "object",
+                properties: [
+                    new OA\Property(
+                        property: "nom",
+                        type: "string",
+                        example: "Kouassi",
+                        description: "Nouveau nom du client"
+                    ),
+                    new OA\Property(
+                        property: "prenoms",
+                        type: "string",
+                        example: "Yao Pierre",
+                        description: "Nouveau(x) prénom(s)"
+                    ),
+                    new OA\Property(
+                        property: "numero",
+                        type: "string",
+                        example: "+225 0198765432",
+                        description: "Nouveau numéro de téléphone"
+                    ),
+                    new OA\Property(
+                        property: "surccursale",
+                        type: "integer",
+                        example: 2,
+                        description: "Nouvel ID de la succursale"
+                    ),
+                    new OA\Property(
+                        property: "photo",
+                        type: "string",
+                        format: "binary",
+                        description: "Nouvelle photo du client (optionnel)"
+                    )
+                ]
+            )
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Client mis à jour avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "id", type: "integer", example: 1),
+                new OA\Property(property: "nom", type: "string", example: "Kouassi"),
+                new OA\Property(property: "prenom", type: "string", example: "Yao Pierre"),
+                new OA\Property(property: "numero", type: "string", example: "+225 0198765432"),
+                new OA\Property(property: "photo", type: "string", nullable: true),
+                new OA\Property(property: "updatedAt", type: "string", format: "date-time")
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: "Données invalides")]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 404, description: "Client non trouvé")]
     public function update(Request $request, Client $client, ClientRepository $clientRepository): Response
     {
-       if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
+
         try {
-            $data = json_decode($request->getContent());
             $names = 'document_' . '01';
-            $filePrefix  = str_slug($names);
+            $filePrefix = str_slug($names);
             $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
+
             if ($client != null) {
+                if ($request->get('nom')) {
+                    $client->setNom($request->get('nom'));
+                }
+                if ($request->get('prenoms')) {
+                    $client->setPrenom($request->get('prenoms'));
+                }
+                if ($request->get('numero')) {
+                    $client->setNumero($request->get('numero'));
+                }
+                if ($request->get('surccursale')) {
+                    $client->setSurccursale($request->get('surccursale'));
+                }
 
-                $client->setNom($request->get('nom'));
-                $client->setNumero($request->get('numero'));
-                $client->setSurccursale($request->get('surccursale'));
                 $uploadedFile = $request->files->get('photo');
-
                 if ($uploadedFile) {
                     if ($fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH)) {
                         $client->setPhoto($fichier);
                     }
                 }
+
                 $client->setUpdatedBy($this->getUser());
                 $client->setUpdatedAt(new \DateTime());
-                $errorResponse = $this->errorResponse($client);
 
+                $errorResponse = $this->errorResponse($client);
                 if ($errorResponse !== null) {
-                    return $errorResponse; 
+                    return $errorResponse;
                 } else {
                     $clientRepository->add($client, true);
                 }
 
-
-
-                // On retourne la confirmation
                 $response = $this->responseData($client, 'group1', ['Content-Type' => 'application/json']);
             } else {
-                $this->setMessage("Cette ressource est inexsitante");
-                $this->setStatusCode(300);
+                $this->setMessage("Cette ressource est inexistante");
+                $this->setStatusCode(404);
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la mise à jour du client");
             $response = $this->response('[]');
         }
         return $response;
     }
 
-    //const TAB_ID = 'parametre-tabs';
-
-    #[Route('/delete/{id}',  methods: ['DELETE'])]
     /**
-     * permet de supprimer un(e) client.
+     * Supprime un client
      */
+    #[Route('/delete/{id}', methods: ['DELETE'])]
+    #[OA\Delete(
+        path: "/api/client/delete/{id}",
+        summary: "Supprimer un client",
+        description: "Permet de supprimer définitivement un client par son identifiant. Nécessite un abonnement actif.",
+        tags: ['client']
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: "Identifiant unique du client à supprimer",
+        schema: new OA\Schema(type: 'integer', example: 1)
+    )]
     #[OA\Response(
         response: 200,
-        description: 'permet de supprimer un(e) client',
+        description: "Client supprimé avec succès",
         content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new Model(type: Client::class, groups: ['full']))
+            type: "object",
+            properties: [
+                new OA\Property(property: "message", type: "string", example: "Operation effectuées avec succès"),
+                new OA\Property(property: "deleted", type: "boolean", example: true)
+            ]
         )
     )]
-    #[OA\Tag(name: 'client')]
-    //#[Security(name: 'Bearer')]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 404, description: "Client non trouvé")]
+    #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
     public function delete(Request $request, Client $client, ClientRepository $villeRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
+
         try {
-
             if ($client != null) {
-
                 $villeRepository->remove($client, true);
-
-                // On retourne la confirmation
-                $this->setMessage("Operation effectuées avec success");
+                $this->setMessage("Operation effectuées avec succès");
                 $response = $this->response($client);
             } else {
                 $this->setMessage("Cette ressource est inexistante");
-                $this->setStatusCode(300);
+                $this->setStatusCode(404);
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la suppression du client");
             $response = $this->response('[]');
         }
         return $response;
     }
 
-    #[Route('/delete/all',  methods: ['DELETE'])]
     /**
-     * Permet de supprimer plusieurs client.
+     * Supprime plusieurs clients en masse
      */
+    #[Route('/delete/all', methods: ['DELETE'])]
+    #[OA\Delete(
+        path: "/api/client/delete/all",
+        summary: "Supprimer plusieurs clients",
+        description: "Permet de supprimer plusieurs clients en une seule opération en fournissant un tableau d'identifiants. Nécessite un abonnement actif.",
+        tags: ['client']
+    )]
     #[OA\RequestBody(
         required: true,
-        description: 'Tableau d’identifiants à supprimer',
+        description: "Tableau des identifiants des clients à supprimer",
         content: new OA\JsonContent(
+            type: "object",
+            required: ["ids"],
             properties: [
                 new OA\Property(
                     property: 'ids',
                     type: 'array',
-                    items: new OA\Items(type: 'integer', example: 1)
+                    description: "Liste des identifiants des clients à supprimer",
+                    items: new OA\Items(type: 'integer', example: 1),
+                    example: [1, 2, 3, 5, 8]
                 )
             ]
         )
     )]
-    #[OA\Tag(name: 'client')]
+    #[OA\Response(
+        response: 200,
+        description: "Clients supprimés avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "message", type: "string", example: "Operation effectuées avec succès"),
+                new OA\Property(property: "deletedCount", type: "integer", example: 5, description: "Nombre de clients supprimés")
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: "Données invalides")]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
     public function deleteAll(Request $request, ClientRepository $villeRepository): Response
     {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+            return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
+        }
 
         try {
-            $data = json_decode($request->getContent());
+            $data = json_decode($request->getContent(), true);
 
             foreach ($data['ids'] as $id) {
                 $client = $villeRepository->find($id);
@@ -431,10 +666,10 @@ class ApiClientController extends ApiInterface
                     $villeRepository->remove($client);
                 }
             }
-            $this->setMessage("Operation effectuées avec success");
+            $this->setMessage("Operation effectuées avec succès");
             $response = $this->response('[]');
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur lors de la suppression des clients");
             $response = $this->response('[]');
         }
         return $response;
