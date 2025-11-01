@@ -613,7 +613,7 @@ class ApiUserController extends ApiInterface
             $user->setLogin($data['email']);
 
             // Affectation à une succursale (optionnel)
-            if (isset($data['surccursale']) && $data['surccursale'] != "") {
+            if (isset($data['surccursale']) && $data['surccursale'] != null) {
                 $succursale = $surccursaleRepository->find($data['surccursale']);
                 if ($succursale) {
                     $user->setSurccursale($succursale);
@@ -621,7 +621,7 @@ class ApiUserController extends ApiInterface
             }
 
             // Affectation à une boutique (optionnel)
-            if (isset($data['boutique']) && $data['boutique'] != "") {
+            if (isset($data['boutique']) && $data['boutique'] != null) {
                 $boutique = $boutiqueRepository->find($data['boutique']);
                 if ($boutique) {
                     $user->setBoutique($boutique);
@@ -693,7 +693,7 @@ class ApiUserController extends ApiInterface
             properties: [
                 new OA\Property(property: "nom", type: "string", example: "Koné"),
                 new OA\Property(property: "prenoms", type: "string", example: "Mariam"),
-                new OA\Property(property: "email", type: "string", example: "mariam.kone@entreprise.ci"),
+                new OA\Property(property: "login", type: "string", example: "mariam.kone@entreprise.ci"),
                 new OA\Property(property: "surccursale", type: "integer", example: 2, nullable: true),
                 new OA\Property(property: "boutique", type: "integer", example: 5, nullable: true),
                 new OA\Property(property: "type", type: "integer", example: 3)
@@ -729,17 +729,17 @@ class ApiUserController extends ApiInterface
             // Mise à jour des champs
             if (isset($data['nom'])) $user->setNom($data['nom']);
             if (isset($data['prenoms'])) $user->setPrenoms($data['prenoms']);
-            if (isset($data['email'])) $user->setLogin($data['email']);
+            //if (isset($data['email'])) $user->setLogin($data['email']);
 
             // Affectation succursale
-            if (isset($data['surccursale']) && $data['surccursale'] != "") {
+            if (isset($data['surccursale']) && $data['surccursale'] != null) {
                 $succursale = $surccursaleRepository->find($data['surccursale']);
                 if ($succursale) $user->setSurccursale($succursale);
             }else{
                 $user->setSurccursale(null);
             }
 
-            if (isset($data['boutique']) && $data['boutique'] != "") {
+            if (isset($data['boutique']) && $data['boutique'] !== null) {
                 $boutique = $boutiqueRepository->find($data['boutique']);
                 if ($boutique) $user->setBoutique($boutique);
             }else{
