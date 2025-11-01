@@ -104,6 +104,7 @@ class ApiUserController extends ApiInterface
         return $response;
     }
 
+
     /**
      * Liste les utilisateurs actifs de l'entreprise de l'utilisateur connecté
      */
@@ -341,8 +342,8 @@ class ApiUserController extends ApiInterface
             $user->setPassword($this->hasher->hashPassword($user, $data['password']));
             $user->setRoles(['ROLE_ADMIN']);
             $user->setType($typeUserRepository->findOneBy(['code' => 'SADM']));
-            $user->setCreatedAtValue(new \DateTime());
-            $user->setUpdatedAt(new \DateTime());
+            /* $user->setCreatedAtValue(new \DateTime());
+            $user->setUpdatedAt(new \DateTime()); */
 
             // Récupération du plan gratuit FREE
             $module = $moduleAbonnementRepository->findOneBy(['code' => 'FREE']);

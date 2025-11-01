@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Repository\UserRepository;
+use App\Service\SubscriptionChecker;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -33,8 +34,12 @@ class UserController extends AbstractController
         ]
     )]
     #[OA\Tag(name: 'user')]
-    public function toggleActive(User $user, UserRepository $repository): JsonResponse
+    public function toggleActive(User $user, UserRepository $repository,SubscriptionChecker $subscriptionChecker): JsonResponse
     {
+
+        if($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "user")){
+             return $this->json(['message'=>"Vous avez atteint le nombre user actif pour votre pack d'abonnement"]);
+        }
         $repository->updateActiveStatus($user, !$user->isActive());
         return $this->json(['message' => 'Status updated']);
     }
