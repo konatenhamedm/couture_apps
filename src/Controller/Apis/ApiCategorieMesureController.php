@@ -59,7 +59,7 @@ class ApiCategorieMesureController extends ApiInterface
             $categories = $this->paginationService->paginate($moduleRepository->findAll());
             $response = $this->responseData($categories, 'group1', ['Content-Type' => 'application/json'], true);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des catégories de mesure");
             $response = $this->response('[]');
         }
@@ -88,7 +88,10 @@ $this->setStatusCode(500);
                     new OA\Property(property: "id", type: "integer", example: 1, description: "Identifiant de la catégorie"),
                     new OA\Property(property: "libelle", type: "string", example: "Mesures corporelles", description: "Nom de la catégorie"),
                     new OA\Property(property: "code", type: "string", example: "CORP", description: "Code unique"),
-                    new OA\Property(property: "entreprise", type: "object", description: "Informations de l'entreprise",
+                    new OA\Property(
+                        property: "entreprise",
+                        type: "object",
+                        description: "Informations de l'entreprise",
                         properties: [
                             new OA\Property(property: "id", type: "integer", example: 5),
                             new OA\Property(property: "nom", type: "string", example: "Mon Entreprise SARL")
@@ -112,14 +115,14 @@ $this->setStatusCode(500);
         try {
             $typeMesures = $this->paginationService->paginate(
                 $moduleRepository->findBy(
-                    ['entreprise' => $this->getUser()->getEntreprise()],
+                    [],
                     ['id' => 'ASC']
                 )
             );
 
             $response = $this->responseData($typeMesures, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des catégories de mesure de l'entreprise");
             $response = $this->response('[]');
         }
@@ -180,7 +183,7 @@ $this->setStatusCode(500);
                 $response = $this->response(null);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
@@ -329,14 +332,14 @@ $this->setStatusCode(500);
             $data = json_decode($request->getContent());
             if ($categorieMesure != null) {
                 $categorieMesure->setLibelle($data->libelle);
-                
+
                 if (isset($data->code)) {
                     $categorieMesure->setCode($data->code);
                 }
-                
+
                 $categorieMesure->setUpdatedBy($this->getUser());
                 $categorieMesure->setUpdatedAt(new \DateTime());
-                
+
                 $errorResponse = $this->errorResponse($categorieMesure);
                 if ($errorResponse !== null) {
                     return $errorResponse;
@@ -351,7 +354,7 @@ $this->setStatusCode(500);
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour de la catégorie de mesure");
             $response = $this->response('[]');
         }
@@ -407,7 +410,7 @@ $this->setStatusCode(500);
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression de la catégorie de mesure");
             $response = $this->response('[]');
         }
@@ -476,7 +479,7 @@ $this->setStatusCode(500);
             $this->setMessage("Operation effectuées avec succès");
             $response = $this->response('[]');
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des catégories de mesure");
             $response = $this->response('[]');
         }

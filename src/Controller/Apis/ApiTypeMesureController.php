@@ -83,7 +83,7 @@ class ApiTypeMesureController extends ApiInterface
         try {
 
             $typeMesures = $this->paginationService->paginate($typeMesureRepository->findBy(
-                ['entreprise' => $this->getUser()->getEntreprise()],
+                [],
                 ['id' => 'ASC']
             ));
 
