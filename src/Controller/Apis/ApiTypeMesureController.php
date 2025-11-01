@@ -91,7 +91,7 @@ class ApiTypeMesureController extends ApiInterface
                 return [
                     'id' => $typeMesure->getId(),
                     'libelle' => $typeMesure->getLibelle(),
-                    'categorieTypeMesures' => array_map(function ($categorieTypeMesure) {
+                    'categories' => array_map(function ($categorieTypeMesure) {
                         return [
                             'id' => $categorieTypeMesure->getId(),
                             'idCategorie' => $categorieTypeMesure->getCategorieMesure()->getId(),
