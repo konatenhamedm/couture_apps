@@ -26,6 +26,7 @@ class TypeMesure
     private ?string $libelle = null;
 
     #[ORM\ManyToOne(inversedBy: 'typeMesures')]
+    #[Groups(["group1", "group_type"])]
     private ?Entreprise $entreprise = null;
 
     /**

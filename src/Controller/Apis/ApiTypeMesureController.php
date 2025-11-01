@@ -50,7 +50,7 @@ class ApiTypeMesureController extends ApiInterface
 
             $response =  $this->responseData($typeMesures, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("");
             $response = $this->response('[]');
         }
@@ -87,11 +87,11 @@ $this->setStatusCode(500);
                 ['id' => 'ASC']
             ));
 
-          
+
 
             $response =  $this->responseData($typeMesures, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("");
             $response = $this->response('[]');
         }
@@ -115,7 +115,7 @@ $this->setStatusCode(500);
     )]
     #[OA\Tag(name: 'typeMesure')]
     // #[Security(name: 'Bearer')]
-    public function indexAllCategorieByTypeMessure(TypeMesureRepository $typeMesureRepository,CategorieTypeMesureRepository $categorieTypeMesureRepository,$typeMesure): Response
+    public function indexAllCategorieByTypeMessure(TypeMesureRepository $typeMesureRepository, CategorieTypeMesureRepository $categorieTypeMesureRepository, $typeMesure): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
@@ -128,11 +128,11 @@ $this->setStatusCode(500);
                 ['id' => 'ASC']
             ));
 
-          
+
 
             $response =  $this->responseData($categories, 'group_type', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("");
             $response = $this->response('[]');
         }
@@ -176,7 +176,7 @@ $this->setStatusCode(500);
                 $response = $this->response($typeMesure);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
@@ -198,7 +198,7 @@ $this->setStatusCode(500);
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
-                    
+
 
                     new OA\Property(
                         property: "lignes",
@@ -206,9 +206,9 @@ $this->setStatusCode(500);
                         items: new OA\Items(
                             type: "object",
                             properties: [
-                                new OA\Property(property: "categorieId", type: "string"), 
-                              
-                               
+                                new OA\Property(property: "categorieId", type: "string"),
+
+
                             ]
                         ),
                     ),
@@ -221,7 +221,7 @@ $this->setStatusCode(500);
         ]
     )]
     #[OA\Tag(name: 'typeMesure')]
-    public function create(Request $request,CategorieMesureRepository $categorieMesureRepository, TypeMesureRepository $typeMesureRepository,EntrepriseRepository $entrepriseRepository): Response
+    public function create(Request $request, CategorieMesureRepository $categorieMesureRepository, TypeMesureRepository $typeMesureRepository, EntrepriseRepository $entrepriseRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
@@ -246,10 +246,10 @@ $this->setStatusCode(500);
                 $typeMesure->addCategorieTypeMesure($categorieMesure);
             }
         }
-     
+
 
         if ($errorResponse !== null) {
-            return $errorResponse; 
+            return $errorResponse;
         } else {
 
             $typeMesureRepository->add($typeMesure, true);
@@ -277,9 +277,9 @@ $this->setStatusCode(500);
                         items: new OA\Items(
                             type: "object",
                             properties: [
-                                new OA\Property(property: "id", type: "string"), 
-                                new OA\Property(property: "libelle", type: "string"), 
-                               
+                                new OA\Property(property: "id", type: "string"),
+                                new OA\Property(property: "libelle", type: "string"),
+
                             ]
                         ),
                     ),
@@ -290,7 +290,7 @@ $this->setStatusCode(500);
                             type: "object",
                             properties: [
                                 new OA\Property(property: "id", type: "string"),
-                               
+
                             ]
                         ),
                     ),
@@ -303,7 +303,7 @@ $this->setStatusCode(500);
         ]
     )]
     #[OA\Tag(name: 'typeMesure')]
-    public function update(Request $request, TypeMesure $typeMesure, TypeMesureRepository $typeMesureRepository,EntrepriseRepository $entrepriseRepository,CategorieMesureRepository $categorieMesureRepository): Response
+    public function update(Request $request, TypeMesure $typeMesure, TypeMesureRepository $typeMesureRepository, EntrepriseRepository $entrepriseRepository, CategorieMesureRepository $categorieMesureRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
@@ -322,21 +322,20 @@ $this->setStatusCode(500);
                 $lignesCategoriesMesure = $data->ligneCategorieMesures;
                 if (isset($lignesCategoriesMesure) && is_array($lignesCategoriesMesure)) {
                     foreach ($lignesCategoriesMesure as $ligneCategorieMesure) {
-                        
-                        if(!isset($ligneCategorieMesure->id) || $ligneCategorieMesure->id == null){
+
+                        if (!isset($ligneCategorieMesure->id) || $ligneCategorieMesure->id == null) {
                             $categorieMesure = new CategorieMesure();
                             $categorieMesure->setLibelle($ligneCategorieMesure->libelle);
                             $categorieMesure->setEntreprise($this->getUser()->getEntreprise());
                             $categorieMesure->setCreatedBy($this->getUser());
                             $categorieMesure->setUpdatedBy($this->getUser());
                             $categorieMesureRepository->add($categorieMesure, true);
-                        }else{
+                        } else {
                             $categorieMesure = $categorieMesureRepository->find($ligneCategorieMesure->id);
                             $categorieMesure->setLibelle($ligneCategorieMesure->libelle);
                             $categorieMesure->setCreatedBy($this->getUser());
                             $categorieMesure->setUpdatedBy($this->getUser());
                             $categorieMesureRepository->add($categorieMesure, true);
-
                         }
                     }
                 }
@@ -353,10 +352,10 @@ $this->setStatusCode(500);
                         }
                     }
                 }
-                
+
 
                 if ($errorResponse !== null) {
-                    return $errorResponse; 
+                    return $errorResponse;
                 } else {
                     $typeMesureRepository->add($typeMesure, true);
                 }
@@ -371,7 +370,7 @@ $this->setStatusCode(500);
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("");
             $response = $this->response('[]');
         }
@@ -415,7 +414,7 @@ $this->setStatusCode(500);
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("");
             $response = $this->response('[]');
         }
@@ -426,7 +425,7 @@ $this->setStatusCode(500);
     /**
      * Permet de supprimer plusieurs typeMesure.
      */
-        #[OA\RequestBody(
+    #[OA\RequestBody(
         required: true,
         description: 'Tableau d’identifiants à supprimer',
         content: new OA\JsonContent(
@@ -459,7 +458,7 @@ $this->setStatusCode(500);
             $this->setMessage("Operation effectuées avec success");
             $response = $this->response('[]');
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("");
             $response = $this->response('[]');
         }
