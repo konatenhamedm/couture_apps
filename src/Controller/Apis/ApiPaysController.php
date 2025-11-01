@@ -47,7 +47,10 @@ class ApiPaysController extends ApiInterface
                     new OA\Property(property: "code", type: "string", example: "CI", description: "Code ISO du pays (2 lettres)"),
                     new OA\Property(property: "indicatif", type: "string", example: "+225", description: "Indicatif téléphonique international"),
                     new OA\Property(property: "actif", type: "boolean", example: true, description: "Statut actif/inactif du pays"),
-                    new OA\Property(property: "operateurs", type: "array", description: "Liste des opérateurs téléphoniques du pays",
+                    new OA\Property(
+                        property: "operateurs",
+                        type: "array",
+                        description: "Liste des opérateurs téléphoniques du pays",
                         items: new OA\Items(
                             type: "object",
                             properties: [
@@ -69,7 +72,7 @@ class ApiPaysController extends ApiInterface
             $pays = $this->paginationService->paginate($paysRepository->findAll());
             $response = $this->responseData($pays, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des pays");
             $response = $this->response('[]');
         }
@@ -116,7 +119,7 @@ $this->setStatusCode(500);
 
             $response = $this->responseData($pays, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des pays actifs");
             $response = $this->response('[]');
         }
@@ -152,7 +155,10 @@ $this->setStatusCode(500);
                 new OA\Property(property: "code", type: "string", example: "CI", description: "Code ISO 3166-1 alpha-2"),
                 new OA\Property(property: "indicatif", type: "string", example: "+225", description: "Indicatif téléphonique avec le signe +"),
                 new OA\Property(property: "actif", type: "boolean", example: true),
-                new OA\Property(property: "operateurs", type: "array", description: "Liste complète des opérateurs téléphoniques du pays",
+                new OA\Property(
+                    property: "operateurs",
+                    type: "array",
+                    description: "Liste complète des opérateurs téléphoniques du pays",
                     items: new OA\Items(
                         type: "object",
                         properties: [
@@ -181,7 +187,7 @@ $this->setStatusCode(500);
                 $response = $this->response(null);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
@@ -373,7 +379,7 @@ $this->setStatusCode(500);
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour du pays");
             $response = $this->response('[]');
         }
@@ -424,7 +430,7 @@ $this->setStatusCode(500);
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression du pays");
             $response = $this->response('[]');
         }
@@ -489,7 +495,7 @@ $this->setStatusCode(500);
             $this->setMessage("Operation effectuées avec succès");
             $response = $this->json(['message' => 'Operation effectuées avec succès', 'deletedCount' => $count]);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des pays");
             $response = $this->response('[]');
         }

@@ -712,14 +712,15 @@ class ApiUserController extends ApiInterface
     #[OA\Response(response: 400, description: "Erreur de validation ou mots de passe non identiques")]
     #[OA\Response(response: 404, description: "Membre non trouvé")]
     public function updateMembre(
-        int $id,
+
         Request $request,
         UserRepository $userRepository,
         SurccursaleRepository $surccursaleRepository,
         BoutiqueRepository $boutiqueRepository,
         TypeUserRepository $typeUserRepository,
         SubscriptionChecker $subscriptionChecker,
-        SendMailService $sendMailService
+        SendMailService $sendMailService,
+        User $user
     ): Response {
         // Vérifie abonnement actif
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
@@ -727,42 +728,41 @@ class ApiUserController extends ApiInterface
         }
 
         try {
-            $data = json_decode($request->getContent(), true);
-            $user = $userRepository->find($id);
+              $data = json_decode($request->getContent(), true);
 
             if (!$user) {
                 return $this->errorResponse(null, "Membre non trouvé", 404);
             }
 
             // Mise à jour des champs
-            if (isset($data['nom'])) $user->setNom($data['nom']);
-            if (isset($data['prenoms'])) $user->setPrenoms($data['prenoms']);
+            if (isset($data->nom)) $user->setNom($data->nom);
+            if (isset($data->prenoms)) $user->setPrenoms($data->prenoms);
             //if (isset($data['email'])) $user->setLogin($data['email']);
 
             // Affectation succursale
-            if (isset($data['succursale']) && $data['succursale'] != null) {
-                $succursale = $surccursaleRepository->find($data['succursale']);
-                if ($succursale) $user->setSurccursale($succursale);
+            if (isset($data->succursale) && $data->succursale != null) {
+                $succursale = $surccursaleRepository->find($data->succursale);
+               $user->setSurccursale($succursale);
             } else {
                 $user->setSurccursale(null);
             }
 
-            if (isset($data['boutique']) && $data['boutique'] !== null) {
-                $boutique = $boutiqueRepository->find($data['boutique']);
-                if ($boutique) $user->setBoutique($boutique);
+            if (isset($data->boutique) && $data->boutique !== null) {
+                $boutique = $boutiqueRepository->find($data->boutique);
+              $user->setBoutique($boutique);
             } else {
                 $user->setBoutique(null);
             }
 
-            if (isset($data['type'])) {
-                $typeUser = $typeUserRepository->find($data['type']);
+            if (isset($data->type)) {
+                $typeUser = $typeUserRepository->find($data->type);
                 if (!$typeUser) {
                     return $this->errorResponse(null, "Type d'utilisateur non trouvé", 404);
                 }
                 $user->setType($typeUser);
             }
 
-            $user->setUpdatedAt(new \DateTime());
+            //$user->setUpdatedAt(new \DateTime());
 
             $errorResponse = $this->errorResponse($user);
             if ($errorResponse !== null) {
