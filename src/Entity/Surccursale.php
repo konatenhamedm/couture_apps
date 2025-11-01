@@ -14,15 +14,15 @@ class Surccursale
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-     #[Groups(["group1", "group_type"])]
+     #[Groups(["group_surccursale",'group1','group_type'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-     #[Groups(["group1", "group_type"])]
+     #[Groups(["group_surccursale",'group1','group_type'])]
     private ?string $libelle = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-     #[Groups(["group1", "group_type"])]
+     #[Groups(["group_surccursale",'group1','group_type'])]
     private ?string $contact = null;
 
     /**
