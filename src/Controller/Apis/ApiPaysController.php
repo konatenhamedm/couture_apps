@@ -440,9 +440,9 @@ class ApiPaysController extends ApiInterface
     /**
      * Supprime plusieurs pays en masse
      */
-    #[Route('/delete/all', methods: ['DELETE'])]
+    #[Route('/delete/all/items', methods: ['DELETE'])]
     #[OA\Delete(
-        path: "/api/pays/delete/all",
+        path: "/api/pays/delete/all/items",
         summary: "Supprimer plusieurs pays",
         description: "Permet de supprimer plusieurs pays en une seule opération en fournissant un tableau d'identifiants. Attention : tous les opérateurs téléphoniques associés seront également supprimés.",
         tags: ['pays']

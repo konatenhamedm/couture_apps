@@ -810,9 +810,9 @@ $this->setStatusCode(500);
     /**
      * Supprime plusieurs factures en masse
      */
-    #[Route('/delete/all', methods: ['DELETE'])]
+    #[Route('/delete/all/items', methods: ['DELETE'])]
     #[OA\Delete(
-        path: "/api/facture/delete/all",
+        path: "/api/facture/delete/all/items",
         summary: "Supprimer plusieurs factures",
         description: "Permet de supprimer plusieurs factures en une seule opération en fournissant un tableau d'identifiants. Toutes les mesures et paiements associés seront également supprimés. Nécessite un abonnement actif.",
         tags: ['facture']

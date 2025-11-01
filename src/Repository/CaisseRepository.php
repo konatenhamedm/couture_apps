@@ -15,7 +15,23 @@ class CaisseRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Caisse::class);
     }
+    public function add(Caisse $entity, bool $flush = false): void
+    {
+        $this->getEntityManager()->persist($entity);
 
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+
+    public function remove(Caisse $entity, bool $flush = false): void
+    {
+        $this->getEntityManager()->remove($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
     //    /**
     //     * @return Caisse[] Returns an array of Caisse objects
     //     */

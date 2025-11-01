@@ -474,9 +474,9 @@ $this->setStatusCode(500);
     /**
      * Supprime plusieurs opérateurs en masse
      */
-    #[Route('/delete/all', methods: ['DELETE'])]
+    #[Route('/delete/all/items', methods: ['DELETE'])]
     #[OA\Delete(
-        path: "/api/operateur/delete/all",
+        path: "/api/operateur/delete/all/items",
         summary: "Supprimer plusieurs opérateurs",
         description: "Permet de supprimer plusieurs opérateurs téléphoniques en une seule opération en fournissant un tableau d'identifiants.",
         tags: ['operateur']

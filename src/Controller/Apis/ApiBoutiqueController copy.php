@@ -310,7 +310,7 @@ $this->setStatusCode(500);
         return $response;
     }
 
-    #[Route('/delete/all',  methods: ['DELETE'])]
+    #[Route('/delete/all/items',  methods: ['DELETE'])]
     /**
      * Permet de supprimer plusieurs boutique.
      */

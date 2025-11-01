@@ -76,9 +76,9 @@ class ApiTypeMesureController extends ApiInterface
     // #[Security(name: 'Bearer')]
     public function indexAll(TypeMesureRepository $typeMesureRepository,CategorieTypeMesureRepository $categorieTypeMesureRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+       /*  if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
-        } 
+        }  */
 
         try {
             $typeMesures = $typeMesureRepository->findBy([],['id' => 'ASC']);
@@ -286,32 +286,7 @@ class ApiTypeMesureController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
-                    new OA\Property(property: "entrepriseId", type: "string"),
-                    new OA\Property(property: "userUpdate", type: "string"),
-
-                    new OA\Property(
-                        property: "ligneCategorieMesures",
-                        type: "array",
-                        items: new OA\Items(
-                            type: "object",
-                            properties: [
-                                new OA\Property(property: "id", type: "string"),
-                                new OA\Property(property: "libelle", type: "string"),
-
-                            ]
-                        ),
-                    ),
-                    new OA\Property(
-                        property: "ligneCategorieMesuresDelete",
-                        type: "array",
-                        items: new OA\Items(
-                            type: "object",
-                            properties: [
-                                new OA\Property(property: "id", type: "string"),
-
-                            ]
-                        ),
-                    ),
+                   
                 ],
                 type: "object"
             )
@@ -337,7 +312,7 @@ class ApiTypeMesureController extends ApiInterface
                 $errorResponse = $this->errorResponse($typeMesure);
 
                 // On vérifie si lignesCategoriesMesure n'est pas vide
-                $lignesCategoriesMesure = $data->ligneCategorieMesures;
+               /*  $lignesCategoriesMesure = $data->ligneCategorieMesures;
                 if (isset($lignesCategoriesMesure) && is_array($lignesCategoriesMesure)) {
                     foreach ($lignesCategoriesMesure as $ligneCategorieMesure) {
 
@@ -369,7 +344,7 @@ class ApiTypeMesureController extends ApiInterface
                             $categorieMesureRepository->remove($categorieMesure, true);
                         }
                     }
-                }
+                } */
 
 
                 if ($errorResponse !== null) {
@@ -439,7 +414,7 @@ class ApiTypeMesureController extends ApiInterface
         return $response;
     }
 
-    #[Route('/delete/all',  methods: ['DELETE'])]
+    #[Route('/delete/all/items',  methods: ['DELETE'])]
     /**
      * Permet de supprimer plusieurs typeMesure.
      */

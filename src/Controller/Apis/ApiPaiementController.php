@@ -894,9 +894,9 @@ $this->setStatusCode(500);
     /**
      * Supprime plusieurs paiements en masse
      */
-    #[Route('/delete/all', methods: ['DELETE'])]
+    #[Route('/delete/all/items', methods: ['DELETE'])]
     #[OA\Delete(
-        path: "/api/paiement/delete/all",
+        path: "/api/paiement/delete/all/items",
         summary: "Supprimer plusieurs paiements",
         description: "Permet de supprimer plusieurs paiements en une seule opération en fournissant un tableau d'identifiants. Attention : cette action ne recalcule pas automatiquement les caisses et les stocks. Nécessite un abonnement actif.",
         tags: ['paiement']

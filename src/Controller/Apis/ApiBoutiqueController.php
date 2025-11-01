@@ -465,9 +465,9 @@ $this->setStatusCode(500);
     /**
      * Supprime plusieurs boutiques en masse
      */
-    #[Route('/delete/all', methods: ['DELETE'])]
+    #[Route('/delete/all/items', methods: ['DELETE'])]
     #[OA\Delete(
-        path: "/api/boutique/delete/all",
+        path: "/api/boutique/delete/all/items",
         summary: "Supprimer plusieurs boutiques",
         description: "Permet de supprimer plusieurs boutiques en une seule opération en fournissant un tableau d'identifiants. Nécessite un abonnement actif.",
         tags: ['boutique']

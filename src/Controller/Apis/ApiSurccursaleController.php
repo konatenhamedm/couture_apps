@@ -514,9 +514,9 @@ class ApiSurccursaleController extends ApiInterface
     /**
      * Supprime plusieurs succursales en masse
      */
-    #[Route('/delete/all', methods: ['DELETE'])]
+    #[Route('/delete/all/items', methods: ['DELETE'])]
     #[OA\Delete(
-        path: "/api/succursale/delete/all",
+        path: "/api/succursale/delete/all/items",
         summary: "Supprimer plusieurs succursales",
         description: "Permet de supprimer plusieurs succursales en une seule opération en fournissant un tableau d'identifiants. Attention : toutes les caisses, boutiques et stocks associés seront également supprimés. Nécessite un abonnement actif.",
         tags: ['surccursale']

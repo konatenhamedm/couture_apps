@@ -558,9 +558,9 @@ $this->setStatusCode(500);
     /**
      * Supprime plusieurs modèles de boutique en masse
      */
-    #[Route('/delete/all', methods: ['DELETE'])]
+    #[Route('/delete/all/items', methods: ['DELETE'])]
     #[OA\Delete(
-        path: "/api/modeleBoutique/delete/all",
+        path: "/api/modeleBoutique/delete/all/items",
         summary: "Supprimer plusieurs modèles de boutique",
         description: "Permet de supprimer plusieurs associations modèle-boutique en une seule opération en fournissant un tableau d'identifiants. Nécessite un abonnement actif.",
         tags: ['modeleBoutique']

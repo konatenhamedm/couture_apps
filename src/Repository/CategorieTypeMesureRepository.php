@@ -15,7 +15,23 @@ class CategorieTypeMesureRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, CategorieTypeMesure::class);
     }
+    public function add(CategorieTypeMesure $entity, bool $flush = false): void
+    {
+        $this->getEntityManager()->persist($entity);
 
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+
+    public function remove(CategorieTypeMesure $entity, bool $flush = false): void
+    {
+        $this->getEntityManager()->remove($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
     //    /**
     //     * @return CategorieTypeMesure[] Returns an array of CategorieTypeMesure objects
     //     */

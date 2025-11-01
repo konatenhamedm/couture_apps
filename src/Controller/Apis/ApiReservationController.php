@@ -645,9 +645,9 @@ class ApiReservationController extends ApiInterface
     /**
      * Supprime plusieurs réservations en masse
      */
-    #[Route('/delete/all', methods: ['DELETE'])]
+    #[Route('/delete/all/items', methods: ['DELETE'])]
     #[OA\Delete(
-        path: "/api/reservation/delete/all",
+        path: "/api/reservation/delete/all/items",
         summary: "Supprimer plusieurs réservations",
         description: "Permet de supprimer plusieurs réservations en une seule opération en fournissant un tableau d'identifiants. Toutes les lignes de réservation et paiements associés seront également supprimés. Nécessite un abonnement actif.",
         tags: ['reservation']

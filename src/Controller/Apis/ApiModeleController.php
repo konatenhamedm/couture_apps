@@ -467,9 +467,9 @@ class ApiModeleController extends ApiInterface
     /**
      * Supprime plusieurs modèles en masse
      */
-    #[Route('/delete/all', methods: ['DELETE'])]
+    #[Route('/delete/all/items', methods: ['DELETE'])]
     #[OA\Delete(
-        path: "/api/modele/delete/all",
+        path: "/api/modele/delete/all/items",
         summary: "Supprimer plusieurs modèles",
         description: "Permet de supprimer plusieurs modèles de vêtements en une seule opération en fournissant un tableau d'identifiants. Toutes les associations et l'historique de stock seront également supprimés. Nécessite un abonnement actif.",
         tags: ['modele']

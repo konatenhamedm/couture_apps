@@ -531,9 +531,9 @@ $this->setStatusCode(500);
     /**
      * Supprime plusieurs plans d'abonnement en masse
      */
-    #[Route('/delete/all', methods: ['DELETE'])]
+    #[Route('/delete/all/items', methods: ['DELETE'])]
     #[OA\Delete(
-        path: "/api/moduleAbonnement/delete/all",
+        path: "/api/moduleAbonnement/delete/all/items",
         summary: "Supprimer plusieurs plans d'abonnement",
         description: "Permet de supprimer plusieurs plans d'abonnement en une seule opération en fournissant un tableau d'identifiants. Toutes les lignes de modules associées seront également supprimées.",
         tags: ['moduleAbonnement']

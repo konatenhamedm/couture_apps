@@ -285,9 +285,9 @@ $this->setStatusCode(500);
     /**
      * Supprime plusieurs notifications en masse
      */
-    #[Route('/delete/all', methods: ['DELETE'])]
+    #[Route('/delete/all/items', methods: ['DELETE'])]
     #[OA\Delete(
-        path: "/api/notification/delete/all",
+        path: "/api/notification/delete/all/items",
         summary: "Supprimer plusieurs notifications",
         description: "Permet de supprimer plusieurs notifications en une seule opération en fournissant un tableau d'identifiants. Utile pour nettoyer rapidement plusieurs notifications obsolètes.",
         tags: ['notification']

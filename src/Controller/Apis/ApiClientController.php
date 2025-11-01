@@ -616,9 +616,9 @@ $this->setStatusCode(500);
     /**
      * Supprime plusieurs clients en masse
      */
-    #[Route('/delete/all', methods: ['DELETE'])]
+    #[Route('/delete/all/items', methods: ['DELETE'])]
     #[OA\Delete(
-        path: "/api/client/delete/all",
+        path: "/api/client/delete/all/items",
         summary: "Supprimer plusieurs clients",
         description: "Permet de supprimer plusieurs clients en une seule opération en fournissant un tableau d'identifiants. Nécessite un abonnement actif.",
         tags: ['client']

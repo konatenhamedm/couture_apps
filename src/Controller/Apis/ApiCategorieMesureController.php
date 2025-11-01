@@ -420,9 +420,9 @@ class ApiCategorieMesureController extends ApiInterface
     /**
      * Supprime plusieurs catégories de mesure en masse
      */
-    #[Route('/delete/all', methods: ['DELETE'])]
+    #[Route('/delete/all/items', methods: ['DELETE'])]
     #[OA\Delete(
-        path: "/api/categorieMesure/delete/all",
+        path: "/api/categorieMesure/delete/all/items",
         summary: "Supprimer plusieurs catégories de mesure",
         description: "Permet de supprimer plusieurs catégories de mesure en une seule opération en fournissant un tableau d'identifiants. Nécessite un abonnement actif.",
         tags: ['categorieMesure']

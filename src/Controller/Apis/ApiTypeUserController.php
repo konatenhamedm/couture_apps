@@ -239,7 +239,7 @@ class ApiTypeUserController extends ApiInterface
         return $response;
     }
 
-    #[Route('/delete/all',  methods: ['DELETE'])]
+    #[Route('/delete/all/items',  methods: ['DELETE'])]
     /**
      * Permet de supprimer plusieurs typeUser.
      */
