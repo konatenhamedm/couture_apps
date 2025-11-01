@@ -36,7 +36,7 @@ class ApiCategorieTypeMesureController extends ApiInterface
         path: "/api/categorieTypeMesure/{typeMesure}",
         summary: "Lister toutes les catégories mesure d'un type de mesure",
         description: "",
-        tags: ['categorieMesure']
+        tags: ['categorieTypeMesure']
     )]
     #[OA\Response(
         response: 200,
