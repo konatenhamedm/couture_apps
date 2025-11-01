@@ -57,6 +57,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
 
     #[ORM\ManyToOne(inversedBy: 'users')]
+    #[Groups(["group1"])]
     private ?Surccursale $surccursale = null;
 
     #[ORM\ManyToOne(inversedBy: 'users')]
@@ -87,6 +88,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?Fichier $logo = null;
 
     #[ORM\ManyToOne(inversedBy: 'users')]
+    #[Groups(["group1"])]
     private ?Boutique $boutique = null;
 
 
