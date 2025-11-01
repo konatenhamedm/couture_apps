@@ -581,7 +581,6 @@ class ApiUserController extends ApiInterface
                 new OA\Property(property: "prenoms", type: "string", example: "Aminata"),
                 new OA\Property(property: "login", type: "string", example: "aminata.traore@fashionci.com"),
                 new OA\Property(property: "type", type: "object"),
-                new OA\Property(property: "entreprise", type: "object"),
                 new OA\Property(property: "succursale", type: "object", nullable: true),
                 new OA\Property(property: "boutique", type: "object", nullable: true)
             ]
@@ -609,7 +608,7 @@ class ApiUserController extends ApiInterface
             $data = json_decode($request->getContent(), true);
 
             // Vérification unicité email
-            if ($userRepository->findOneBy(['login' => $data['email']])) {
+            if ($userRepository->findOneBy(['login' => $data['login']])) {
                 return $this->errorResponse(null, "Cet email existe déjà, veuillez utiliser un autre");
             }
 
@@ -673,7 +672,7 @@ class ApiUserController extends ApiInterface
         } catch (\Throwable $th) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la création du membre");
-            $response = $this->response('[]');
+            $response = $this->response($th->getMessage());
         }
 
         return $response;
