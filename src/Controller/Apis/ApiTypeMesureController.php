@@ -74,22 +74,40 @@ class ApiTypeMesureController extends ApiInterface
     )]
     #[OA\Tag(name: 'typeMesure')]
     // #[Security(name: 'Bearer')]
-    public function indexAll(TypeMesureRepository $typeMesureRepository): Response
+    public function indexAll(TypeMesureRepository $typeMesureRepository,CategorieTypeMesureRepository $categorieTypeMesureRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
-        }
+        } 
 
         try {
-
-            $typeMesures = $this->paginationService->paginate($typeMesureRepository->findBy(
-                [],
-                ['id' => 'ASC']
-            ));
+            $typeMesures = $typeMesureRepository->findBy([],['id' => 'ASC']);
 
 
+             $formattedTypeMesures = array_map(function ($typeMesure) use ($categorieTypeMesureRepository) {
 
-            $response =  $this->responseData($typeMesures, 'group1', ['Content-Type' => 'application/json']);
+                $categorieTypeMesures = $categorieTypeMesureRepository->findBy(['typeMesure' => $typeMesure,'entreprise' => $this->getUser()->getEntreprise()]);
+        
+                return [
+                    'id' => $typeMesure->getId(),
+                    'libelle' => $typeMesure->getLibelle(),
+                    'categorieTypeMesures' => array_map(function ($categorieTypeMesure) {
+                        return [
+                            'id' => $categorieTypeMesure->getId(),
+                            'idCategorie' => $categorieTypeMesure->getCategorieMesure()->getId(),
+                            'libelleCategorie' => $categorieTypeMesure->getCategorieMesure()->getLibelle(),
+                        ];
+                    }, $categorieTypeMesures), 
+                ];
+            }, $typeMesures);
+
+          //  $typeMesures = $this->paginationService->paginate($typeMesures);
+
+
+
+
+
+            $response =  $this->responseData($formattedTypeMesures, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("");

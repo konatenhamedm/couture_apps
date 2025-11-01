@@ -23,6 +23,11 @@ class CategorieTypeMesure
      #[Groups(["group1", "group_type"])]
     private ?CategorieMesure $categorieMesure = null;
 
+    #[ORM\ManyToOne(inversedBy: 'categorieTypeMesures')]
+    private ?Entreprise $entreprise = null;
+
+    
+
     public function getId(): ?int
     {
         return $this->id;
@@ -48,6 +53,18 @@ class CategorieTypeMesure
     public function setCategorieMesure(?CategorieMesure $categorieMesure): static
     {
         $this->categorieMesure = $categorieMesure;
+
+        return $this;
+    }
+
+    public function getEntreprise(): ?Entreprise
+    {
+        return $this->entreprise;
+    }
+
+    public function setEntreprise(?Entreprise $entreprise): static
+    {
+        $this->entreprise = $entreprise;
 
         return $this;
     }

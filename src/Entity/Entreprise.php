@@ -121,6 +121,12 @@ class Entreprise
     #[ORM\OneToMany(targetEntity: EntreStock::class, mappedBy: 'entreprise')]
     private Collection $entreStocks;
 
+    /**
+     * @var Collection<int, CategorieTypeMesure>
+     */
+    #[ORM\OneToMany(targetEntity: CategorieTypeMesure::class, mappedBy: 'entreprise')]
+    private Collection $categorieTypeMesures;
+
     public function __construct()
     {
         $this->categorieMesures = new ArrayCollection();
@@ -136,6 +142,7 @@ class Entreprise
         $this->caisses = new ArrayCollection();
         $this->reservations = new ArrayCollection();
         $this->entreStocks = new ArrayCollection();
+        $this->categorieTypeMesures = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -589,6 +596,36 @@ class Entreprise
             // set the owning side to null (unless already changed)
             if ($entreStock->getEntreprise() === $this) {
                 $entreStock->setEntreprise(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, CategorieTypeMesure>
+     */
+    public function getCategorieTypeMesures(): Collection
+    {
+        return $this->categorieTypeMesures;
+    }
+
+    public function addCategorieTypeMesure(CategorieTypeMesure $categorieTypeMesure): static
+    {
+        if (!$this->categorieTypeMesures->contains($categorieTypeMesure)) {
+            $this->categorieTypeMesures->add($categorieTypeMesure);
+            $categorieTypeMesure->setEntreprise($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCategorieTypeMesure(CategorieTypeMesure $categorieTypeMesure): static
+    {
+        if ($this->categorieTypeMesures->removeElement($categorieTypeMesure)) {
+            // set the owning side to null (unless already changed)
+            if ($categorieTypeMesure->getEntreprise() === $this) {
+                $categorieTypeMesure->setEntreprise(null);
             }
         }
 

@@ -38,7 +38,7 @@ class JwtService
             $decoded = JWT::decode($token, new Key($this->secret, 'HS256'));
             return (array) $decoded;
         } catch (\Exception $e) {
-$this->setStatusCode(500);
+
             return null;
         }
     }
