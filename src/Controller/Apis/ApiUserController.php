@@ -527,9 +527,9 @@ class ApiUserController extends ApiInterface
                     description: "Prénom(s) du membre (obligatoire)"
                 ),
                 new OA\Property(
-                    property: "email",
+                    property: "login",
                     type: "string",
-                    format: "email",
+                    format: "login",
                     example: "aminata.traore@fashionci.com",
                     description: "Email de connexion du membre (obligatoire, unique)"
                 ),
@@ -617,11 +617,11 @@ class ApiUserController extends ApiInterface
             $user = new User();
             $user->setNom($data['nom']);
             $user->setPrenoms($data['prenoms']);
-            $user->setLogin($data['email']);
+            $user->setLogin($data['login']);
 
             // Affectation à une succursale (optionnel)
-            if (isset($data['surccursale']) && $data['surccursale'] != null) {
-                $succursale = $surccursaleRepository->find($data['surccursale']);
+            if (isset($data['succursale']) && $data['succursale'] != null) {
+                $succursale = $surccursaleRepository->find($data['succursale']);
                 if ($succursale) {
                     $user->setSurccursale($succursale);
                 }
