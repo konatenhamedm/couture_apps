@@ -26,7 +26,7 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
  * Contrôleur pour la gestion des succursales
  * Permet de gérer les établissements secondaires d'une entreprise avec création automatique de caisse
  */
-#[Route('/api/surccursale')]
+#[Route('/api/succursale')]
 #[OA\Tag(name: 'surccursale', description: 'Gestion des succursales (établissements secondaires) avec caisses dédiées')]
 class ApiSurccursaleController extends ApiInterface
 {
@@ -35,7 +35,7 @@ class ApiSurccursaleController extends ApiInterface
      */
     #[Route('/', methods: ['GET'])]
     #[OA\Get(
-        path: "/api/surccursale/",
+        path: "/api/succursale/",
         summary: "Lister toutes les succursales",
         description: "Retourne la liste paginée de toutes les succursales du système, tous établissements confondus.",
         tags: ['surccursale']
@@ -52,13 +52,20 @@ class ApiSurccursaleController extends ApiInterface
                     new OA\Property(property: "libelle", type: "string", example: "Succursale Abidjan Plateau", description: "Nom de la succursale"),
                     new OA\Property(property: "contact", type: "string", example: "+225 27 20 12 34 56", description: "Numéro de contact de la succursale"),
                     new OA\Property(property: "isActive", type: "boolean", example: true, description: "Statut actif/inactif"),
-                    new OA\Property(property: "entreprise", type: "object", description: "Entreprise propriétaire",
+                    new OA\Property(
+                        property: "entreprise",
+                        type: "object",
+                        description: "Entreprise propriétaire",
                         properties: [
                             new OA\Property(property: "id", type: "integer", example: 1),
                             new OA\Property(property: "nom", type: "string", example: "Fashion Boutique CI")
                         ]
                     ),
-                    new OA\Property(property: "caisse", type: "object", nullable: true, description: "Caisse associée à la succursale",
+                    new OA\Property(
+                        property: "caisse",
+                        type: "object",
+                        nullable: true,
+                        description: "Caisse associée à la succursale",
                         properties: [
                             new OA\Property(property: "id", type: "integer", example: 5),
                             new OA\Property(property: "montant", type: "number", example: 500000, description: "Solde en caisse"),
@@ -78,7 +85,7 @@ class ApiSurccursaleController extends ApiInterface
             $surccursales = $this->paginationService->paginate($surccursaleRepository->findAll());
             $response = $this->responseData($surccursales, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des succursales");
             $response = $this->response('[]');
         }
@@ -91,7 +98,7 @@ $this->setStatusCode(500);
      */
     #[Route('/active/entreprise', methods: ['GET'])]
     #[OA\Get(
-        path: "/api/surccursale/active/entreprise",
+        path: "/api/succursale/active/entreprise",
         summary: "Lister les succursales actives de l'entreprise",
         description: "Retourne la liste paginée uniquement des succursales actives de l'entreprise de l'utilisateur connecté. Utile pour les formulaires de sélection.",
         tags: ['surccursale']
@@ -126,7 +133,7 @@ $this->setStatusCode(500);
 
             $response = $this->responseData($surccursales, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des succursales actives");
             $response = $this->response('[]');
         }
@@ -139,7 +146,7 @@ $this->setStatusCode(500);
      */
     #[Route('/entreprise', methods: ['GET'])]
     #[OA\Get(
-        path: "/api/surccursale/entreprise",
+        path: "/api/succursale/entreprise",
         summary: "Lister toutes les succursales de l'entreprise",
         description: "Retourne la liste paginée de toutes les succursales (actives et inactives) de l'entreprise de l'utilisateur connecté.",
         tags: ['surccursale']
@@ -175,7 +182,7 @@ $this->setStatusCode(500);
 
             $response = $this->responseData($surccursales, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des succursales de l'entreprise");
             $response = $this->response('[]');
         }
@@ -188,7 +195,7 @@ $this->setStatusCode(500);
      */
     #[Route('/get/one/{id}', methods: ['GET'])]
     #[OA\Get(
-        path: "/api/surccursale/get/one/{id}",
+        path: "/api/succursale/get/one/{id}",
         summary: "Détails d'une succursale",
         description: "Affiche les informations détaillées d'une succursale spécifique, incluant sa caisse, ses boutiques et tous ses utilisateurs.",
         tags: ['surccursale']
@@ -211,7 +218,11 @@ $this->setStatusCode(500);
                 new OA\Property(property: "contact", type: "string", example: "+225 27 20 12 34 56"),
                 new OA\Property(property: "isActive", type: "boolean", example: true),
                 new OA\Property(property: "entreprise", type: "object", description: "Entreprise mère"),
-                new OA\Property(property: "caisse", type: "object", nullable: true, description: "Caisse de la succursale",
+                new OA\Property(
+                    property: "caisse",
+                    type: "object",
+                    nullable: true,
+                    description: "Caisse de la succursale",
                     properties: [
                         new OA\Property(property: "id", type: "integer", example: 5),
                         new OA\Property(property: "montant", type: "number", example: 500000),
@@ -238,7 +249,7 @@ $this->setStatusCode(500);
                 $response = $this->response(null);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
@@ -251,7 +262,7 @@ $this->setStatusCode(500);
      */
     #[Route('/create', methods: ['POST'])]
     #[OA\Post(
-        path: "/api/surccursale/create",
+        path: "/api/succursale/create",
         summary: "Créer une succursale",
         description: "Permet de créer une nouvelle succursale pour l'entreprise. Crée automatiquement une caisse dédiée à cette succursale avec un solde initial de 0 FCFA. Le statut actif/inactif est déterminé par les paramètres de l'entreprise. Nécessite un abonnement actif.",
         tags: ['surccursale']
@@ -287,17 +298,7 @@ $this->setStatusCode(500);
                 new OA\Property(property: "id", type: "integer", example: 15),
                 new OA\Property(property: "libelle", type: "string", example: "Succursale Abidjan Cocody"),
                 new OA\Property(property: "contact", type: "string", example: "+225 27 20 12 34 56"),
-                new OA\Property(property: "isActive", type: "boolean", example: true, description: "Déterminé par les paramètres entreprise"),
-                new OA\Property(property: "entreprise", type: "object"),
-                new OA\Property(property: "caisse", type: "object", description: "Caisse créée automatiquement",
-                    properties: [
-                        new OA\Property(property: "id", type: "integer", example: 20),
-                        new OA\Property(property: "montant", type: "number", example: 0, description: "Solde initial à 0"),
-                        new OA\Property(property: "reference", type: "string", example: "CAIS-2025-020"),
-                        new OA\Property(property: "type", type: "string", example: "succursale")
-                    ]
-                ),
-                new OA\Property(property: "createdAt", type: "string", format: "date-time")
+        
             ]
         )
     )]
@@ -357,7 +358,7 @@ $this->setStatusCode(500);
      */
     #[Route('/update/{id}', methods: ['PUT', 'POST'])]
     #[OA\Put(
-        path: "/api/surccursale/update/{id}",
+        path: "/api/succursale/update/{id}",
         summary: "Mettre à jour une succursale",
         description: "Permet de modifier les informations d'une succursale existante, incluant son nom et son numéro de contact. Nécessite un abonnement actif.",
         tags: ['surccursale']
@@ -447,7 +448,7 @@ $this->setStatusCode(500);
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour de la succursale");
             $response = $this->response('[]');
         }
@@ -459,7 +460,7 @@ $this->setStatusCode(500);
      */
     #[Route('/delete/{id}', methods: ['DELETE'])]
     #[OA\Delete(
-        path: "/api/surccursale/delete/{id}",
+        path: "/api/succursale/delete/{id}",
         summary: "Supprimer une succursale",
         description: "Permet de supprimer définitivement une succursale par son identifiant. Attention : cette action supprime également la caisse associée, toutes les boutiques de la succursale et leurs stocks. Nécessite un abonnement actif.",
         tags: ['surccursale']
@@ -503,7 +504,7 @@ $this->setStatusCode(500);
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression de la succursale");
             $response = $this->response('[]');
         }
@@ -515,7 +516,7 @@ $this->setStatusCode(500);
      */
     #[Route('/delete/all', methods: ['DELETE'])]
     #[OA\Delete(
-        path: "/api/surccursale/delete/all",
+        path: "/api/succursale/delete/all",
         summary: "Supprimer plusieurs succursales",
         description: "Permet de supprimer plusieurs succursales en une seule opération en fournissant un tableau d'identifiants. Attention : toutes les caisses, boutiques et stocks associés seront également supprimés. Nécessite un abonnement actif.",
         tags: ['surccursale']
@@ -572,7 +573,7 @@ $this->setStatusCode(500);
             $this->setMessage("Operation effectuées avec succès");
             $response = $this->json(['message' => 'Operation effectuées avec succès', 'deletedCount' => $count]);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des succursales");
             $response = $this->response('[]');
         }
