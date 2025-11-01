@@ -694,7 +694,7 @@ class ApiUserController extends ApiInterface
                 new OA\Property(property: "nom", type: "string", example: "Koné"),
                 new OA\Property(property: "prenoms", type: "string", example: "Mariam"),
                 new OA\Property(property: "login", type: "string", example: "mariam.kone@entreprise.ci"),
-                new OA\Property(property: "surccursale", type: "integer", example: 2, nullable: true),
+                new OA\Property(property: "succursale", type: "integer", example: 2, nullable: true),
                 new OA\Property(property: "boutique", type: "integer", example: 5, nullable: true),
                 new OA\Property(property: "type", type: "integer", example: 3)
             ]
@@ -732,8 +732,8 @@ class ApiUserController extends ApiInterface
             //if (isset($data['email'])) $user->setLogin($data['email']);
 
             // Affectation succursale
-            if (isset($data['surccursale']) && $data['surccursale'] != null) {
-                $succursale = $surccursaleRepository->find($data['surccursale']);
+            if (isset($data['succursale']) && $data['surccursale'] != null) {
+                $succursale = $surccursaleRepository->find($data['succursale']);
                 if ($succursale) $user->setSurccursale($succursale);
             }else{
                 $user->setSurccursale(null);
@@ -873,8 +873,8 @@ class ApiUserController extends ApiInterface
             if (isset($data['prenoms'])) {
                 $user->setPrenoms($data['prenoms']);
             }
-
-            if (isset($data['email'])) {
+/* 
+            if (isset($data['login'])) {
                 // Vérification unicité email
                 $existingUser = $userRepository->findOneBy(['login' => $data['email']]);
                 if ($existingUser && $existingUser->getId() !== $user->getId()) {
@@ -884,7 +884,7 @@ class ApiUserController extends ApiInterface
                     ], 400);
                 }
                 $user->setLogin($data['email']);
-            }
+            } */
 
             //$user->setUpdatedAt(new \DateTime());
             $userRepository->add($user, true);
