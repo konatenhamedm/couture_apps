@@ -28,6 +28,49 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 class ApiCategorieTypeMesureController extends ApiInterface
 {
     
+ /**
+     * Liste toutes les catégories de mesure du système
+     */
+    #[Route('/{typeMesure}', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/categorieTypeMesure/{typeMesure}",
+        summary: "Lister toutes les catégories mesure d'un type de mesure",
+        description: "",
+        tags: ['categorieMesure']
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Liste des catégories de mesure récupérée avec succès",
+        content: new OA\JsonContent(
+            type: 'array',
+            items: new OA\Items(
+                type: "object",
+                properties: [
+                    new OA\Property(property: "id", type: "integer", example: 1, description: "Identifiant unique de la catégorie"),
+                    new OA\Property(property: "libelle", type: "string", example: "Mesures corporelles", description: "Nom de la catégorie de mesure"),
+                    new OA\Property(property: "code", type: "string", example: "CORP", description: "Code unique de la catégorie"),
+                    new OA\Property(property: "entreprise", type: "object", description: "Entreprise associée", nullable: true),
+                    new OA\Property(property: "createdAt", type: "string", format: "date-time", example: "2025-01-15T10:30:00+00:00", description: "Date de création"),
+                    new OA\Property(property: "updatedAt", type: "string", format: "date-time", example: "2025-01-20T14:20:00+00:00", description: "Date de mise à jour")
+                ]
+            )
+        )
+    )]
+    #[OA\Response(response: 500, description: "Erreur serveur lors de la récupération")]
+    public function index($typeMesure,CategorieTypeMesureRepository $categorieTypeMesureRepository): Response
+    {
+        try {
+            
+            $categories = $this->paginationService->paginate($categorieTypeMesureRepository->findBy(['typeMesure' => $typeMesure]));
+            $response = $this->responseData($categories, 'group1', ['Content-Type' => 'application/json'], true);
+        } catch (\Exception $exception) {
+            $this->setStatusCode(500);
+            $this->setMessage("Erreur lors de la récupération des catégories de mesure");
+            $response = $this->response('[]');
+        }
+
+        return $response;
+    }
 
     /**
      * Crée un nouveau categorieTypeMesure
