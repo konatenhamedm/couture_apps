@@ -16,6 +16,27 @@ class ReservationRepository extends ServiceEntityRepository
         parent::__construct($registry, Reservation::class);
     }
 
+    public function getEvolutionCommandes(\DateTime $debut, \DateTime $fin, string $groupBy = 'jour'): array
+    {
+        $format = match ($groupBy) {
+            'jour' => '%Y-%m-%d',
+            'semaine' => '%Y-%U',
+            'mois' => '%Y-%m',
+            default => '%Y-%m-%d'
+        };
+
+        return $this->createQueryBuilder('r')
+            ->select("DATE_FORMAT(r.dateCreated, '$format') as periode")
+            ->addSelect('COUNT(r.id) as nombre')
+            ->where('r.dateCreated BETWEEN :debut AND :fin')
+            ->setParameter('debut', $debut)
+            ->setParameter('fin', $fin)
+            ->groupBy('periode')
+            ->orderBy('periode', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     //    /**
     //     * @return Reservation[] Returns an array of Reservation objects
     //     */

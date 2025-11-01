@@ -32,6 +32,27 @@ class FactureRepository extends ServiceEntityRepository
             $this->getEntityManager()->flush();
         }
     }
+
+    public function getEvolutionCommandes(\DateTime $debut, \DateTime $fin, string $groupBy = 'jour'): array
+    {
+        $format = match ($groupBy) {
+            'jour' => '%Y-%m-%d',
+            'semaine' => '%Y-%U',
+            'mois' => '%Y-%m',
+            default => '%Y-%m-%d'
+        };
+
+        return $this->createQueryBuilder('f')
+            ->select("DATE_FORMAT(f.dateCreated, '$format') as periode")
+            ->addSelect('COUNT(f.id) as nombre')
+            ->where('f.dateCreated BETWEEN :debut AND :fin')
+            ->setParameter('debut', $debut)
+            ->setParameter('fin', $fin)
+            ->groupBy('periode')
+            ->orderBy('periode', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
     //    /**
     //     * @return Facture[] Returns an array of Facture objects
     //     */
