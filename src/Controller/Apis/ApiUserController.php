@@ -97,6 +97,8 @@ class ApiUserController extends ApiInterface
 
             return new JsonResponse(['code' => 200, 'data' => json_decode($json)]);
         } catch (\Exception $exception) {
+            $this->setStatusCode(500);
+
             $this->setMessage("Erreur lors de la récupération des utilisateurs");
             $response = $this->response('[]');
         }
@@ -145,6 +147,7 @@ class ApiUserController extends ApiInterface
 
             return new JsonResponse(['code' => 200, 'data' => json_decode($json)]);
         } catch (\Exception $exception) {
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des utilisateurs actifs");
             $response = $this->response('[]');
         }
@@ -483,6 +486,7 @@ class ApiUserController extends ApiInterface
                 ], 'group1', ['Content-Type' => 'application/json']);
             }
         } catch (Exception $th) {
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de l'inscription");
             $response = $this->response('[]');
         }
@@ -664,6 +668,7 @@ class ApiUserController extends ApiInterface
 
             $response = $this->responseData($user, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Throwable $th) {
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la création du membre");
             $response = $this->response('[]');
         }
@@ -732,7 +737,7 @@ class ApiUserController extends ApiInterface
             //if (isset($data['email'])) $user->setLogin($data['email']);
 
             // Affectation succursale
-            if (isset($data['succursale']) && $data['surccursale'] != null) {
+            if (isset($data['succursale']) && $data['succursale'] != null) {
                 $succursale = $surccursaleRepository->find($data['succursale']);
                 if ($succursale) $user->setSurccursale($succursale);
             }else{
@@ -774,6 +779,7 @@ class ApiUserController extends ApiInterface
 
             return $this->responseData($user, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Throwable $th) {
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour du membre");
             return $this->response('[]');
         }
@@ -988,6 +994,7 @@ class ApiUserController extends ApiInterface
 
             return $this->responseData($user, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour du logo");
             $response = $this->response('[]');
         }
