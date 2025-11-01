@@ -41,7 +41,7 @@ class UserController extends AbstractController
              return $this->json(['message'=>"Vous avez atteint le nombre user actif pour votre pack d'abonnement"]);
         }
         $repository->updateActiveStatus($user, !$user->isActive());
-        return $this->json(['message' => 'Status updated']);
+        return $this->json(['message' => 'Enregistrement effectué avec success']);
     }
 
    /*  #[Route('/create', methods: ['POST'])]
