@@ -649,9 +649,9 @@ class ApiUserController extends ApiInterface
             //$user->setUpdatedAt(new \DateTime());
 
             // Validation mot de passe
-            if ($data['password'] !== $data['confirmPassword']) {
+            /* if ($data['password'] !== $data['confirmPassword']) {
                 return $this->errorResponse($user, "Les mots de passe ne sont pas identiques");
-            }
+            } */
 
             $errorResponse = $this->errorResponse($user);
             if ($errorResponse !== null) {
