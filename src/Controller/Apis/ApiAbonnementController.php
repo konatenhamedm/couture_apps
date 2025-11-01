@@ -66,7 +66,7 @@ class ApiAbonnementController extends ApiInterface
             $categories = $this->paginationService->paginate($moduleRepository->findAll());
             $response = $this->responseData($categories, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des abonnements");
             $response = $this->response('[]');
         }
@@ -213,7 +213,10 @@ $this->setStatusCode(500);
                     new OA\Property(property: "prix", type: "number", format: "float", example: 99.99, description: "Prix"),
                     new OA\Property(property: "duree", type: "integer", example: 12, description: "Durée en mois"),
                     new OA\Property(property: "etat", type: "string", example: "actif", description: "État de l'abonnement"),
-                    new OA\Property(property: "entreprise", type: "object", description: "Informations de l'entreprise",
+                    new OA\Property(
+                        property: "entreprise",
+                        type: "object",
+                        description: "Informations de l'entreprise",
                         properties: [
                             new OA\Property(property: "id", type: "integer", example: 5),
                             new OA\Property(property: "nom", type: "string", example: "Mon Entreprise SARL")
@@ -239,7 +242,7 @@ $this->setStatusCode(500);
 
             $response = $this->responseData($typeMesures, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des abonnements de l'entreprise");
             $response = $this->response('[]');
         }
@@ -270,7 +273,10 @@ $this->setStatusCode(500);
                     new OA\Property(property: "prix", type: "number", format: "float", example: 99.99, description: "Prix de l'abonnement"),
                     new OA\Property(property: "duree", type: "integer", example: 12, description: "Durée en mois"),
                     new OA\Property(property: "etat", type: "string", example: "actif", description: "État de l'abonnement (toujours 'actif' pour cet endpoint)"),
-                    new OA\Property(property: "entreprise", type: "object", description: "Informations de l'entreprise",
+                    new OA\Property(
+                        property: "entreprise",
+                        type: "object",
+                        description: "Informations de l'entreprise",
                         properties: [
                             new OA\Property(property: "id", type: "integer", example: 5),
                             new OA\Property(property: "nom", type: "string", example: "Mon Entreprise SARL")
@@ -297,7 +303,7 @@ $this->setStatusCode(500);
 
             $response = $this->responseData($typeMesures, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des abonnements actifs");
             $response = $this->response('[]');
         }

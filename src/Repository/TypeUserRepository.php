@@ -24,6 +24,14 @@ class TypeUserRepository extends ServiceEntityRepository
         }
     }
 
+    public function getTypeWithoutUser(){
+        return $this->createQueryBuilder('t')
+            ->where('t.code != :code')
+            ->setParameter('code', 'SADM')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function remove(TypeUser $entity, bool $flush = false): void
     {
         $this->getEntityManager()->remove($entity);

@@ -42,13 +42,13 @@ class ApiTypeUserController extends ApiInterface
     {
         try {
 
-            $typeUsers = $this->paginationService->paginate($typeUserRepository->findAll());
+            $typeUsers = $this->paginationService->paginate($typeUserRepository->getTypeWithoutUser());
 
-          
+
 
             $response =  $this->responseData($typeUsers, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("");
             $response = $this->response('[]');
         }
@@ -88,7 +88,7 @@ $this->setStatusCode(500);
                 $response = $this->response($typeUser);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
@@ -111,7 +111,7 @@ $this->setStatusCode(500);
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "code", type: "string"),
-                   
+
                 ],
                 type: "object"
             )
@@ -133,7 +133,7 @@ $this->setStatusCode(500);
         $typeUser->setUpdatedBy($this->getuser());
         $errorResponse = $this->errorResponse($typeUser);
         if ($errorResponse !== null) {
-            return $errorResponse; 
+            return $errorResponse;
         } else {
 
             $typeUserRepository->add($typeUser, true);
@@ -153,7 +153,7 @@ $this->setStatusCode(500);
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "code", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -177,7 +177,7 @@ $this->setStatusCode(500);
                 $errorResponse = $this->errorResponse($typeUser);
 
                 if ($errorResponse !== null) {
-                    return $errorResponse; 
+                    return $errorResponse;
                 } else {
                     $typeUserRepository->add($typeUser, true);
                 }
@@ -192,7 +192,7 @@ $this->setStatusCode(500);
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("");
             $response = $this->response('[]');
         }
@@ -232,7 +232,7 @@ $this->setStatusCode(500);
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("");
             $response = $this->response('[]');
         }
@@ -243,7 +243,7 @@ $this->setStatusCode(500);
     /**
      * Permet de supprimer plusieurs typeUser.
      */
-      #[OA\RequestBody(
+    #[OA\RequestBody(
         required: true,
         description: 'Tableau d’identifiants à supprimer',
         content: new OA\JsonContent(
@@ -272,7 +272,7 @@ $this->setStatusCode(500);
             $this->setMessage("Operation effectuées avec success");
             $response = $this->response('[]');
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("");
             $response = $this->response('[]');
         }

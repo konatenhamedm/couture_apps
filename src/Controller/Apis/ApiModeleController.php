@@ -63,7 +63,7 @@ class ApiModeleController extends ApiInterface
             $modeles = $this->paginationService->paginate($modeleRepository->findAll());
             $response = $this->responseData($modeles, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des modèles");
             $response = $this->response('[]');
         }
@@ -124,7 +124,7 @@ $this->setStatusCode(500);
 
             $response = $this->responseData($modeles, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des modèles");
             $response = $this->response('[]');
         }
@@ -187,7 +187,7 @@ $this->setStatusCode(500);
                 $response = $this->response(null);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
@@ -401,7 +401,7 @@ $this->setStatusCode(500);
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour du modèle");
             $response = $this->response('[]');
         }
@@ -457,7 +457,7 @@ $this->setStatusCode(500);
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression du modèle");
             $response = $this->response('[]');
         }
@@ -525,7 +525,7 @@ $this->setStatusCode(500);
             $this->setMessage("Operation effectuées avec succès");
             $response = $this->response('[]');
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des modèles");
             $response = $this->response('[]');
         }
