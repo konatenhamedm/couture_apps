@@ -735,26 +735,26 @@ class ApiUserController extends ApiInterface
             }
 
             // Mise à jour des champs
-            if (isset($data->nom)) $user->setNom($data->nom);
-            if (isset($data->prenoms)) $user->setPrenoms($data->prenoms);
-            //if (isset($data['email'])) $user->setLogin($data['email']);
+           $user->setNom($data->nom);
+            $user->setPrenoms($data->prenoms);
+            //if (  isset($data['email'])) $user->setLogin($data['email']);
 
             // Affectation succursale
-            if (isset($data->succursale) && $data->succursale != null) {
+            if ($data->succursale != null) {
                 $succursale = $surccursaleRepository->find($data->succursale);
                $user->setSurccursale($succursale);
             } else {
                 $user->setSurccursale(null);
             }
 
-            if (isset($data->boutique) && $data->boutique !== null) {
+            if ($data->boutique != null) {
                 $boutique = $boutiqueRepository->find($data->boutique);
               $user->setBoutique($boutique);
             } else {
                 $user->setBoutique(null);
             }
 
-            if (isset($data->type)) {
+            if ($data->type != null) {
                 $typeUser = $typeUserRepository->find($data->type);
                 if (!$typeUser) {
                     return $this->errorResponse(null, "Type d'utilisateur non trouvé", 404);
