@@ -46,12 +46,7 @@ class ApiCategorieTypeMesureController extends ApiInterface
             items: new OA\Items(
                 type: "object",
                 properties: [
-                    new OA\Property(property: "id", type: "integer", example: 1, description: "Identifiant unique de la catégorie"),
-                    new OA\Property(property: "libelle", type: "string", example: "Mesures corporelles", description: "Nom de la catégorie de mesure"),
-                    new OA\Property(property: "code", type: "string", example: "CORP", description: "Code unique de la catégorie"),
-                    new OA\Property(property: "entreprise", type: "object", description: "Entreprise associée", nullable: true),
-                    new OA\Property(property: "createdAt", type: "string", format: "date-time", example: "2025-01-15T10:30:00+00:00", description: "Date de création"),
-                    new OA\Property(property: "updatedAt", type: "string", format: "date-time", example: "2025-01-20T14:20:00+00:00", description: "Date de mise à jour")
+                    
                 ]
             )
         )
