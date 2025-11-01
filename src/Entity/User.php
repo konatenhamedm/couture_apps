@@ -21,7 +21,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
 
-    use TraitEntity;
+   // use TraitEntity;
     #[OA\Property(description: 'ID unique de l’utilisateur', type: 'integer', example: 1)]
     #[ORM\Id]
     #[ORM\GeneratedValue]

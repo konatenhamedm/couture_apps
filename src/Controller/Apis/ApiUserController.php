@@ -637,8 +637,8 @@ class ApiUserController extends ApiInterface
             }
             $user->setType($typeUser);
             $user->setEntreprise($this->getUser()->getEntreprise());
-            $user->setCreatedAtValue(new \DateTime());
-            $user->setUpdatedAt(new \DateTime());
+            //$user->setCreatedAtValue(new \DateTime());
+            //$user->setUpdatedAt(new \DateTime());
 
             // Validation mot de passe
             if ($data['password'] !== $data['confirmPassword']) {
@@ -885,7 +885,7 @@ class ApiUserController extends ApiInterface
                 $user->setLogin($data['email']);
             }
 
-            $user->setUpdatedAt(new \DateTime());
+            //$user->setUpdatedAt(new \DateTime());
             $userRepository->add($user, true);
 
             $context = [AbstractNormalizer::GROUPS => 'group_pro'];
@@ -982,7 +982,7 @@ class ApiUserController extends ApiInterface
                 return $errorResponse;
             }
 
-            $user->setUpdatedAt(new \DateTime());
+            //$user->setUpdatedAt(new \DateTime());
             $userRepository->add($user, true);
 
             return $this->responseData($user, 'group1', ['Content-Type' => 'application/json']);
