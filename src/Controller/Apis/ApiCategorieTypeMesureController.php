@@ -319,7 +319,7 @@ class ApiCategorieTypeMesureController extends ApiInterface
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
     public function deleteAll(Request $request, CategorieTypeMesureRepository $categorieTypeMesureRepository): Response
     {
-        dd($request->getContent());
+       // dd($request->getContent());
         try {
             $data = json_decode($request->getContent(), true);
 

@@ -323,7 +323,7 @@ $this->setStatusCode(500);
     #[OA\Response(response: 400, description: "Données invalides")]
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
-    #[Security(name: 'Bearer')]
+   /*  #[Security(name: 'Bearer')] */
     public function deleteAll(Request $request, NotificationRepository $villeRepository): Response
     {
         try {
