@@ -78,7 +78,7 @@ class ApiUserController extends ApiInterface
                             new OA\Property(property: "type", type: "object", description: "Type d'utilisateur (SADM, ADMIN, GESTIONNAIRE, etc.)"),
                             new OA\Property(property: "entreprise", type: "object"),
                             new OA\Property(property: "boutique", type: "object", nullable: true),
-                            new OA\Property(property: "surccursale", type: "object", nullable: true),
+                            new OA\Property(property: "succursale", type: "object", nullable: true),
                             new OA\Property(property: "createdAt", type: "string", format: "date-time")
                         ]
                     )
@@ -548,7 +548,7 @@ class ApiUserController extends ApiInterface
                     description: "Confirmation du mot de passe (obligatoire)"
                 ),
                 new OA\Property(
-                    property: "surccursale",
+                    property: "succursale",
                     type: "integer",
                     nullable: true,
                     example: 1,
@@ -582,7 +582,7 @@ class ApiUserController extends ApiInterface
                 new OA\Property(property: "login", type: "string", example: "aminata.traore@fashionci.com"),
                 new OA\Property(property: "type", type: "object"),
                 new OA\Property(property: "entreprise", type: "object"),
-                new OA\Property(property: "surccursale", type: "object", nullable: true),
+                new OA\Property(property: "succursale", type: "object", nullable: true),
                 new OA\Property(property: "boutique", type: "object", nullable: true)
             ]
         )

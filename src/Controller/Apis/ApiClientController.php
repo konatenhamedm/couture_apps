@@ -51,7 +51,7 @@ class ApiClientController extends ApiInterface
                     new OA\Property(property: "numero", type: "string", example: "+225 0123456789", description: "Numéro de téléphone"),
                     new OA\Property(property: "photo", type: "string", nullable: true, example: "/uploads/clients/photo_001.jpg", description: "Chemin de la photo"),
                     new OA\Property(property: "boutique", type: "object", nullable: true, description: "Boutique associée"),
-                    new OA\Property(property: "surccursale", type: "object", nullable: true, description: "Succursale associée"),
+                    new OA\Property(property: "succursale", type: "object", nullable: true, description: "Succursale associée"),
                     new OA\Property(property: "entreprise", type: "object", description: "Entreprise associée"),
                     new OA\Property(property: "createdAt", type: "string", format: "date-time", example: "2025-01-15T10:30:00+00:00")
                 ]
@@ -97,7 +97,7 @@ $this->setStatusCode(500);
                     new OA\Property(property: "numero", type: "string", example: "+225 0123456789"),
                     new OA\Property(property: "photo", type: "string", nullable: true, example: "/uploads/clients/photo_001.jpg"),
                     new OA\Property(property: "boutique", type: "object", nullable: true),
-                    new OA\Property(property: "surccursale", type: "object", nullable: true),
+                    new OA\Property(property: "succursale", type: "object", nullable: true),
                     new OA\Property(property: "entreprise", type: "object")
                 ]
             )
@@ -169,7 +169,7 @@ $this->setStatusCode(500);
                 new OA\Property(property: "numero", type: "string", example: "+225 0123456789"),
                 new OA\Property(property: "photo", type: "string", nullable: true, example: "/uploads/clients/photo_001.jpg"),
                 new OA\Property(property: "boutique", type: "object", nullable: true, description: "Boutique associée"),
-                new OA\Property(property: "surccursale", type: "object", nullable: true, description: "Succursale associée"),
+                new OA\Property(property: "succursale", type: "object", nullable: true, description: "Succursale associée"),
                 new OA\Property(property: "entreprise", type: "object", description: "Entreprise"),
                 new OA\Property(property: "createdAt", type: "string", format: "date-time"),
                 new OA\Property(property: "updatedAt", type: "string", format: "date-time")
@@ -218,7 +218,7 @@ $this->setStatusCode(500);
             mediaType: "multipart/form-data",
             schema: new OA\Schema(
                 type: "object",
-                required: ["nom", "prenoms", "numero", "surccursale"],
+                required: ["nom", "prenoms", "numero", "succursale"],
                 properties: [
                     new OA\Property(
                         property: "nom",
@@ -239,7 +239,7 @@ $this->setStatusCode(500);
                         description: "Numéro de téléphone du client (obligatoire)"
                     ),
                     new OA\Property(
-                        property: "surccursale",
+                        property: "succursale",
                         type: "integer",
                         example: 1,
                         description: "ID de la succursale à laquelle associer le client (obligatoire)"
@@ -265,7 +265,7 @@ $this->setStatusCode(500);
                 new OA\Property(property: "prenom", type: "string", example: "Yao Jean"),
                 new OA\Property(property: "numero", type: "string", example: "+225 0123456789"),
                 new OA\Property(property: "photo", type: "string", nullable: true, example: "/uploads/clients/document_01_abc123.jpg"),
-                new OA\Property(property: "surccursale", type: "object"),
+                new OA\Property(property: "succursale", type: "object"),
                 new OA\Property(property: "entreprise", type: "object")
             ]
         )
@@ -467,7 +467,7 @@ $this->setStatusCode(500);
                         description: "Nouveau numéro de téléphone"
                     ),
                     new OA\Property(
-                        property: "surccursale",
+                        property: "succursale",
                         type: "integer",
                         example: 2,
                         description: "Nouvel ID de la succursale"

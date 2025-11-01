@@ -115,7 +115,7 @@ $this->setStatusCode(500);
                     new OA\Property(property: "type", type: "string", example: "paiementFacture"),
                     new OA\Property(property: "facture", type: "object", nullable: true),
                     new OA\Property(property: "entreprise", type: "object"),
-                    new OA\Property(property: "surccursale", type: "object", nullable: true)
+                    new OA\Property(property: "succursale", type: "object", nullable: true)
                 ]
             )
         )

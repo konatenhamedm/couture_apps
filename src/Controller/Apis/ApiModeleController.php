@@ -50,7 +50,7 @@ class ApiModeleController extends ApiInterface
                     new OA\Property(property: "photo", type: "string", nullable: true, example: "/uploads/modeles/photo_001.jpg", description: "Photo du modèle"),
                     new OA\Property(property: "quantiteGlobale", type: "integer", example: 150, description: "Quantité totale en stock (toutes boutiques confondues)"),
                     new OA\Property(property: "entreprise", type: "object", description: "Entreprise propriétaire"),
-                    new OA\Property(property: "surccursale", type: "object", nullable: true, description: "Succursale associée"),
+                    new OA\Property(property: "succursale", type: "object", nullable: true, description: "Succursale associée"),
                     new OA\Property(property: "createdAt", type: "string", format: "date-time", example: "2025-01-15T10:30:00+00:00")
                 ]
             )
@@ -95,7 +95,7 @@ class ApiModeleController extends ApiInterface
                     new OA\Property(property: "photo", type: "string", nullable: true, example: "/uploads/modeles/photo_001.jpg"),
                     new OA\Property(property: "quantiteGlobale", type: "integer", example: 150),
                     new OA\Property(property: "entreprise", type: "object"),
-                    new OA\Property(property: "surccursale", type: "object", nullable: true)
+                    new OA\Property(property: "succursale", type: "object", nullable: true)
                 ]
             )
         )
@@ -162,7 +162,7 @@ class ApiModeleController extends ApiInterface
                 new OA\Property(property: "photo", type: "string", nullable: true, example: "/uploads/modeles/photo_001.jpg"),
                 new OA\Property(property: "quantiteGlobale", type: "integer", example: 150, description: "Stock total toutes boutiques"),
                 new OA\Property(property: "entreprise", type: "object", description: "Entreprise propriétaire"),
-                new OA\Property(property: "surccursale", type: "object", nullable: true, description: "Succursale associée"),
+                new OA\Property(property: "succursale", type: "object", nullable: true, description: "Succursale associée"),
                 new OA\Property(property: "modeleBoutiques", type: "array", description: "Répartition par boutique", items: new OA\Items(type: "object")),
                 new OA\Property(property: "createdAt", type: "string", format: "date-time"),
                 new OA\Property(property: "updatedAt", type: "string", format: "date-time")
