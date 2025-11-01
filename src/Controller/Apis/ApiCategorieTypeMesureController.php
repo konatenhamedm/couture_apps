@@ -91,13 +91,16 @@ class ApiCategorieTypeMesureController extends ApiInterface
                   
                 ),
                 new OA\Property(
-                    property: "categorieMesure",
-                    type: "string",
-                    example: "SN",
-                  
-                ),
+                    property: 'categorieMesures',
+                    type: 'array',
+                    description: "Liste des identifiants des catégories de mesure à supprimer",
+                    items: new OA\Items(type: 'integer', example: 1),
+                    example: [1, 2, 3, 5, 8]
+                )
+            
                 
-            ]
+            ],
+            
         )
     )]
     #[OA\Response(
@@ -119,22 +122,18 @@ class ApiCategorieTypeMesureController extends ApiInterface
     {
         $data = json_decode($request->getContent(), true);
 
-        $categorieTypeMesure = new CategorieTypeMesure();
-        $categorieTypeMesure->setTypeMesure($typeMesureRepository->find($data['typeMesure']));
-        $categorieTypeMesure->setCategorieMesure($categorieMesureRepository->find($data['categorieMesure']));
-       
-        $categorieTypeMesure->setCreatedBy($this->getUser());
-        $categorieTypeMesure->setUpdatedBy($this->getUser());
-        $categorieTypeMesure->setCreatedAtValue(new \DateTime());
-        $categorieTypeMesure->setUpdatedAt(new \DateTime());
-
-        $errorResponse = $this->errorResponse($categorieTypeMesure);
-        if ($errorResponse !== null) {
-            return $errorResponse;
-        } else {
+        foreach ($data['categorieMesures'] as $categorieMesure) {
+            $categorieTypeMesure = new CategorieTypeMesure();
+            $categorieTypeMesure->setTypeMesure($typeMesureRepository->find($data['typeMesure']));
+            $categorieTypeMesure->setCategorieMesure($categorieMesureRepository->find($categorieMesure));
+            $categorieTypeMesure->setCreatedBy($this->getUser());
+            $categorieTypeMesure->setUpdatedBy($this->getUser());
+            $categorieTypeMesure->setCreatedAtValue(new \DateTime());
+            $categorieTypeMesure->setUpdatedAt(new \DateTime());
             $categorieTypeMesureRepository->add($categorieTypeMesure, true);
         }
 
+    
         return $this->responseData($categorieTypeMesure, 'group1', ['Content-Type' => 'application/json']);
     }
 

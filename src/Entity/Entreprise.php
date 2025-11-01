@@ -127,6 +127,12 @@ class Entreprise
     #[ORM\OneToMany(targetEntity: CategorieTypeMesure::class, mappedBy: 'entreprise')]
     private Collection $categorieTypeMesures;
 
+    /**
+     * @var Collection<int, Facture>
+     */
+    #[ORM\OneToMany(targetEntity: Facture::class, mappedBy: 'entreprise')]
+    private Collection $factures;
+
     public function __construct()
     {
         $this->categorieMesures = new ArrayCollection();
@@ -143,6 +149,7 @@ class Entreprise
         $this->reservations = new ArrayCollection();
         $this->entreStocks = new ArrayCollection();
         $this->categorieTypeMesures = new ArrayCollection();
+        $this->factures = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -626,6 +633,36 @@ class Entreprise
             // set the owning side to null (unless already changed)
             if ($categorieTypeMesure->getEntreprise() === $this) {
                 $categorieTypeMesure->setEntreprise(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Facture>
+     */
+    public function getFactures(): Collection
+    {
+        return $this->factures;
+    }
+
+    public function addFacture(Facture $facture): static
+    {
+        if (!$this->factures->contains($facture)) {
+            $this->factures->add($facture);
+            $facture->setEntreprise($this);
+        }
+
+        return $this;
+    }
+
+    public function removeFacture(Facture $facture): static
+    {
+        if ($this->factures->removeElement($facture)) {
+            // set the owning side to null (unless already changed)
+            if ($facture->getEntreprise() === $this) {
+                $facture->setEntreprise(null);
             }
         }
 

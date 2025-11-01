@@ -459,7 +459,7 @@ class ApiCategorieMesureController extends ApiInterface
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
-    #[Security(name: 'Bearer')]
+/*     #[Security(name: 'Bearer')] */
     public function deleteAll(Request $request, CategorieMesureRepository $villeRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {

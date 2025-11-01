@@ -67,6 +67,9 @@ class Facture
     #[Groups(["group1", "group_type"])]
     private Collection $paiementFactures;
 
+    #[ORM\ManyToOne(inversedBy: 'factures')]
+    private ?Entreprise $entreprise = null;
+
 
 
     public function __construct()
@@ -232,6 +235,18 @@ class Facture
     public function setSignature(?Fichier $signature): static
     {
         $this->signature = $signature;
+
+        return $this;
+    }
+
+    public function getEntreprise(): ?Entreprise
+    {
+        return $this->entreprise;
+    }
+
+    public function setEntreprise(?Entreprise $entreprise): static
+    {
+        $this->entreprise = $entreprise;
 
         return $this;
     }
