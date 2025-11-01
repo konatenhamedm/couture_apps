@@ -20,20 +20,25 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[ORM\Table(name: "users")]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
+
+    use TraitEntity;
     #[OA\Property(description: 'ID unique de l’utilisateur', type: 'integer', example: 1)]
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: "integer")]
+    #[Groups(["group1"])]
     private ?int $id = null;
 
     #[OA\Property(description: 'Login (email ou identifiant)', type: 'string', example: 'jane.doe')]
     #[ORM\Column(type: "string", length: 180, unique: true)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 180)]
+    #[Groups(["group1"])]
     private string $login;
 
     #[OA\Property(description: 'Rôles de l’utilisateur', type: 'array', items: new OA\Items(type: 'string'))]
     #[ORM\Column(type: "json")]
+    #[Groups(["group1"])]
     private array $roles = [];
 
     #[OA\Property(description: 'Mot de passe hashé', type: 'string', example: '$2y$13$xxx')]
@@ -42,10 +47,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[OA\Property(description: 'Statut actif de l’utilisateur', type: 'boolean', example: true)]
     #[ORM\Column(type: "boolean")]
+    #[Groups(["group1"])]
     private bool $isActive = true;
 
     #[OA\Property(description: 'Date de création du compte', type: 'string', format: 'date-time')]
     #[ORM\Column(type: "datetime_immutable", nullable: true)]
+    #[Groups(["group1"])]
     private ?\DateTimeImmutable $createdAt;
 
 
@@ -56,9 +63,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?Entreprise $entreprise = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(["group1"])]
     private ?string $nom = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(["group1"])]
     private ?string $prenoms = null;
 
     /**
@@ -68,6 +77,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private Collection $notifications;
 
     #[ORM\ManyToOne(inversedBy: 'users')]
+    #[Groups(["group1"])]
     private ?TypeUser $type = null;
 
 

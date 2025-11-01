@@ -182,10 +182,7 @@ class ApiUserController extends ApiInterface
                 ['id' => 'DESC']
             ));
 
-            $context = [AbstractNormalizer::GROUPS => 'group1'];
-            $json = $this->serializer->serialize($users, 'json', $context);
-
-            return new JsonResponse(['code' => 200, 'data' => json_decode($json)]);
+           $response =  $this->responseData($users, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setMessage("Erreur lors de la récupération des utilisateurs de l'entreprise");
             $response = $this->response('[]');
@@ -327,7 +324,7 @@ class ApiUserController extends ApiInterface
             $entreprise->setLibelle($data['denominationEntreprise']);
             $entreprise->setEmail($data['emailEntreprise']);
             $entreprise->setNumero($data['numeroEntreprise']);
-            
+
             $pays = $paysRepository->find($data['pays']);
             if (!$pays) {
                 return $this->errorResponse(null, "Pays non trouvé", 404);
@@ -575,8 +572,6 @@ class ApiUserController extends ApiInterface
                 new OA\Property(property: "nom", type: "string", example: "Traoré"),
                 new OA\Property(property: "prenoms", type: "string", example: "Aminata"),
                 new OA\Property(property: "login", type: "string", example: "aminata.traore@fashionci.com"),
-                new OA\Property(property: "isActive", type: "boolean", example: true),
-                new OA\Property(property: "roles", type: "array", items: new OA\Items(type: "string", example: "ROLE_MEMBRE")),
                 new OA\Property(property: "type", type: "object"),
                 new OA\Property(property: "entreprise", type: "object"),
                 new OA\Property(property: "surccursale", type: "object", nullable: true),
@@ -635,7 +630,7 @@ class ApiUserController extends ApiInterface
             $user->setIsActive($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "user"));
             $user->setPassword($this->hasher->hashPassword($user, $data['password']));
             $user->setRoles(['ROLE_MEMBRE']);
-            
+
             $typeUser = $typeUserRepository->find($data['type']);
             if (!$typeUser) {
                 return $this->errorResponse(null, "Type d'utilisateur non trouvé", 404);
@@ -674,6 +669,115 @@ class ApiUserController extends ApiInterface
 
         return $response;
     }
+
+    #[Route('/update/membre/{id}', methods: ['PUT'])]
+    #[OA\Put(
+        path: "/api/user/update/membre/{id}",
+        summary: "Mettre à jour un membre de l'entreprise",
+        description: "Permet de modifier les informations d’un utilisateur membre (employé) existant. Nécessite un abonnement actif.",
+        tags: ['user']
+    )]
+    #[OA\Parameter(
+        name: "id",
+        in: "path",
+        required: true,
+        description: "ID du membre à mettre à jour",
+        schema: new OA\Schema(type: "integer", example: 45)
+    )]
+    #[OA\RequestBody(
+        required: true,
+        description: "Données du membre à mettre à jour",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "nom", type: "string", example: "Koné"),
+                new OA\Property(property: "prenoms", type: "string", example: "Mariam"),
+                new OA\Property(property: "email", type: "string", example: "mariam.kone@entreprise.ci"),
+                new OA\Property(property: "surccursale", type: "integer", example: 2, nullable: true),
+                new OA\Property(property: "boutique", type: "integer", example: 5, nullable: true),
+                new OA\Property(property: "type", type: "integer", example: 3)
+            ]
+        )
+    )]
+    #[OA\Response(response: 200, description: "Membre mis à jour avec succès")]
+    #[OA\Response(response: 400, description: "Erreur de validation ou mots de passe non identiques")]
+    #[OA\Response(response: 404, description: "Membre non trouvé")]
+    public function updateMembre(
+        int $id,
+        Request $request,
+        UserRepository $userRepository,
+        SurccursaleRepository $surccursaleRepository,
+        BoutiqueRepository $boutiqueRepository,
+        TypeUserRepository $typeUserRepository,
+        SubscriptionChecker $subscriptionChecker,
+        SendMailService $sendMailService
+    ): Response {
+        // Vérifie abonnement actif
+        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+            return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
+        }
+
+        try {
+            $data = json_decode($request->getContent(), true);
+            $user = $userRepository->find($id);
+
+            if (!$user) {
+                return $this->errorResponse(null, "Membre non trouvé", 404);
+            }
+
+            // Mise à jour des champs
+            if (isset($data['nom'])) $user->setNom($data['nom']);
+            if (isset($data['prenoms'])) $user->setPrenoms($data['prenoms']);
+            if (isset($data['email'])) $user->setLogin($data['email']);
+
+            // Affectation succursale
+            if (isset($data['surccursale']) && $data['surccursale'] != "") {
+                $succursale = $surccursaleRepository->find($data['surccursale']);
+                if ($succursale) $user->setSurccursale($succursale);
+            }else{
+                $user->setSurccursale(null);
+            }
+
+            if (isset($data['boutique']) && $data['boutique'] != "") {
+                $boutique = $boutiqueRepository->find($data['boutique']);
+                if ($boutique) $user->setBoutique($boutique);
+            }else{
+                $user->setBoutique(null);
+            }
+
+            if (isset($data['type'])) {
+                $typeUser = $typeUserRepository->find($data['type']);
+                if (!$typeUser) {
+                    return $this->errorResponse(null, "Type d'utilisateur non trouvé", 404);
+                }
+                $user->setType($typeUser);
+            }
+
+            $user->setUpdatedAt(new \DateTime());
+
+            $errorResponse = $this->errorResponse($user);
+            if ($errorResponse !== null) {
+                return $errorResponse;
+            }
+
+            $userRepository->add($user, true);
+
+            // Notification optionnelle
+            $sendMailService->sendNotification([
+                'libelle' => "Mise à jour de votre profil utilisateur",
+                'titre' => "Profil modifié",
+                'entreprise' => $this->getUser()->getEntreprise(),
+                'user' => $user,
+                'userUpdate' => $this->getUser()
+            ]);
+
+            return $this->responseData($user, 'group1', ['Content-Type' => 'application/json']);
+        } catch (\Throwable $th) {
+            $this->setMessage("Erreur lors de la mise à jour du membre");
+            return $this->response('[]');
+        }
+    }
+
 
     /**
      * Met à jour le profil d'un utilisateur

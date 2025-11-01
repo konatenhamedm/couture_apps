@@ -6,9 +6,11 @@ use App\Repository\ClientRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: ClientRepository::class)]
+#[UniqueEntity(fields: 'numero', message: 'Cet client avec ce numero existe deja')]
 class Client
 { use TraitEntity;
     #[ORM\Id]
@@ -17,7 +19,7 @@ class Client
      #[Groups(["group1", "group_type"])]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 255, nullable: true,unique:true)]
      #[Groups(["group1", "group_type"])]
     private ?string $numero = null;
 
