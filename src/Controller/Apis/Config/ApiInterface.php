@@ -209,26 +209,19 @@ class ApiInterface extends AbstractController
 
             ]);
             // On instancie la réponse
-            $response = new Response($jsonContent);
+            $response = new Response($jsonContent,$this->getStatusCode());
             //$response->headers->set('Content-Type', 'application/json');
             $response->headers->set('Access-Control-Allow-Origin', '*');
         }
-        // dd($this->json($data));
-        // On convertit en json
-        // On ajoute l'entête HTTP
-
+       
         return $response;
         //return new JsonResponse($response, $this->getStatusCode(), $headers);
     }
     public function responseTrue($data, $headers = [])
     {
-        // On spécifie qu'on utilise l'encodeur JSON
+      
         $encoders = [new JsonEncoder()];
-
-        // On instancie le "normaliseur" pour convertir la collection en tableau
         $normalizers = [new ObjectNormalizer()];
-
-        // On instancie le convertisseur
         $serializer = new Serializer($normalizers, $encoders);
 
 
@@ -304,6 +297,7 @@ class ApiInterface extends AbstractController
                 $response->headers->set('Access-Control-Allow-Origin', '*');
             }
         } catch (\Exception $e) {
+$this->setStatusCode(500);
             $response = new JsonResponse([
                 'code' => 500,
                 'message' => $e->getMessage(),
@@ -355,6 +349,7 @@ class ApiInterface extends AbstractController
 
             $response->headers->set('Access-Control-Allow-Origin', '*');
         } catch (\Exception $e) {
+$this->setStatusCode(500);
             $response = new JsonResponse([
                 'code' => 500,
                 'message' => $e->getMessage(),
@@ -390,6 +385,7 @@ class ApiInterface extends AbstractController
                 $response->headers->set('Access-Control-Allow-Origin', '*');
             }
         } catch (\Exception $e) {
+$this->setStatusCode(500);
             $response = new JsonResponse([
                 'code' => 500,
                 'message' => $e->getMessage(),

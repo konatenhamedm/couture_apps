@@ -65,7 +65,10 @@ class ApiReservationController extends ApiInterface
                     new OA\Property(property: "avance", type: "number", format: "float", example: 20000, description: "Acompte versé en FCFA"),
                     new OA\Property(property: "reste", type: "number", format: "float", example: 30000, description: "Reste à payer en FCFA"),
                     new OA\Property(property: "dateRetrait", type: "string", format: "date-time", example: "2025-02-15T10:00:00+00:00", description: "Date prévue de retrait"),
-                    new OA\Property(property: "client", type: "object", description: "Client ayant effectué la réservation",
+                    new OA\Property(
+                        property: "client",
+                        type: "object",
+                        description: "Client ayant effectué la réservation",
                         properties: [
                             new OA\Property(property: "id", type: "integer", example: 5),
                             new OA\Property(property: "nom", type: "string", example: "Kouassi"),
@@ -74,7 +77,10 @@ class ApiReservationController extends ApiInterface
                         ]
                     ),
                     new OA\Property(property: "boutique", type: "object", description: "Boutique où récupérer la réservation"),
-                    new OA\Property(property: "ligneReservations", type: "array", description: "Liste des articles réservés",
+                    new OA\Property(
+                        property: "ligneReservations",
+                        type: "array",
+                        description: "Liste des articles réservés",
                         items: new OA\Items(
                             type: "object",
                             properties: [
@@ -96,7 +102,7 @@ class ApiReservationController extends ApiInterface
             $reservations = $this->paginationService->paginate($reservationRepository->findAll());
             $response = $this->responseData($reservations, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des réservations");
             $response = $this->response('[]');
         }
@@ -152,7 +158,7 @@ $this->setStatusCode(500);
             }
             $response = $this->responseData($reservations, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des réservations");
             $response = $this->response('[]');
         }
@@ -191,7 +197,10 @@ $this->setStatusCode(500);
                 new OA\Property(property: "client", type: "object", description: "Informations complètes du client"),
                 new OA\Property(property: "boutique", type: "object", description: "Boutique de retrait"),
                 new OA\Property(property: "entreprise", type: "object"),
-                new OA\Property(property: "ligneReservations", type: "array", description: "Détail de tous les articles réservés",
+                new OA\Property(
+                    property: "ligneReservations",
+                    type: "array",
+                    description: "Détail de tous les articles réservés",
                     items: new OA\Items(type: "object")
                 ),
                 new OA\Property(property: "paiements", type: "array", description: "Liste des paiements effectués", items: new OA\Items(type: "object")),
@@ -212,7 +221,7 @@ $this->setStatusCode(500);
                 $response = $this->response(null);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
@@ -352,21 +361,21 @@ $this->setStatusCode(500);
         $reservation = new Reservation();
         $reservation->setAvance($data['avance']);
         $reservation->setDateRetrait(new \DateTime($data['dateRetrait']));
-        
+
         $client = $clientRepository->find($data['client']);
         if (!$client) {
             $this->setMessage("Client non trouvé");
             return $this->response('[]', 404);
         }
         $reservation->setClient($client);
-        
+
         $boutique = $boutiqueRepository->find($data['boutique']);
         if (!$boutique) {
             $this->setMessage("Boutique non trouvée");
             return $this->response('[]', 404);
         }
         $reservation->setBoutique($boutique);
-        
+
         $reservation->setEntreprise($this->getUser()->getEntreprise());
         $reservation->setMontant($data['montant']);
         $reservation->setReste($data['reste']);
@@ -382,7 +391,7 @@ $this->setStatusCode(500);
                 $this->setMessage("Modèle de boutique non trouvé avec ID: " . $value['modele']);
                 return $this->response('[]', 404);
             }
-            
+
             $ligne = new LigneReservation();
             $ligne->setQuantite($value['quantite']);
             $ligne->setModele($modeleBoutique);
@@ -528,7 +537,7 @@ $this->setStatusCode(500);
                 if (isset($data['montant'])) {
                     $reservation->setMontant($data['montant']);
                 }
-                
+
                 $reservation->setUpdatedBy($this->getUser());
                 $reservation->setUpdatedAt(new \DateTime());
 
@@ -559,7 +568,7 @@ $this->setStatusCode(500);
                 if ($errorResponse !== null) {
                     return $errorResponse;
                 }
-                
+
                 $reservationRepository->add($reservation, true);
 
                 $response = $this->responseData($reservation, 'group1', ['Content-Type' => 'application/json']);
@@ -569,6 +578,7 @@ $this->setStatusCode(500);
                 $response = $this->response('[]');
             }
         } catch (\Exception $e) {
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour de la réservation");
             $response = $this->response('[]');
         }
@@ -625,7 +635,7 @@ $this->setStatusCode(500);
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression de la réservation");
             $response = $this->response('[]');
         }
@@ -695,7 +705,7 @@ $this->setStatusCode(500);
             $this->setMessage("Operation effectuées avec succès");
             $response = $this->json(['message' => 'Operation effectuées avec succès', 'deletedCount' => $count]);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des réservations");
             $response = $this->response('[]');
         }

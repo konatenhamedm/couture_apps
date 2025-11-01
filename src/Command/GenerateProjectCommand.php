@@ -97,6 +97,7 @@ class GenerateProjectCommand extends Command
                 try {
                     $this->fs->copy($item->getPathname(), $targetPath);
                 } catch (\Exception $e) {
+$this->setStatusCode(500);
                     $output->writeln("<error>Erreur lors de la copie de {$item->getPathname()}: {$e->getMessage()}</error>");
                 }
             }
