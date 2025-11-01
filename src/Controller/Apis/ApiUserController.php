@@ -723,9 +723,9 @@ class ApiUserController extends ApiInterface
         User $user
     ): Response {
         // Vérifie abonnement actif
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+       /*  if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
-        }
+        } */
 
         try {
               $data = json_decode($request->getContent(), true);
@@ -735,27 +735,27 @@ class ApiUserController extends ApiInterface
             }
 
             // Mise à jour des champs
-           $user->setNom($data->nom);
-            $user->setPrenoms($data->prenoms);
+           $user->setNom($data['nom']);
+            $user->setPrenoms($data['prenoms']);
             //if (  isset($data['email'])) $user->setLogin($data['email']);
 
             // Affectation succursale
-            if ($data->succursale != null) {
-                $succursale = $surccursaleRepository->find($data->succursale);
+            if ($data['succursale'] != null) {
+                $succursale = $surccursaleRepository->find($data['succursale']);
                $user->setSurccursale($succursale);
             } else {
                 $user->setSurccursale(null);
             }
 
-            if ($data->boutique != null) {
-                $boutique = $boutiqueRepository->find($data->boutique);
+            if ($data['boutique'] != null) {
+                $boutique = $boutiqueRepository->find($data['boutique']);
               $user->setBoutique($boutique);
             } else {
                 $user->setBoutique(null);
             }
 
-            if ($data->type != null) {
-                $typeUser = $typeUserRepository->find($data->type);
+            if ($data['type'] != null) {
+                $typeUser = $typeUserRepository->find($data['type']);
                 if (!$typeUser) {
                     return $this->errorResponse(null, "Type d'utilisateur non trouvé", 404);
                 }
