@@ -69,6 +69,7 @@ class ApiPaysController extends ApiInterface
             $pays = $this->paginationService->paginate($paysRepository->findAll());
             $response = $this->responseData($pays, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des pays");
             $response = $this->response('[]');
         }
@@ -115,6 +116,7 @@ class ApiPaysController extends ApiInterface
 
             $response = $this->responseData($pays, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des pays actifs");
             $response = $this->response('[]');
         }
@@ -179,6 +181,7 @@ class ApiPaysController extends ApiInterface
                 $response = $this->response(null);
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
@@ -370,6 +373,7 @@ class ApiPaysController extends ApiInterface
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour du pays");
             $response = $this->response('[]');
         }
@@ -420,6 +424,7 @@ class ApiPaysController extends ApiInterface
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression du pays");
             $response = $this->response('[]');
         }
@@ -484,6 +489,7 @@ class ApiPaysController extends ApiInterface
             $this->setMessage("Operation effectuées avec succès");
             $response = $this->json(['message' => 'Operation effectuées avec succès', 'deletedCount' => $count]);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des pays");
             $response = $this->response('[]');
         }

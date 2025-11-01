@@ -50,6 +50,7 @@ class ApiBoutiqueController extends ApiInterface
 
             $response =  $this->responseData($boutiques, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("");
             $response = $this->response('[]');
         }
@@ -90,6 +91,7 @@ class ApiBoutiqueController extends ApiInterface
             }
             $response =  $this->responseData($boutiques, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("");
             $response = $this->response('[]');
         }
@@ -129,6 +131,7 @@ class ApiBoutiqueController extends ApiInterface
                 $response = $this->response($boutique);
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
@@ -256,6 +259,7 @@ class ApiBoutiqueController extends ApiInterface
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("");
             $response = $this->response('[]');
         }
@@ -299,6 +303,7 @@ class ApiBoutiqueController extends ApiInterface
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("");
             $response = $this->response('[]');
         }
@@ -337,6 +342,7 @@ class ApiBoutiqueController extends ApiInterface
             $this->setMessage("Operation effectuées avec success");
             $response = $this->response('[]');
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("");
             $response = $this->response('[]');
         }

@@ -78,6 +78,7 @@ class ApiModuleAbonnementController extends ApiInterface
             $moduleAbonnements = $this->paginationService->paginate($moduleAbonnementRepository->findAll());
             $response = $this->responseData($moduleAbonnements, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des plans d'abonnement");
             $response = $this->response('[]');
         }
@@ -146,6 +147,7 @@ class ApiModuleAbonnementController extends ApiInterface
                 $response = $this->response(null);
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
@@ -469,6 +471,7 @@ class ApiModuleAbonnementController extends ApiInterface
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour du plan d'abonnement");
             $response = $this->response('[]');
         }
@@ -518,6 +521,7 @@ class ApiModuleAbonnementController extends ApiInterface
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression du plan d'abonnement");
             $response = $this->response('[]');
         }
@@ -581,6 +585,7 @@ class ApiModuleAbonnementController extends ApiInterface
             $this->setMessage("Operation effectuées avec succès");
             $response = $this->response('[]');
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des plans d'abonnement");
             $response = $this->response('[]');
         }

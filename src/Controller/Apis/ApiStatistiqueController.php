@@ -63,6 +63,7 @@ class ApiStatistiqueController extends ApiInterface
             ]);
             
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             return $this->json([
                 'success' => false,
                 'message' => $exception->getMessage()
@@ -117,6 +118,7 @@ class ApiStatistiqueController extends ApiInterface
             ]);
             
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             return $this->json([
                 'success' => false,
                 'message' => $exception->getMessage()
@@ -149,6 +151,7 @@ class ApiStatistiqueController extends ApiInterface
             ]);
             
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             return $this->json([
                 'success' => false,
                 'message' => $exception->getMessage()
@@ -192,6 +195,7 @@ class ApiStatistiqueController extends ApiInterface
             ]);
             
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             return $this->json([
                 'success' => false,
                 'message' => $exception->getMessage()
@@ -224,6 +228,7 @@ class ApiStatistiqueController extends ApiInterface
             ]);
             
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             return $this->json([
                 'success' => false,
                 'message' => $exception->getMessage()
@@ -255,6 +260,7 @@ class ApiStatistiqueController extends ApiInterface
             ]);
             
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             return $this->json([
                 'success' => false,
                 'message' => $exception->getMessage()
@@ -283,6 +289,7 @@ class ApiStatistiqueController extends ApiInterface
             ]);
             
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             return $this->json([
                 'success' => false,
                 'message' => $exception->getMessage()

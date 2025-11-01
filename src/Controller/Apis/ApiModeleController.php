@@ -63,6 +63,7 @@ class ApiModeleController extends ApiInterface
             $modeles = $this->paginationService->paginate($modeleRepository->findAll());
             $response = $this->responseData($modeles, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des modèles");
             $response = $this->response('[]');
         }
@@ -123,6 +124,7 @@ class ApiModeleController extends ApiInterface
 
             $response = $this->responseData($modeles, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des modèles");
             $response = $this->response('[]');
         }
@@ -185,6 +187,7 @@ class ApiModeleController extends ApiInterface
                 $response = $this->response(null);
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
@@ -398,6 +401,7 @@ class ApiModeleController extends ApiInterface
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour du modèle");
             $response = $this->response('[]');
         }
@@ -453,6 +457,7 @@ class ApiModeleController extends ApiInterface
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression du modèle");
             $response = $this->response('[]');
         }
@@ -520,6 +525,7 @@ class ApiModeleController extends ApiInterface
             $this->setMessage("Operation effectuées avec succès");
             $response = $this->response('[]');
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des modèles");
             $response = $this->response('[]');
         }

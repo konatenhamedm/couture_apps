@@ -66,6 +66,7 @@ class ApiAbonnementController extends ApiInterface
             $categories = $this->paginationService->paginate($moduleRepository->findAll());
             $response = $this->responseData($categories, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des abonnements");
             $response = $this->response('[]');
         }
@@ -238,6 +239,7 @@ class ApiAbonnementController extends ApiInterface
 
             $response = $this->responseData($typeMesures, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des abonnements de l'entreprise");
             $response = $this->response('[]');
         }
@@ -295,6 +297,7 @@ class ApiAbonnementController extends ApiInterface
 
             $response = $this->responseData($typeMesures, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des abonnements actifs");
             $response = $this->response('[]');
         }

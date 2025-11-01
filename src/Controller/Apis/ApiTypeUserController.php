@@ -48,6 +48,7 @@ class ApiTypeUserController extends ApiInterface
 
             $response =  $this->responseData($typeUsers, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("");
             $response = $this->response('[]');
         }
@@ -87,6 +88,7 @@ class ApiTypeUserController extends ApiInterface
                 $response = $this->response($typeUser);
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
@@ -190,6 +192,7 @@ class ApiTypeUserController extends ApiInterface
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("");
             $response = $this->response('[]');
         }
@@ -229,6 +232,7 @@ class ApiTypeUserController extends ApiInterface
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("");
             $response = $this->response('[]');
         }
@@ -268,6 +272,7 @@ class ApiTypeUserController extends ApiInterface
             $this->setMessage("Operation effectuées avec success");
             $response = $this->response('[]');
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("");
             $response = $this->response('[]');
         }

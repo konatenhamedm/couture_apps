@@ -68,6 +68,7 @@ class ApiNotificationController extends ApiInterface
             $categories = $this->paginationService->paginate($moduleRepository->findAll());
             $response = $this->responseData($categories, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des notifications");
             $response = $this->response('[]');
         }
@@ -118,6 +119,7 @@ class ApiNotificationController extends ApiInterface
 
             $response = $this->responseData($typeMesures, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération de vos notifications");
             $response = $this->response('[]');
         }
@@ -172,6 +174,7 @@ class ApiNotificationController extends ApiInterface
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour de la notification");
             $response = $this->response('[]');
         }
@@ -220,6 +223,7 @@ class ApiNotificationController extends ApiInterface
             $this->setMessage("Toutes les notifications ont été marquées comme lues");
             $response = $this->json(['message' => 'Toutes les notifications ont été marquées comme lues', 'count' => $count]);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour des notifications");
             $response = $this->response('[]');
         }
@@ -271,6 +275,7 @@ class ApiNotificationController extends ApiInterface
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression de la notification");
             $response = $this->response('[]');
         }
@@ -336,6 +341,7 @@ class ApiNotificationController extends ApiInterface
             $this->setMessage("Operation effectuées avec succès");
             $response = $this->json(['message' => 'Operation effectuées avec succès', 'deletedCount' => $count]);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des notifications");
             $response = $this->response('[]');
         }
@@ -381,6 +387,7 @@ class ApiNotificationController extends ApiInterface
                 'totalCount' => $totalCount
             ]);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors du comptage des notifications");
             $response = $this->response('[]');
         }

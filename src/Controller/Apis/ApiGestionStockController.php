@@ -97,6 +97,7 @@ class ApiGestionStockController extends ApiInterface
 
             $response = $this->responseData($entrees, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération de l'historique de stock");
             $response = $this->response('[]');
         }
@@ -168,6 +169,7 @@ class ApiGestionStockController extends ApiInterface
 
             $response = $this->responseData($entrees, 'group_ligne', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération de l'historique du modèle");
             $response = $this->response('[]');
         }

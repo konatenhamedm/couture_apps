@@ -69,6 +69,7 @@ class ApiOperateurController extends ApiInterface
             $operateurs = $this->paginationService->paginate($operateurRepository->findAll());
             $response = $this->responseData($operateurs, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des opérateurs");
             $response = $this->response('[]');
         }
@@ -123,6 +124,7 @@ class ApiOperateurController extends ApiInterface
 
             $response = $this->responseData($operateurs, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des opérateurs du pays");
             $response = $this->response('[]');
         }
@@ -183,6 +185,7 @@ class ApiOperateurController extends ApiInterface
                 $response = $this->response(null);
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
@@ -411,6 +414,7 @@ class ApiOperateurController extends ApiInterface
                 return $this->response('[]');
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour de l'opérateur");
             return $this->response('[]');
         }
@@ -460,6 +464,7 @@ class ApiOperateurController extends ApiInterface
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression de l'opérateur");
             $response = $this->response('[]');
         }
@@ -524,6 +529,7 @@ class ApiOperateurController extends ApiInterface
             $this->setMessage("Operation effectuées avec succès");
             $response = $this->json(['message' => 'Operation effectuées avec succès', 'deletedCount' => $count]);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des opérateurs");
             $response = $this->response('[]');
         }

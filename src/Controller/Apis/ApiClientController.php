@@ -65,6 +65,7 @@ class ApiClientController extends ApiInterface
             $clients = $this->paginationService->paginate($clientRepository->findAll());
             $response = $this->responseData($clients, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des clients");
             $response = $this->response('[]');
         }
@@ -131,6 +132,7 @@ class ApiClientController extends ApiInterface
 
             $response = $this->responseData($clients, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des clients");
             $response = $this->response('[]');
         }
@@ -192,6 +194,7 @@ class ApiClientController extends ApiInterface
                 $response = $this->response(null);
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
@@ -547,6 +550,7 @@ class ApiClientController extends ApiInterface
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour du client");
             $response = $this->response('[]');
         }
@@ -602,6 +606,7 @@ class ApiClientController extends ApiInterface
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression du client");
             $response = $this->response('[]');
         }
@@ -669,6 +674,7 @@ class ApiClientController extends ApiInterface
             $this->setMessage("Operation effectuées avec succès");
             $response = $this->response('[]');
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des clients");
             $response = $this->response('[]');
         }

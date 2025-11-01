@@ -118,6 +118,7 @@ class ApiEntrepriseController extends ApiInterface
 
             $response = $this->responseData($data, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des boutiques et succursales de l'entreprise");
             $response = $this->response('[]');
         }
@@ -196,6 +197,7 @@ class ApiEntrepriseController extends ApiInterface
 
             $response = $this->responseData($entreprise, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des informations de l'entreprise");
             $response = $this->response('[]');
         }
@@ -249,6 +251,7 @@ class ApiEntrepriseController extends ApiInterface
 
             $response = $this->responseData($surccursales, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des succursales");
             $response = $this->response('[]');
         }
@@ -303,6 +306,7 @@ class ApiEntrepriseController extends ApiInterface
 
             $response = $this->responseData($boutiques, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des boutiques");
             $response = $this->response('[]');
         }

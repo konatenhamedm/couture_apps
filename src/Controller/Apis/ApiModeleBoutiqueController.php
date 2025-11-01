@@ -75,6 +75,7 @@ class ApiModeleBoutiqueController extends ApiInterface
             $modeleBoutiques = $this->paginationService->paginate($modeleBoutiqueRepository->findAll());
             $response = $this->responseData($modeleBoutiques, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des modèles de boutique");
             $response = $this->response('[]');
         }
@@ -133,6 +134,7 @@ class ApiModeleBoutiqueController extends ApiInterface
 
             $response = $this->responseData($modeles, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des modèles de la boutique");
             $response = $this->response('[]');
         }
@@ -197,6 +199,7 @@ class ApiModeleBoutiqueController extends ApiInterface
 
             $response = $this->responseData($modeleBoutiques, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des modèles de boutique");
             $response = $this->response('[]');
         }
@@ -263,6 +266,7 @@ class ApiModeleBoutiqueController extends ApiInterface
                 $response = $this->response(null);
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
@@ -488,6 +492,7 @@ class ApiModeleBoutiqueController extends ApiInterface
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour du modèle de boutique");
             $response = $this->response('[]');
         }
@@ -543,6 +548,7 @@ class ApiModeleBoutiqueController extends ApiInterface
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression du modèle de boutique");
             $response = $this->response('[]');
         }
@@ -610,6 +616,7 @@ class ApiModeleBoutiqueController extends ApiInterface
             $this->setMessage("Operation effectuées avec succès");
             $response = $this->response('[]');
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des modèles de boutique");
             $response = $this->response('[]');
         }

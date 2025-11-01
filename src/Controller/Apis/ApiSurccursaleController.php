@@ -78,6 +78,7 @@ class ApiSurccursaleController extends ApiInterface
             $surccursales = $this->paginationService->paginate($surccursaleRepository->findAll());
             $response = $this->responseData($surccursales, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des succursales");
             $response = $this->response('[]');
         }
@@ -125,6 +126,7 @@ class ApiSurccursaleController extends ApiInterface
 
             $response = $this->responseData($surccursales, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des succursales actives");
             $response = $this->response('[]');
         }
@@ -173,6 +175,7 @@ class ApiSurccursaleController extends ApiInterface
 
             $response = $this->responseData($surccursales, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des succursales de l'entreprise");
             $response = $this->response('[]');
         }
@@ -235,6 +238,7 @@ class ApiSurccursaleController extends ApiInterface
                 $response = $this->response(null);
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
@@ -443,6 +447,7 @@ class ApiSurccursaleController extends ApiInterface
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour de la succursale");
             $response = $this->response('[]');
         }
@@ -498,6 +503,7 @@ class ApiSurccursaleController extends ApiInterface
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression de la succursale");
             $response = $this->response('[]');
         }
@@ -566,6 +572,7 @@ class ApiSurccursaleController extends ApiInterface
             $this->setMessage("Operation effectuées avec succès");
             $response = $this->json(['message' => 'Operation effectuées avec succès', 'deletedCount' => $count]);
         } catch (\Exception $exception) {
+$this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des succursales");
             $response = $this->response('[]');
         }

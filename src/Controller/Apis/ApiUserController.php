@@ -98,6 +98,7 @@ class ApiUserController extends ApiInterface
             return new JsonResponse(['code' => 200, 'data' => json_decode($json)]);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
+            $this->setStatusCode(500);
 
             $this->setMessage("Erreur lors de la récupération des utilisateurs");
             $response = $this->response('[]');
@@ -148,6 +149,7 @@ class ApiUserController extends ApiInterface
             return new JsonResponse(['code' => 200, 'data' => json_decode($json)]);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des utilisateurs actifs");
             $response = $this->response('[]');
         }
@@ -186,8 +188,9 @@ class ApiUserController extends ApiInterface
                 ['id' => 'DESC']
             ));
 
-           $response =  $this->responseData($users, 'group1', ['Content-Type' => 'application/json']);
+            $response =  $this->responseData($users, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des utilisateurs de l'entreprise");
             $response = $this->response('[]');
         }
@@ -740,14 +743,14 @@ class ApiUserController extends ApiInterface
             if (isset($data['succursale']) && $data['succursale'] != null) {
                 $succursale = $surccursaleRepository->find($data['succursale']);
                 if ($succursale) $user->setSurccursale($succursale);
-            }else{
+            } else {
                 $user->setSurccursale(null);
             }
 
             if (isset($data['boutique']) && $data['boutique'] !== null) {
                 $boutique = $boutiqueRepository->find($data['boutique']);
                 if ($boutique) $user->setBoutique($boutique);
-            }else{
+            } else {
                 $user->setBoutique(null);
             }
 
@@ -879,7 +882,7 @@ class ApiUserController extends ApiInterface
             if (isset($data['prenoms'])) {
                 $user->setPrenoms($data['prenoms']);
             }
-/* 
+            /* 
             if (isset($data['login'])) {
                 // Vérification unicité email
                 $existingUser = $userRepository->findOneBy(['login' => $data['email']]);
@@ -904,6 +907,7 @@ class ApiUserController extends ApiInterface
                 'data' => json_decode($json)
             ]);
         } catch (\Exception $exception) {
+            $this->setStatusCode(500);
             return $this->json([
                 'code' => 500,
                 'message' => "Une erreur est survenue lors de la mise à jour"
@@ -994,6 +998,7 @@ class ApiUserController extends ApiInterface
 
             return $this->responseData($user, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+            $this->setStatusCode(500);
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour du logo");
             $response = $this->response('[]');
