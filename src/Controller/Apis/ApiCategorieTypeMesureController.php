@@ -124,6 +124,7 @@ class ApiCategorieTypeMesureController extends ApiInterface
 
         foreach ($data['categorieMesures'] as $categorieMesure) {
             $categorieTypeMesure = new CategorieTypeMesure();
+            $categorieTypeMesure->setEntreprise($this->getUser()->getEntreprise());
             $categorieTypeMesure->setTypeMesure($typeMesureRepository->find($data['typeMesure']));
             $categorieTypeMesure->setCategorieMesure($categorieMesureRepository->find($categorieMesure));
             $categorieTypeMesure->setCreatedBy($this->getUser());
