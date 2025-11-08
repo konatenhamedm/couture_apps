@@ -299,8 +299,8 @@ class ApiClientController extends ApiInterface
         $client->setNom($request->get('nom'));
         $client->setNumero($request->get('numero'));
         
-        if($request->get('surccursale') && $request->get('surccursale') != null){
-        $client->setSurccursale($surccursaleRepository->find($request->get('surccursale')));
+        if($request->get('succursale') && $request->get('succursale') != null){
+        $client->setSurccursale($surccursaleRepository->find($request->get('succursale')));
         }
         $client->setBoutique($boutiqueRepository->find($request->get('boutique')));
         if($request->get('boutique') && $request->get('boutique') != null){
@@ -427,8 +427,8 @@ class ApiClientController extends ApiInterface
         if ($request->get('boutique')    && $request->get('boutique') != null) {
             $client->setBoutique($boutiqueRepository->find($request->get('boutique')));
         }
-        if ($request->get('surccursale')    && $request->get('surccursale') != null) {
-            $client->setSurccursale($surccursaleRepository->find($request->get('surccursale')));
+        if ($request->get('succursale')    && $request->get('succursale') != null) {
+            $client->setSurccursale($surccursaleRepository->find($request->get('succursale')));
         }
 
         if ($uploadedFile) {

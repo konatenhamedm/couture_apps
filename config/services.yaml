@@ -41,6 +41,8 @@ services:
         arguments:
             $secret: '%jwt.secret%'
             $ttl: '%jwt.ttl%'
+            $params: '@parameter_bag'
+            $cache: '@cache.app'  # Utilise le cache système par défaut de Symfony
         autowire: false  # Important pour forcer l'utilisation des arguments
 
     App\:

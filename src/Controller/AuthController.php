@@ -33,12 +33,12 @@ class AuthController extends ApiInterface
                     new OA\Property(
                         property: "login",
                         type: "string",
-                        default: "0101564767" 
+                        default: "0101564767"
                     ),
                     new OA\Property(
                         property: "password",
                         type: "string",
-                        default: "admin93K" 
+                        default: "admin93K"
                     ),
                 ]
             )
@@ -98,6 +98,53 @@ class AuthController extends ApiInterface
             ],
             'token_expires_in' => $jwtService->getTtl()
         ], 'group1', ['Content-Type' => 'application/json']);
+    }
 
+    #[Route('/api/logout', methods: ['POST'])]
+    #[OA\Post(
+        summary: "Permet de déconnecter un utilisateur",
+        description: "Permet de déconnecter un utilisateur en invalidant le token JWT",
+        security: [["bearerAuth" => []]],
+        responses: [
+            new OA\Response(response: 200, description: "Déconnexion réussie"),
+            new OA\Response(response: 401, description: "Non authentifié")
+        ]
+    )]
+    public function logout(
+        Request $request,
+        JwtService $jwtService
+    ): JsonResponse {
+        $authHeader = $request->headers->get('Authorization');
+
+        if (!$authHeader || !preg_match('/Bearer\s+(.*)$/i', $authHeader, $matches)) {
+            return $this->json([
+                'error' => 'Token manquant',
+                'success' => false
+            ], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $token = $matches[1];
+
+        try {
+            $invalidated = $jwtService->invalidateToken($token);
+
+            if ($invalidated) {
+                return $this->json([
+                    'message' => 'Déconnexion réussie',
+                    'success' => true,
+                    'timestamp' => time()
+                ]);
+            } else {
+                return $this->json([
+                    'error' => 'Erreur lors de la déconnexion',
+                    'success' => false
+                ], Response::HTTP_BAD_REQUEST);
+            }
+        } catch (\Exception $e) {
+            return $this->json([
+                'error' => 'Erreur lors de la déconnexion',
+                'success' => false
+            ], Response::HTTP_BAD_REQUEST);
+        }
     }
 }
