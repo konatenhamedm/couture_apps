@@ -253,7 +253,7 @@ class ApiCategorieMesureController extends ApiInterface
         $categorieMesure->setEntreprise($this->getUser()->getEntreprise());
         $categorieMesure->setCreatedBy($this->getUser());
         $categorieMesure->setUpdatedBy($this->getUser());
-        $categorieMesure->setsetIsActive(true);
+        $categorieMesure->setIsActive(true);
         $categorieMesure->setCreatedAtValue(new \DateTime());
         $categorieMesure->setUpdatedAt(new \DateTime());
 
