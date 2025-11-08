@@ -57,7 +57,7 @@ class Client
      private Collection $reservations;
 
      #[ORM\ManyToOne(targetEntity: self::class, inversedBy: 'clients')]
-     private ?self $entreprise = null;
+     private ?Entreprise $entreprise = null;
 
      /**
       * @var Collection<int, self>
@@ -210,12 +210,12 @@ class Client
         return $this;
     }
 
-    public function getEntreprise(): ?self
+    public function getEntreprise(): ?Entreprise
     {
         return $this->entreprise;
     }
 
-    public function setEntreprise(?self $entreprise): static
+    public function setEntreprise(?Entreprise $entreprise): static
     {
         $this->entreprise = $entreprise;
 
