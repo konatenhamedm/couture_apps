@@ -33,7 +33,7 @@ class AuthController extends ApiInterface
                     new OA\Property(
                         property: "login",
                         type: "string",
-                        default: "0101564767"
+                        default: "hamed@wiassur.com"
                     ),
                     new OA\Property(
                         property: "password",
@@ -104,7 +104,6 @@ class AuthController extends ApiInterface
     #[OA\Post(
         summary: "Permet de déconnecter un utilisateur",
         description: "Permet de déconnecter un utilisateur en invalidant le token JWT",
-        security: [["bearerAuth" => []]],
         responses: [
             new OA\Response(response: 200, description: "Déconnexion réussie"),
             new OA\Response(response: 401, description: "Non authentifié")
