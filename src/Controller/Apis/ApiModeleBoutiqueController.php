@@ -75,10 +75,74 @@ class ApiModeleBoutiqueController extends ApiInterface
         )
     )]
     #[OA\Response(response: 500, description: "Erreur serveur lors de la récupération")]
-    public function index(ModeleBoutiqueRepository $modeleBoutiqueRepository): Response
+    public function indexAllEntreprise(ModeleBoutiqueRepository $modeleBoutiqueRepository): Response
     {
         try {
             $modeleBoutiques = $this->paginationService->paginate($modeleBoutiqueRepository->findAll());
+            $response = $this->responseData($modeleBoutiques, 'group1', ['Content-Type' => 'application/json']);
+        } catch (\Exception $exception) {
+            $this->setStatusCode(500);
+            $this->setMessage("Erreur lors de la récupération des modèles de boutique");
+            $response = $this->response([]);
+        }
+
+        return $response;
+    }
+
+    /**
+     * Liste tous les modèles de boutique du système
+     */
+    #[Route('/entreprise', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/modeleBoutique/entreprise",
+        summary: "Lister tous les modèles de boutique",
+        description: "Retourne la liste paginée de tous les modèles de boutique disponibles dans le système, incluant les prix et quantités spécifiques à chaque boutique.",
+        tags: ['modeleBoutique']
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Liste des modèles de boutique récupérée avec succès",
+        content: new OA\JsonContent(
+            type: 'array',
+            items: new OA\Items(
+                type: "object",
+                properties: [
+                    new OA\Property(property: "id", type: "integer", example: 1, description: "Identifiant unique du modèle de boutique"),
+                    new OA\Property(property: "prix", type: "number", format: "float", example: 15000, description: "Prix de vente du modèle dans cette boutique"),
+                    new OA\Property(property: "quantite", type: "integer", example: 50, description: "Quantité en stock dans cette boutique"),
+                    new OA\Property(
+                        property: "modele",
+                        type: "object",
+                        description: "Modèle de vêtement associé",
+                        properties: [
+                            new OA\Property(property: "id", type: "integer", example: 3),
+                            new OA\Property(property: "libelle", type: "string", example: "Robe Wax Élégante"),
+                            new OA\Property(property: "reference", type: "string", example: "MOD-2025-003"),
+                            new OA\Property(property: "quantiteGlobale", type: "integer", example: 150, description: "Stock total tous établissements confondus")
+                        ]
+                    ),
+                    new OA\Property(
+                        property: "boutique",
+                        type: "object",
+                        description: "Boutique concernée",
+                        properties: [
+                            new OA\Property(property: "id", type: "integer", example: 1),
+                            new OA\Property(property: "libelle", type: "string", example: "Boutique Centre-Ville")
+                        ]
+                    ),
+                    new OA\Property(property: "createdAt", type: "string", format: "date-time")
+                ]
+            )
+        )
+    )]
+    #[OA\Response(response: 500, description: "Erreur serveur lors de la récupération")]
+    public function index(ModeleBoutiqueRepository $modeleBoutiqueRepository): Response
+    {
+        try {
+            $modeleBoutiques = $this->paginationService->paginate($modeleBoutiqueRepository->findBy(
+                ['entreprise' => $this->getUser()->getEntreprise()],
+                ['id' => 'DESC']
+            ));
             $response = $this->responseData($modeleBoutiques, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
