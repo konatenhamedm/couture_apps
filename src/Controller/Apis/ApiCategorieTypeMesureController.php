@@ -109,8 +109,8 @@ class ApiCategorieTypeMesureController extends ApiInterface
         content: new OA\JsonContent(
             type: "object",
             properties: [
-                new OA\Property(property: "id", type: "integer", example: 15),
-                new OA\Property(property: "typeMesure", type: "string", example: "Sénégal"),
+               
+                new OA\Property(property: "typeMesure", type: "integer", example: "1"),
                 new OA\Property(property: "categorieMesure", type: "string", example: "SN"),
                
             ]
