@@ -135,8 +135,11 @@ class ApiCategorieTypeMesureController extends ApiInterface
             $categorieTypeMesureRepository->add($categorieTypeMesure, true);
         }
 
+
+        $categories = $categorieTypeMesureRepository->findBy(['typeMesure' => $data['typeMesure'],'isActive' => true],['id' => 'ASC']);
+        
     
-        return $this->responseData($categorieTypeMesure, 'group1', ['Content-Type' => 'application/json']);
+        return $this->responseData($categories, 'group1', ['Content-Type' => 'application/json']);
     }
 
 
