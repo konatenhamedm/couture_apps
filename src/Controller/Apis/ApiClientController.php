@@ -239,6 +239,12 @@ class ApiClientController extends ApiInterface
                         description: "Numéro de téléphone du client (obligatoire)"
                     ),
                     new OA\Property(
+                        property: "boutique",
+                        type: "integer",
+                        example: 1,
+                        description: "ID de la boutique à laquelle associer le client (obligatoire)"
+                    ),
+                    new OA\Property(
                         property: "succursale",
                         type: "integer",
                         example: 1,
@@ -266,14 +272,15 @@ class ApiClientController extends ApiInterface
                 new OA\Property(property: "numero", type: "string", example: "+225 0123456789"),
                 new OA\Property(property: "photo", type: "string", nullable: true, example: "/uploads/clients/document_01_abc123.jpg"),
                 new OA\Property(property: "succursale", type: "object"),
-                new OA\Property(property: "entreprise", type: "object")
+                new OA\Property(property: "boutique", type: "object"),
+               
             ]
         )
     )]
     #[OA\Response(response: 400, description: "Données invalides ou fichier non accepté")]
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
-    public function create(Request $request, ClientRepository $clientRepository, SurccursaleRepository $surccursaleRepository): Response
+    public function create(Request $request, ClientRepository $clientRepository, SurccursaleRepository $surccursaleRepository, BoutiqueRepository $boutiqueRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
@@ -290,7 +297,14 @@ class ApiClientController extends ApiInterface
         $client->setPrenom($request->get('prenoms'));
         $client->setNom($request->get('nom'));
         $client->setNumero($request->get('numero'));
+        
+        if($request->get('surccursale') && $request->get('surccursale') != null){
         $client->setSurccursale($surccursaleRepository->find($request->get('surccursale')));
+        }
+        $client->setBoutique($boutiqueRepository->find($request->get('boutique')));
+        if($request->get('boutique') && $request->get('boutique') != null){
+            $client->setBoutique($boutiqueRepository->find($request->get('boutique')));
+        }
 
         if ($uploadedFile) {
             if ($fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH)) {
