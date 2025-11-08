@@ -56,8 +56,6 @@ class Client
      #[ORM\OneToMany(targetEntity: Reservation::class, mappedBy: 'client')]
      private Collection $reservations;
 
-     #[ORM\ManyToOne(targetEntity: self::class, inversedBy: 'clients')]
-     private ?Entreprise $entreprise = null;
 
      /**
       * @var Collection<int, self>
@@ -74,6 +72,9 @@ class Client
       */
      #[ORM\OneToMany(targetEntity: PaiementBoutique::class, mappedBy: 'client')]
      private Collection $paiementBoutiques;
+
+     #[ORM\ManyToOne(inversedBy: 'clients')]
+     private ?Entreprise $entreprise = null;
 
     public function __construct()
     {
@@ -210,47 +211,7 @@ class Client
         return $this;
     }
 
-    public function getEntreprise(): ?Entreprise
-    {
-        return $this->entreprise;
-    }
-
-    public function setEntreprise(?Entreprise $entreprise): static
-    {
-        $this->entreprise = $entreprise;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, self>
-     */
-    public function getClients(): Collection
-    {
-        return $this->clients;
-    }
-
-    public function addClient(self $client): static
-    {
-        if (!$this->clients->contains($client)) {
-            $this->clients->add($client);
-            $client->setEntreprise($this);
-        }
-
-        return $this;
-    }
-
-    public function removeClient(self $client): static
-    {
-        if ($this->clients->removeElement($client)) {
-            // set the owning side to null (unless already changed)
-            if ($client->getEntreprise() === $this) {
-                $client->setEntreprise(null);
-            }
-        }
-
-        return $this;
-    }
+    
 
     public function getBoutique(): ?Boutique
     {
@@ -290,6 +251,18 @@ class Client
                 $paiementBoutique->setClient(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getEntreprise(): ?Entreprise
+    {
+        return $this->entreprise;
+    }
+
+    public function setEntreprise(?Entreprise $entreprise): static
+    {
+        $this->entreprise = $entreprise;
 
         return $this;
     }
