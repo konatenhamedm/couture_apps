@@ -314,6 +314,12 @@ class ApiModeleBoutiqueController extends ApiInterface
                     description: "Quantité initiale en stock dans cette boutique (obligatoire)"
                 ),
                 new OA\Property(
+                    property: "taille",
+                    type: "string",
+                    example: "M",
+                    description: "Taille du modèle dans cette boutique (obligatoire)"
+                ),
+                new OA\Property(
                     property: "modele",
                     type: "integer",
                     example: 3,
@@ -334,13 +340,13 @@ class ApiModeleBoutiqueController extends ApiInterface
         content: new OA\JsonContent(
             type: "object",
             properties: [
-                new OA\Property(property: "id", type: "integer", example: 15),
+                
                 new OA\Property(property: "prix", type: "number", example: 15000),
                 new OA\Property(property: "quantite", type: "integer", example: 50),
                 new OA\Property(property: "modele", type: "object"),
                 new OA\Property(property: "taille", type: "string", example: "M", description: "Taille du modèle dans cette boutique"),
                 new OA\Property(property: "boutique", type: "object"),
-                new OA\Property(property: "createdAt", type: "string", format: "date-time")
+                
             ]
         )
     )]
@@ -421,6 +427,12 @@ class ApiModeleBoutiqueController extends ApiInterface
                     format: "float",
                     example: 18000,
                     description: "Nouveau prix de vente en FCFA"
+                ),
+                 new OA\Property(
+                    property: "taille",
+                    type: "string",
+                    example: "M",
+                    description: "Taille du modèle dans cette boutique (obligatoire)"
                 ),
                 new OA\Property(
                     property: "modele",
