@@ -110,6 +110,7 @@ class AuthController extends ApiInterface
             new OA\Response(response: 401, description: "Non authentifié")
         ]
     )]
+    #[OA\Tag(name: 'auth')]
     public function logout(
         Request $request,
         JwtService $jwtService
