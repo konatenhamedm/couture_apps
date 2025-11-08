@@ -9,9 +9,9 @@ use Symfony\Component\Serializer\Annotation\Groups as Group;
 
 trait TraitEntity
 {
-   
+
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
-    #[Group(["group_user","group1","group_type","group_user_trx","group_pro"])]
+    #[Group(["group_user", "group1", "group_type", "group_user_trx", "group_pro"])]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
@@ -27,7 +27,11 @@ trait TraitEntity
     #[ORM\JoinColumn(nullable: true)]
     private ?User $updatedBy = null;
 
-/* 
+    #[ORM\Column]
+    #[Group(["group1", "group_type"])]
+    private ?bool $isActive = null;
+
+    /* 
     #[ORM\PrePersist] */
     public function setCreatedAtValue(): void
     {
@@ -36,7 +40,7 @@ trait TraitEntity
         }
     }
 
- /*    #[ORM\PreUpdate] */
+    /*    #[ORM\PreUpdate] */
     public function setUpdatedAt(): void
     {
         $this->updatedAt = new DateTimeImmutable();
@@ -71,6 +75,18 @@ trait TraitEntity
     public function setUpdatedBy(?User $user): self
     {
         $this->updatedBy = $user;
+        return $this;
+    }
+
+    public function isActive(): ?bool
+    {
+        return $this->isActive;
+    }
+
+    public function setIsActive(bool $actif): static
+    {
+        $this->isActive = $actif;
+
         return $this;
     }
 }

@@ -120,7 +120,7 @@ class ApiEntrepriseController extends ApiInterface
         } catch (\Exception $exception) {
 $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des boutiques et succursales de l'entreprise");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -199,7 +199,7 @@ $this->setStatusCode(500);
         } catch (\Exception $exception) {
 $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des informations de l'entreprise");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -253,7 +253,7 @@ $this->setStatusCode(500);
         } catch (\Exception $exception) {
 $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des succursales");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -308,7 +308,7 @@ $this->setStatusCode(500);
         } catch (\Exception $exception) {
 $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des boutiques");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;

@@ -61,7 +61,7 @@ class ApiCategorieMesureController extends ApiInterface
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des catégories de mesure");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -115,7 +115,7 @@ class ApiCategorieMesureController extends ApiInterface
         try {
             $typeMesures = $this->paginationService->paginate(
                 $moduleRepository->findBy(
-                    [],
+                    ['isActive' => true],
                     ['id' => 'ASC']
                 )
             );
@@ -124,7 +124,7 @@ class ApiCategorieMesureController extends ApiInterface
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des catégories de mesure de l'entreprise");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -185,7 +185,7 @@ class ApiCategorieMesureController extends ApiInterface
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -253,6 +253,7 @@ class ApiCategorieMesureController extends ApiInterface
         $categorieMesure->setEntreprise($this->getUser()->getEntreprise());
         $categorieMesure->setCreatedBy($this->getUser());
         $categorieMesure->setUpdatedBy($this->getUser());
+        $categorieMesure->setIsActive(true);
         $categorieMesure->setCreatedAtValue(new \DateTime());
         $categorieMesure->setUpdatedAt(new \DateTime());
 
@@ -312,9 +313,7 @@ class ApiCategorieMesureController extends ApiInterface
             properties: [
                 new OA\Property(property: "id", type: "integer", example: 1),
                 new OA\Property(property: "libelle", type: "string", example: "Mesures corporelles (mis à jour)"),
-                new OA\Property(property: "code", type: "string", example: "CORP_V2"),
-                new OA\Property(property: "updatedAt", type: "string", format: "date-time"),
-                new OA\Property(property: "updatedBy", type: "object", description: "Utilisateur modificateur")
+            
             ]
         )
     )]
@@ -333,10 +332,6 @@ class ApiCategorieMesureController extends ApiInterface
             if ($categorieMesure != null) {
                 $categorieMesure->setLibelle($data->libelle);
 
-                if (isset($data->code)) {
-                    $categorieMesure->setCode($data->code);
-                }
-
                 $categorieMesure->setUpdatedBy($this->getUser());
                 $categorieMesure->setUpdatedAt(new \DateTime());
 
@@ -351,12 +346,12 @@ class ApiCategorieMesureController extends ApiInterface
             } else {
                 $this->setMessage("Cette ressource est inexistante");
                 $this->setStatusCode(404);
-                $response = $this->response('[]');
+                $response = $this->response([]);
             }
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour de la catégorie de mesure");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
         return $response;
     }
@@ -401,18 +396,19 @@ class ApiCategorieMesureController extends ApiInterface
 
         try {
             if ($categorieMesure != null) {
-                $villeRepository->remove($categorieMesure, true);
+                $categorieMesure->isActive(false);
+                $villeRepository->add($categorieMesure, true);
                 $this->setMessage("Operation effectuées avec succès");
                 $response = $this->response($categorieMesure);
             } else {
                 $this->setMessage("Cette ressource est inexistante");
                 $this->setStatusCode(404);
-                $response = $this->response('[]');
+                $response = $this->response([]);
             }
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression de la catégorie de mesure");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
         return $response;
     }
@@ -459,7 +455,6 @@ class ApiCategorieMesureController extends ApiInterface
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
-/*     #[Security(name: 'Bearer')] */
     public function deleteAll(Request $request, CategorieMesureRepository $villeRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
@@ -477,11 +472,11 @@ class ApiCategorieMesureController extends ApiInterface
                 }
             }
             $this->setMessage("Operation effectuées avec succès");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des catégories de mesure");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
         return $response;
     }

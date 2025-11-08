@@ -56,12 +56,12 @@ class ApiCategorieTypeMesureController extends ApiInterface
     {
         try {
             
-            $categories = $this->paginationService->paginate($categorieTypeMesureRepository->findBy(['typeMesure' => $typeMesure]));
+            $categories = $this->paginationService->paginate($categorieTypeMesureRepository->findBy(['typeMesure' => $typeMesure,'isActive' => true],['id' => 'ASC']));
             $response = $this->responseData($categories, 'group1', ['Content-Type' => 'application/json'], true);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des catégories de mesure");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -129,6 +129,7 @@ class ApiCategorieTypeMesureController extends ApiInterface
             $categorieTypeMesure->setCategorieMesure($categorieMesureRepository->find($categorieMesure));
             $categorieTypeMesure->setCreatedBy($this->getUser());
             $categorieTypeMesure->setUpdatedBy($this->getUser());
+            $categorieTypeMesure->setIsActive(true);
             $categorieTypeMesure->setCreatedAtValue(new \DateTime());
             $categorieTypeMesure->setUpdatedAt(new \DateTime());
             $categorieTypeMesureRepository->add($categorieTypeMesure, true);
@@ -216,12 +217,12 @@ class ApiCategorieTypeMesureController extends ApiInterface
             } else {
                 $this->setMessage("Cette ressource est inexistante");
                 $this->setStatusCode(404);
-                $response = $this->response('[]');
+                $response = $this->response([]);
             }
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour du categorieTypeMesure");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
         return $response;
     }
@@ -261,18 +262,21 @@ class ApiCategorieTypeMesureController extends ApiInterface
     {
         try {
             if ($categorieTypeMesure != null) {
-                $categorieTypeMesureRepository->remove($categorieTypeMesure, true);
+                $categorieTypeMesure->setIsActive(false);
+                $categorieTypeMesure->setUpdatedBy($this->getUser());
+                $categorieTypeMesure->setUpdatedAt(new \DateTime());
+                $categorieTypeMesureRepository->add($categorieTypeMesure, true);
                 $this->setMessage("Operation effectuées avec succès");
                 $response = $this->response($categorieTypeMesure);
             } else {
                 $this->setMessage("Cette ressource est inexistante");
                 $this->setStatusCode(404);
-                $response = $this->response('[]');
+                $response = $this->response([]);
             }
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression du categorieTypeMesure");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
         return $response;
     }
@@ -338,7 +342,7 @@ class ApiCategorieTypeMesureController extends ApiInterface
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des categorieTypeMesure");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
         return $response;
     }

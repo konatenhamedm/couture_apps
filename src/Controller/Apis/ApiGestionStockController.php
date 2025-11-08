@@ -99,7 +99,7 @@ class ApiGestionStockController extends ApiInterface
         } catch (\Exception $exception) {
 $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération de l'historique de stock");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -171,7 +171,7 @@ $this->setStatusCode(500);
         } catch (\Exception $exception) {
 $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération de l'historique du modèle");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;

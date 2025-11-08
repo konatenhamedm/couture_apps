@@ -40,9 +40,6 @@ class Surccursale
     #[ORM\ManyToOne(inversedBy: 'surccursales')]
     private ?Entreprise $entreprise = null;
 
-    #[ORM\Column(nullable: true)]
-     #[Groups(["group1", "group_type"])]
-    private ?bool $isActive = true;
 
     /**
      * @var Collection<int, CaisseSuccursale>
@@ -158,17 +155,7 @@ class Surccursale
         return $this;
     }
 
-    public function isActive(): ?bool
-    {
-        return $this->isActive;
-    }
 
-    public function setIsActive(?bool $active): static
-    {
-        $this->isActive = $active;
-
-        return $this;
-    }
 
     /**
      * @return Collection<int, CaisseSuccursale>

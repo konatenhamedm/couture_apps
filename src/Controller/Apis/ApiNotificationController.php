@@ -70,7 +70,7 @@ class ApiNotificationController extends ApiInterface
         } catch (\Exception $exception) {
 $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des notifications");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -121,7 +121,7 @@ $this->setStatusCode(500);
         } catch (\Exception $exception) {
 $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération de vos notifications");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -171,12 +171,12 @@ $this->setStatusCode(500);
             } else {
                 $this->setMessage("Cette notification est inexistante");
                 $this->setStatusCode(404);
-                $response = $this->response('[]');
+                $response = $this->response([]);
             }
         } catch (\Exception $exception) {
 $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour de la notification");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -225,7 +225,7 @@ $this->setStatusCode(500);
         } catch (\Exception $exception) {
 $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour des notifications");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -272,12 +272,12 @@ $this->setStatusCode(500);
             } else {
                 $this->setMessage("Cette ressource est inexistante");
                 $this->setStatusCode(404);
-                $response = $this->response('[]');
+                $response = $this->response([]);
             }
         } catch (\Exception $exception) {
 $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression de la notification");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
         return $response;
     }
@@ -343,7 +343,7 @@ $this->setStatusCode(500);
         } catch (\Exception $exception) {
 $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des notifications");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
         return $response;
     }
@@ -389,7 +389,7 @@ $this->setStatusCode(500);
         } catch (\Exception $exception) {
 $this->setStatusCode(500);
             $this->setMessage("Erreur lors du comptage des notifications");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;

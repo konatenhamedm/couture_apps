@@ -50,7 +50,7 @@ class ApiTypeUserController extends ApiInterface
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         // On envoie la réponse
@@ -90,7 +90,7 @@ class ApiTypeUserController extends ApiInterface
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
 
@@ -189,12 +189,12 @@ class ApiTypeUserController extends ApiInterface
             } else {
                 $this->setMessage("Cette ressource est inexsitante");
                 $this->setStatusCode(300);
-                $response = $this->response('[]');
+                $response = $this->response([]);
             }
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
         return $response;
     }
@@ -229,12 +229,12 @@ class ApiTypeUserController extends ApiInterface
             } else {
                 $this->setMessage("Cette ressource est inexistante");
                 $this->setStatusCode(300);
-                $response = $this->response('[]');
+                $response = $this->response([]);
             }
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
         return $response;
     }
@@ -270,11 +270,11 @@ class ApiTypeUserController extends ApiInterface
                 }
             }
             $this->setMessage("Operation effectuées avec success");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
         return $response;
     }

@@ -68,7 +68,7 @@ class ApiAbonnementController extends ApiInterface
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des abonnements");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -244,7 +244,7 @@ class ApiAbonnementController extends ApiInterface
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des abonnements de l'entreprise");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -305,7 +305,7 @@ class ApiAbonnementController extends ApiInterface
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des abonnements actifs");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;

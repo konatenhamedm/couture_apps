@@ -65,7 +65,7 @@ class ApiModeleController extends ApiInterface
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des modèles");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -126,7 +126,7 @@ class ApiModeleController extends ApiInterface
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des modèles");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -189,7 +189,7 @@ class ApiModeleController extends ApiInterface
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -398,12 +398,12 @@ class ApiModeleController extends ApiInterface
             } else {
                 $this->setMessage("Cette ressource est inexistante");
                 $this->setStatusCode(404);
-                $response = $this->response('[]');
+                $response = $this->response([]);
             }
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour du modèle");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
         return $response;
     }
@@ -454,12 +454,12 @@ class ApiModeleController extends ApiInterface
             } else {
                 $this->setMessage("Cette ressource est inexistante");
                 $this->setStatusCode(404);
-                $response = $this->response('[]');
+                $response = $this->response([]);
             }
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression du modèle");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
         return $response;
     }
@@ -523,11 +523,11 @@ class ApiModeleController extends ApiInterface
                 }
             }
             $this->setMessage("Operation effectuées avec succès");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des modèles");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
         return $response;
     }

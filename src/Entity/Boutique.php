@@ -32,9 +32,7 @@ class Boutique
      #[Groups(["group1", "group_type"])]
     private ?string $situation = null;
 
-    #[ORM\Column]
-     #[Groups(["group1", "group_type"])]
-    private ?bool $isActive = null;
+
 
     #[ORM\ManyToOne(inversedBy: 'boutiques')]
     private ?Entreprise $entreprise = null;
@@ -133,17 +131,7 @@ class Boutique
         return $this;
     }
 
-    public function isActive(): ?bool
-    {
-        return $this->isActive;
-    }
 
-    public function setIsActive(bool $actif): static
-    {
-        $this->isActive = $actif;
-
-        return $this;
-    }
 
     public function getEntreprise(): ?Entreprise
     {

@@ -74,7 +74,7 @@ class ApiPaysController extends ApiInterface
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des pays");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -121,7 +121,7 @@ class ApiPaysController extends ApiInterface
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des pays actifs");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -189,7 +189,7 @@ class ApiPaysController extends ApiInterface
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -376,12 +376,12 @@ class ApiPaysController extends ApiInterface
             } else {
                 $this->setMessage("Cette ressource est inexistante");
                 $this->setStatusCode(404);
-                $response = $this->response('[]');
+                $response = $this->response([]);
             }
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour du pays");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
         return $response;
     }
@@ -427,12 +427,12 @@ class ApiPaysController extends ApiInterface
             } else {
                 $this->setMessage("Cette ressource est inexistante");
                 $this->setStatusCode(404);
-                $response = $this->response('[]');
+                $response = $this->response([]);
             }
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression du pays");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
         return $response;
     }
@@ -497,7 +497,7 @@ class ApiPaysController extends ApiInterface
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des pays");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
         return $response;
     }

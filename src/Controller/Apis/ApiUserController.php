@@ -101,7 +101,7 @@ class ApiUserController extends ApiInterface
             $this->setStatusCode(500);
 
             $this->setMessage("Erreur lors de la récupération des utilisateurs");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -151,7 +151,7 @@ class ApiUserController extends ApiInterface
             $this->setStatusCode(500);
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des utilisateurs actifs");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -192,7 +192,7 @@ class ApiUserController extends ApiInterface
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des utilisateurs de l'entreprise");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -491,7 +491,7 @@ class ApiUserController extends ApiInterface
         } catch (Exception $th) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de l'inscription");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -783,7 +783,7 @@ class ApiUserController extends ApiInterface
         } catch (\Throwable $th) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour du membre");
-            return $this->response('[]');
+            return $this->response([]);
         }
     }
 
@@ -1000,7 +1000,7 @@ class ApiUserController extends ApiInterface
             $this->setStatusCode(500);
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour du logo");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
         return $response;
     }

@@ -104,7 +104,7 @@ class ApiReservationController extends ApiInterface
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des réservations");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -160,7 +160,7 @@ class ApiReservationController extends ApiInterface
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des réservations");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -223,7 +223,7 @@ class ApiReservationController extends ApiInterface
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -575,12 +575,12 @@ class ApiReservationController extends ApiInterface
             } else {
                 $this->setMessage("Cette ressource est inexistante");
                 $this->setStatusCode(404);
-                $response = $this->response('[]');
+                $response = $this->response([]);
             }
         } catch (\Exception $e) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour de la réservation");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -632,12 +632,12 @@ class ApiReservationController extends ApiInterface
             } else {
                 $this->setMessage("Cette ressource est inexistante");
                 $this->setStatusCode(404);
-                $response = $this->response('[]');
+                $response = $this->response([]);
             }
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression de la réservation");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
         return $response;
     }
@@ -707,7 +707,7 @@ class ApiReservationController extends ApiInterface
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des réservations");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
         return $response;
     }

@@ -87,7 +87,7 @@ class ApiSurccursaleController extends ApiInterface
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des succursales");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -135,7 +135,7 @@ class ApiSurccursaleController extends ApiInterface
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des succursales actives");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -184,7 +184,7 @@ class ApiSurccursaleController extends ApiInterface
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des succursales de l'entreprise");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -251,7 +251,7 @@ class ApiSurccursaleController extends ApiInterface
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -445,12 +445,12 @@ class ApiSurccursaleController extends ApiInterface
             } else {
                 $this->setMessage("Cette ressource est inexistante");
                 $this->setStatusCode(404);
-                $response = $this->response('[]');
+                $response = $this->response([]);
             }
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour de la succursale");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
         return $response;
     }
@@ -501,12 +501,12 @@ class ApiSurccursaleController extends ApiInterface
             } else {
                 $this->setMessage("Cette ressource est inexistante");
                 $this->setStatusCode(404);
-                $response = $this->response('[]');
+                $response = $this->response([]);
             }
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression de la succursale");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
         return $response;
     }
@@ -575,7 +575,7 @@ class ApiSurccursaleController extends ApiInterface
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des succursales");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
         return $response;
     }

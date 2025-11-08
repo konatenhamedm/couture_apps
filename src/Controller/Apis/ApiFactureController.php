@@ -80,7 +80,7 @@ class ApiFactureController extends ApiInterface
         } catch (\Exception $exception) {
 $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des factures");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -136,7 +136,7 @@ $this->setStatusCode(500);
         } catch (\Exception $exception) {
 $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des factures de l'entreprise");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -207,7 +207,7 @@ $this->setStatusCode(500);
         } catch (\Exception $exception) {
 $this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
 
         return $response;
@@ -797,12 +797,12 @@ $this->setStatusCode(500);
             } else {
                 $this->setMessage("Cette ressource est inexistante");
                 $this->setStatusCode(404);
-                $response = $this->response('[]');
+                $response = $this->response([]);
             }
         } catch (\Exception $exception) {
 $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression de la facture");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
         return $response;
     }
@@ -866,11 +866,11 @@ $this->setStatusCode(500);
                 }
             }
             $this->setMessage("Operation effectuées avec succès");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         } catch (\Exception $exception) {
 $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des factures");
-            $response = $this->response('[]');
+            $response = $this->response([]);
         }
         return $response;
     }
