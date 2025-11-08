@@ -555,6 +555,7 @@ class ApiReservationController extends ApiInterface
                             $ligne = new LigneReservation();
                             $ligne->setQuantite($value['quantite']);
                             $ligne->setModele($modeleBoutique);
+                            $ligne->setIsActive(true);
                             $ligne->setCreatedAtValue(new \DateTime());
                             $ligne->setUpdatedAt(new \DateTime());
                             $ligne->setCreatedBy($this->getUser());

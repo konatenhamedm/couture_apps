@@ -47,7 +47,10 @@ class ApiNotificationController extends ApiInterface
                     new OA\Property(property: "libelle", type: "string", example: "Un nouveau paiement de 50 000 FCFA a été enregistré", description: "Message détaillé"),
                     new OA\Property(property: "type", type: "string", example: "paiement", description: "Type de notification (paiement, stock, facture, etc.)"),
                     new OA\Property(property: "isRead", type: "boolean", example: false, description: "Statut de lecture"),
-                    new OA\Property(property: "user", type: "object", description: "Utilisateur destinataire",
+                    new OA\Property(
+                        property: "user",
+                        type: "object",
+                        description: "Utilisateur destinataire",
                         properties: [
                             new OA\Property(property: "id", type: "integer", example: 5),
                             new OA\Property(property: "login", type: "string", example: "admin@entreprise.com"),
@@ -68,7 +71,7 @@ class ApiNotificationController extends ApiInterface
             $categories = $this->paginationService->paginate($moduleRepository->findAll());
             $response = $this->responseData($categories, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des notifications");
             $response = $this->response([]);
         }
@@ -119,7 +122,7 @@ $this->setStatusCode(500);
 
             $response = $this->responseData($typeMesures, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération de vos notifications");
             $response = $this->response([]);
         }
@@ -174,7 +177,7 @@ $this->setStatusCode(500);
                 $response = $this->response([]);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour de la notification");
             $response = $this->response([]);
         }
@@ -223,7 +226,7 @@ $this->setStatusCode(500);
             $this->setMessage("Toutes les notifications ont été marquées comme lues");
             $response = $this->json(['message' => 'Toutes les notifications ont été marquées comme lues', 'count' => $count]);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour des notifications");
             $response = $this->response([]);
         }
@@ -275,7 +278,7 @@ $this->setStatusCode(500);
                 $response = $this->response([]);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression de la notification");
             $response = $this->response([]);
         }
@@ -323,7 +326,7 @@ $this->setStatusCode(500);
     #[OA\Response(response: 400, description: "Données invalides")]
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
-   /*  #[Security(name: 'Bearer')] */
+    /*  #[Security(name: 'Bearer')] */
     public function deleteAll(Request $request, NotificationRepository $villeRepository): Response
     {
         try {
@@ -341,7 +344,7 @@ $this->setStatusCode(500);
             $this->setMessage("Operation effectuées avec succès");
             $response = $this->json(['message' => 'Operation effectuées avec succès', 'deletedCount' => $count]);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des notifications");
             $response = $this->response([]);
         }
@@ -387,7 +390,7 @@ $this->setStatusCode(500);
                 'totalCount' => $totalCount
             ]);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors du comptage des notifications");
             $response = $this->response([]);
         }

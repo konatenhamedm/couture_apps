@@ -258,6 +258,7 @@ class ApiPaysController extends ApiInterface
         $pays->setLibelle($data['libelle']);
         $pays->setCode($data['code']);
         $pays->setActif(true);
+        $pays->setIsActive(true);
         $pays->setIndicatif($data['indicatif']);
         $pays->setCreatedBy($this->getUser());
         $pays->setUpdatedBy($this->getUser());

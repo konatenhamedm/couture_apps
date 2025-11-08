@@ -266,6 +266,7 @@ class ApiModeleController extends ApiInterface
 
         $modele = new Modele();
         $modele->setLibelle($request->get('libelle'));
+        $modele->setIsActive(true);
         $modele->setQuantiteGlobale($request->get('quantite') ?? 0);
         $modele->setEntreprise($this->getUser()->getEntreprise());
 

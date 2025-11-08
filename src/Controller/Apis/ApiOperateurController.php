@@ -50,7 +50,11 @@ class ApiOperateurController extends ApiInterface
                     new OA\Property(property: "code", type: "string", example: "ORANGE_CI", description: "Code unique de l'opérateur"),
                     new OA\Property(property: "photo", type: "string", nullable: true, example: "/uploads/operateurs/orange_logo.png", description: "Logo de l'opérateur"),
                     new OA\Property(property: "actif", type: "boolean", example: true, description: "Statut actif/inactif"),
-                    new OA\Property(property: "pays", type: "object", nullable: true, description: "Pays associé",
+                    new OA\Property(
+                        property: "pays",
+                        type: "object",
+                        nullable: true,
+                        description: "Pays associé",
                         properties: [
                             new OA\Property(property: "id", type: "integer", example: 1),
                             new OA\Property(property: "libelle", type: "string", example: "Côte d'Ivoire"),
@@ -69,7 +73,7 @@ class ApiOperateurController extends ApiInterface
             $operateurs = $this->paginationService->paginate($operateurRepository->findAll());
             $response = $this->responseData($operateurs, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des opérateurs");
             $response = $this->response([]);
         }
@@ -124,7 +128,7 @@ $this->setStatusCode(500);
 
             $response = $this->responseData($operateurs, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des opérateurs du pays");
             $response = $this->response([]);
         }
@@ -160,7 +164,11 @@ $this->setStatusCode(500);
                 new OA\Property(property: "code", type: "string", example: "ORANGE_CI"),
                 new OA\Property(property: "photo", type: "string", nullable: true, example: "/uploads/operateurs/orange_logo.png"),
                 new OA\Property(property: "actif", type: "boolean", example: true),
-                new OA\Property(property: "pays", type: "object", nullable: true, description: "Pays d'opération",
+                new OA\Property(
+                    property: "pays",
+                    type: "object",
+                    nullable: true,
+                    description: "Pays d'opération",
                     properties: [
                         new OA\Property(property: "id", type: "integer", example: 1),
                         new OA\Property(property: "libelle", type: "string", example: "Côte d'Ivoire"),
@@ -185,7 +193,7 @@ $this->setStatusCode(500);
                 $response = $this->response(null);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
             $response = $this->response([]);
         }
@@ -262,6 +270,7 @@ $this->setStatusCode(500);
         $operateur->setLibelle($libelle);
         $operateur->setCode($code);
         $operateur->setActif(true);
+        $operateur->setIsActive(true);
         $operateur->setCreatedBy($this->getUser());
         $operateur->setUpdatedBy($this->getUser());
         $operateur->setCreatedAtValue(new \DateTime());
@@ -414,7 +423,7 @@ $this->setStatusCode(500);
                 return $this->response('[]');
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour de l'opérateur");
             return $this->response('[]');
         }
@@ -464,7 +473,7 @@ $this->setStatusCode(500);
                 $response = $this->response([]);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression de l'opérateur");
             $response = $this->response([]);
         }
@@ -529,7 +538,7 @@ $this->setStatusCode(500);
             $this->setMessage("Operation effectuées avec succès");
             $response = $this->json(['message' => 'Operation effectuées avec succès', 'deletedCount' => $count]);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des opérateurs");
             $response = $this->response([]);
         }

@@ -78,7 +78,7 @@ class ApiModuleAbonnementController extends ApiInterface
             $moduleAbonnements = $this->paginationService->paginate($moduleAbonnementRepository->findAll());
             $response = $this->responseData($moduleAbonnements, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des plans d'abonnement");
             $response = $this->response([]);
         }
@@ -147,7 +147,7 @@ $this->setStatusCode(500);
                 $response = $this->response(null);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
             $response = $this->response([]);
         }
@@ -259,7 +259,7 @@ $this->setStatusCode(500);
                 new OA\Property(property: "montant", type: "number", example: 50000),
                 new OA\Property(property: "duree", type: "integer", example: 30),
                 new OA\Property(property: "numero", type: "integer", example: 1),
-                
+
                 new OA\Property(property: "etat", type: "boolean", example: true),
                 new OA\Property(property: "description", type: "string"),
                 new OA\Property(property: "ligneModules", type: "array", items: new OA\Items(type: "object")),
@@ -272,10 +272,11 @@ $this->setStatusCode(500);
     public function create(Request $request, ModuleAbonnementRepository $moduleAbonnementRepository, ModuleRepository $moduleRepository): Response
     {
         $data = json_decode($request->getContent(), true);
-        
+
         $moduleAbonnement = new ModuleAbonnement();
         $moduleAbonnement->setEtat($data['etat']);
         $moduleAbonnement->setCode($data['code']);
+        $moduleAbonnement->setIsActive(true);
         $moduleAbonnement->setDescription($data['description']);
         $moduleAbonnement->setMontant($data['montant']);
         $moduleAbonnement->setDuree($data['duree']);
@@ -303,6 +304,7 @@ $this->setStatusCode(500);
             $ligneModule->setLibelle($ligneModuleData['libelle']);
             $ligneModule->setDescription($ligneModuleData['description']);
             $ligneModule->setModule($module);
+            $ligneModule->setIsActive(true);
             $moduleAbonnement->addLigneModule($ligneModule);
         }
 
@@ -426,6 +428,8 @@ $this->setStatusCode(500);
                         $ligneModule->setLibelle($ligneModuleData['libelle']);
                         $ligneModule->setDescription($ligneModuleData['description']);
                         $ligneModule->setModule($module);
+                        $ligneModule->setIsActive(true);
+                        
                         $moduleAbonnement->addLigneModule($ligneModule);
                     } else {
                         // Mise à jour d'une ligne existante
@@ -471,7 +475,7 @@ $this->setStatusCode(500);
                 $response = $this->response([]);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour du plan d'abonnement");
             $response = $this->response([]);
         }
@@ -521,7 +525,7 @@ $this->setStatusCode(500);
                 $response = $this->response([]);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression du plan d'abonnement");
             $response = $this->response([]);
         }
@@ -585,7 +589,7 @@ $this->setStatusCode(500);
             $this->setMessage("Operation effectuées avec succès");
             $response = $this->response([]);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des plans d'abonnement");
             $response = $this->response([]);
         }

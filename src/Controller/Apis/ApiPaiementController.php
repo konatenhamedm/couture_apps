@@ -83,7 +83,7 @@ class ApiPaiementController extends ApiInterface
             $paiements = $this->paginationService->paginate($paiementRepository->findAll());
             $response = $this->responseData($paiements, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des paiements");
             $response = $this->response([]);
         }
@@ -146,7 +146,7 @@ $this->setStatusCode(500);
                 'data' => $paiements,
             ], 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des paiements");
             $response = $this->response([]);
         }
@@ -207,7 +207,7 @@ $this->setStatusCode(500);
                 $response = $this->response(null);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
             $response = $this->response([]);
         }
@@ -262,7 +262,10 @@ $this->setStatusCode(500);
         content: new OA\JsonContent(
             type: "object",
             properties: [
-                new OA\Property(property: "data", type: "object", description: "Facture mise à jour",
+                new OA\Property(
+                    property: "data",
+                    type: "object",
+                    description: "Facture mise à jour",
                     properties: [
                         new OA\Property(property: "id", type: "integer", example: 1),
                         new OA\Property(property: "reference", type: "string", example: "FACT-2025-001"),
@@ -298,6 +301,7 @@ $this->setStatusCode(500);
         $paiement = new PaiementFacture();
         $paiement->setMontant($data['montant']);
         $paiement->setFacture($facture);
+        $paiement->setIsActive(true);
         $paiement->setType(Paiement::TYPE["paiementFacture"]);
         $paiement->setReference($utils->generateReference('PMT'));
         $paiement->setCreatedBy($this->getUser());
@@ -309,8 +313,8 @@ $this->setStatusCode(500);
         $facture->setResteArgent((int)$facture->getResteArgent() - (int)$data['montant']);
 
         // Mise à jour de la caisse succursale
-        $caisse = $data['succursaleId'] != null 
-            ? $caisseSuccursaleRepository->findOneBy(['surccursale' => $data['succursaleId']]) 
+        $caisse = $data['succursaleId'] != null
+            ? $caisseSuccursaleRepository->findOneBy(['surccursale' => $data['succursaleId']])
             : $caisseSuccursaleRepository->findOneBy(['surccursale' => $this->getUser()->getSurccursale()]);
 
         $caisse->setMontant((int)$caisse->getMontant() + (int)$data['montant']);
@@ -339,8 +343,8 @@ $this->setStatusCode(500);
                         $admin->getLogin(),
                         $this->getUser()->getSurccursale() ? $this->getUser()->getSurccursale()->getLibelle() : "N/A",
                         number_format($data['montant'], 0, ',', ' '),
-                        $this->getUser()->getNom() && $this->getUser()->getPrenoms() 
-                            ? $this->getUser()->getNom() . " " . $this->getUser()->getPrenoms() 
+                        $this->getUser()->getNom() && $this->getUser()->getPrenoms()
+                            ? $this->getUser()->getNom() . " " . $this->getUser()->getPrenoms()
                             : $this->getUser()->getLogin(),
                         (new \DateTime())->format('d/m/Y H:i')
                     ),
@@ -425,7 +429,10 @@ $this->setStatusCode(500);
         content: new OA\JsonContent(
             type: "object",
             properties: [
-                new OA\Property(property: "data", type: "object", description: "Paiement créé",
+                new OA\Property(
+                    property: "data",
+                    type: "object",
+                    description: "Paiement créé",
                     properties: [
                         new OA\Property(property: "id", type: "integer", example: 25),
                         new OA\Property(property: "montant", type: "number", example: 15000),
@@ -466,20 +473,21 @@ $this->setStatusCode(500);
         // Création du paiement boutique
         $paiement = new PaiementBoutique();
         $paiement->setMontant($data['montant']);
-        
+
         if (isset($data['client']) && $data['client']) {
             $client = $clientRepository->find($data['client']);
             if ($client) {
                 $paiement->setClient($client);
             }
         }
-        
+
         $paiement->setType(Paiement::TYPE["paiementBoutique"]);
         $paiement->setBoutique($boutique);
         $paiement->setReference($utils->generateReference('PMT'));
         $paiement->setQuantite($data['quantite']);
         $paiement->setCreatedBy($this->getUser());
         $paiement->setUpdatedBy($this->getUser());
+        $paiement->setIsActive(true);
         $paiement->setCreatedAtValue(new \DateTime());
         $paiement->setUpdatedAt(new \DateTime());
 
@@ -494,13 +502,13 @@ $this->setStatusCode(500);
             // Création de la ligne de paiement
             $ligne = new PaiementBoutiqueLigne();
             $ligne->setPaiementBoutique($paiement);
-            
+
             $modeleBoutique = $modeleBoutiqueRepository->find($data['modeleBoutiqueId']);
             if (!$modeleBoutique) {
                 $this->setMessage("Modèle de boutique non trouvé");
                 return $this->response('[]', 404);
             }
-            
+
             // Vérification du stock disponible
             if ($modeleBoutique->getQuantite() < $data['quantite']) {
                 return $this->json([
@@ -508,7 +516,7 @@ $this->setStatusCode(500);
                     'message' => "Stock insuffisant pour ce modèle (disponible: {$modeleBoutique->getQuantite()}, demandé: {$data['quantite']})"
                 ], 400);
             }
-            
+
             $ligne->setModeleBoutique($modeleBoutique);
             $ligne->setQuantite($data['quantite']);
             $ligne->setMontant($data['montant']);
@@ -517,7 +525,7 @@ $this->setStatusCode(500);
             // Mise à jour du stock
             $modeleBoutique->setQuantite((int)$modeleBoutique->getQuantite() - (int)$data['quantite']);
             $modeleBoutiqueRepository->add($modeleBoutique, true);
-            
+
             $paiementRepository->add($paiement, true);
             $caisseBoutiqueRepository->add($caisse, true);
 
@@ -536,8 +544,8 @@ $this->setStatusCode(500);
                         $admin->getLogin(),
                         $boutique->getLibelle(),
                         number_format($data['montant'], 0, ',', ' '),
-                        $this->getUser()->getNom() && $this->getUser()->getPrenoms() 
-                            ? $this->getUser()->getNom() . " " . $this->getUser()->getPrenoms() 
+                        $this->getUser()->getNom() && $this->getUser()->getPrenoms()
+                            ? $this->getUser()->getNom() . " " . $this->getUser()->getPrenoms()
                             : $this->getUser()->getLogin(),
                         (new \DateTime())->format('d/m/Y H:i')
                     ),
@@ -639,7 +647,10 @@ $this->setStatusCode(500);
         content: new OA\JsonContent(
             type: "object",
             properties: [
-                new OA\Property(property: "data", type: "object", description: "Paiement créé",
+                new OA\Property(
+                    property: "data",
+                    type: "object",
+                    description: "Paiement créé",
                     properties: [
                         new OA\Property(property: "id", type: "integer", example: 30),
                         new OA\Property(property: "montant", type: "number", example: 50000, description: "Montant total de la vente"),
@@ -681,15 +692,16 @@ $this->setStatusCode(500);
         $paiement = new PaiementBoutique();
         $paiement->setType(Paiement::TYPE["paiementBoutique"]);
         $paiement->setBoutique($boutique);
+        $paiement->setIsActive(true);
         $paiement->setReference($utils->generateReference('PMT'));
-        
+
         if (isset($data['client']) && $data['client']) {
             $client = $clientRepository->find($data['client']);
             if ($client) {
                 $paiement->setClient($client);
             }
         }
-        
+
         $paiement->setCreatedBy($this->getUser());
         $paiement->setUpdatedBy($this->getUser());
         $paiement->setCreatedAtValue(new \DateTime());
@@ -703,29 +715,30 @@ $this->setStatusCode(500);
         // Traitement de toutes les lignes de vente
         foreach ($data['lignes'] as $ligneData) {
             $modeleBoutique = $modeleBoutiqueRepository->find($ligneData['modeleBoutiqueId']);
-            
+
             if (!$modeleBoutique) {
                 return $this->json([
                     'status' => 'ERROR',
                     'message' => "Modèle de boutique non trouvé avec ID: " . $ligneData['modeleBoutiqueId']
                 ], 400);
             }
-            
+
             // Vérification du stock disponible
             if ($modeleBoutique->getQuantite() < $ligneData['quantite']) {
                 return $this->json([
                     'status' => 'ERROR',
                     'message' => "Stock insuffisant pour le modèle ID {$modeleBoutique->getId()} " .
-                               "(disponible: {$modeleBoutique->getQuantite()}, demandé: {$ligneData['quantite']})"
+                        "(disponible: {$modeleBoutique->getQuantite()}, demandé: {$ligneData['quantite']})"
                 ], 400);
             }
-            
+
             $ligne = new PaiementBoutiqueLigne();
             $ligne->setPaiementBoutique($paiement);
             $ligne->setModeleBoutique($modeleBoutique);
             $ligne->setQuantite($ligneData['quantite']);
             $ligne->setMontant($ligneData['montant']);
-            
+            //$ligne->setIsActive(true);
+
             $sommeMontant += $ligneData['montant'];
             $sommeQuantite += $ligneData['quantite'];
 
@@ -758,8 +771,8 @@ $this->setStatusCode(500);
                     $admin->getLogin(),
                     $boutique->getLibelle(),
                     number_format($sommeMontant, 0, ',', ' '),
-                    $this->getUser()->getNom() && $this->getUser()->getPrenoms() 
-                        ? $this->getUser()->getNom() . " " . $this->getUser()->getPrenoms() 
+                    $this->getUser()->getNom() && $this->getUser()->getPrenoms()
+                        ? $this->getUser()->getNom() . " " . $this->getUser()->getPrenoms()
                         : $this->getUser()->getLogin(),
                     (new \DateTime())->format('d/m/Y H:i')
                 ),
@@ -884,7 +897,7 @@ $this->setStatusCode(500);
                 $response = $this->response([]);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression du paiement");
             $response = $this->response([]);
         }
@@ -954,7 +967,7 @@ $this->setStatusCode(500);
             $this->setMessage("Operation effectuées avec succès");
             $response = $this->json(['message' => 'Operation effectuées avec succès', 'deletedCount' => $count]);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des paiements");
             $response = $this->response([]);
         }
