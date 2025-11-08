@@ -397,6 +397,8 @@ class ApiCategorieMesureController extends ApiInterface
         try {
             if ($categorieMesure != null) {
                 $categorieMesure->isActive(false);
+                $categorieMesure->setUpdatedBy($this->getUser());
+                $categorieMesure->setUpdatedAt(new \DateTime());
                 $villeRepository->add($categorieMesure, true);
                 $this->setMessage("Operation effectuées avec succès");
                 $response = $this->response($categorieMesure);
