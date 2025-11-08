@@ -86,8 +86,8 @@ class ApiCategorieTypeMesureController extends ApiInterface
             properties: [
                 new OA\Property(
                     property: "typeMesure",
-                    type: "string",
-                    example: "Sénégal",
+                    type: "integer",
+                    example: "1",
                   
                 ),
                 new OA\Property(
