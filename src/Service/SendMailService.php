@@ -70,6 +70,7 @@ class SendMailService
         $notification = new Notification();
         $notification->setLibelle($data['libelle']);
         $notification->setTitre($data['titre']);
+        $notification->isActive(true);
         $notification->setEntreprise($data['entreprise']);
         $notification->setUser($data['user']);
 

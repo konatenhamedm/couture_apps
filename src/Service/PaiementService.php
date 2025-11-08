@@ -74,6 +74,7 @@ class PaiementService
         $paiement->setMontant($moduleAbonnement->getMontant());
         $paiement->setModuleAbonnement($moduleAbonnement);
         $paiement->setEntreprise($entreprise);
+        $paiement->isActive(true);
         $paiement->setCreatedAtValue(new \DateTime());
         $reference = $this->generateReference('ABNT');
         $paiement->setReference($reference);
@@ -194,6 +195,7 @@ class PaiementService
         $abonnement = new Abonnement();
         $abonnement->setModuleAbonnement($paiement->getModuleAbonnement());
         $abonnement->setEntreprise($paiement->getEntreprise());
+        $abonnement->isActive(true);
         $abonnement->setType('payant');
         $abonnement->setEtat('actif');
 

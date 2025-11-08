@@ -331,6 +331,7 @@ class ApiUserController extends ApiInterface
             $entreprise->setLibelle($data['denominationEntreprise']);
             $entreprise->setEmail($data['emailEntreprise']);
             $entreprise->setNumero($data['numeroEntreprise']);
+            $entreprise->isActive(true);
 
             $pays = $paysRepository->find($data['pays']);
             if (!$pays) {
@@ -617,6 +618,7 @@ class ApiUserController extends ApiInterface
             $user->setNom($data['nom']);
             $user->setPrenoms($data['prenoms']);
             $user->setLogin($data['login']);
+
 
             // Affectation à une succursale (optionnel)
             if (isset($data['succursale']) && $data['succursale'] != null) {

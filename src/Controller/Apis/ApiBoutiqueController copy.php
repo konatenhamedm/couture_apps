@@ -50,7 +50,7 @@ class ApiBoutiqueController extends ApiInterface
 
             $response =  $this->responseData($boutiques, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("");
             $response = $this->response([]);
         }
@@ -80,18 +80,18 @@ $this->setStatusCode(500);
         try {
             if ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'SADM'])) {
                 $boutiques = $boutiqueRepository->findBy(
-                    ['entreprise' => $this->getUser()->getEntreprise(),'active' => true],
+                    ['entreprise' => $this->getUser()->getEntreprise(), 'active' => true],
                     ['id' => 'ASC']
                 );
             } else {
                 $boutiques = $boutiqueRepository->findBy(
-                    ['surccursale' => $this->getUser()->getSurccursale(),'active' => true],
+                    ['surccursale' => $this->getUser()->getSurccursale(), 'active' => true],
                     ['id' => 'ASC']
                 );
             }
             $response =  $this->responseData($boutiques, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("");
             $response = $this->response([]);
         }
@@ -131,7 +131,7 @@ $this->setStatusCode(500);
                 $response = $this->response($boutique);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
             $response = $this->response([]);
         }
@@ -165,7 +165,7 @@ $this->setStatusCode(500);
         ]
     )]
     #[OA\Tag(name: 'boutique')]
-    public function create(Request $request,Utils $utils, CaisseBoutiqueRepository $caisseBoutiqueRepository, BoutiqueRepository $boutiqueRepository): Response
+    public function create(Request $request, Utils $utils, CaisseBoutiqueRepository $caisseBoutiqueRepository, BoutiqueRepository $boutiqueRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
@@ -179,12 +179,13 @@ $this->setStatusCode(500);
         $boutique->setLibelle($data['libelle']);
         $boutique->setSituation($data['situation']);
         $boutique->setContact($data['contact']);
+        $boutique->isActive(true);
 
         $boutique->setCreatedBy($this->getUser());
         $boutique->setUpdatedBy($this->getUser());
         $errorResponse = $this->errorResponse($boutique);
         if ($errorResponse !== null) {
-            return $errorResponse; 
+            return $errorResponse;
         } else {
 
             $boutiqueRepository->add($boutique, true);
@@ -192,6 +193,7 @@ $this->setStatusCode(500);
             $caisse = new CaisseBoutique();
             $caisse->setMontant("0");
             $caisse->setBoutique($boutique);
+            $caisse->isActive(true);
             $caisse->setReference($utils->generateReference('CAIS'));
             $caisse->setType(Caisse::TYPE['boutique']);
             $caisse->setEntreprise($this->getUser()->getEntreprise());
@@ -244,7 +246,7 @@ $this->setStatusCode(500);
                 $errorResponse = $this->errorResponse($boutique);
 
                 if ($errorResponse !== null) {
-                    return $errorResponse; 
+                    return $errorResponse;
                 } else {
                     $boutiqueRepository->add($boutique, true);
                 }
@@ -259,7 +261,7 @@ $this->setStatusCode(500);
                 $response = $this->response([]);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("");
             $response = $this->response([]);
         }
@@ -284,7 +286,7 @@ $this->setStatusCode(500);
     //#[Security(name: 'Bearer')]
     public function delete(Request $request, Boutique $boutique, BoutiqueRepository $villeRepository): Response
     {
-     if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -303,7 +305,7 @@ $this->setStatusCode(500);
                 $response = $this->response([]);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("");
             $response = $this->response([]);
         }
@@ -342,7 +344,7 @@ $this->setStatusCode(500);
             $this->setMessage("Operation effectuées avec success");
             $response = $this->response([]);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("");
             $response = $this->response([]);
         }

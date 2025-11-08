@@ -66,7 +66,7 @@ class ApiBoutiqueController extends ApiInterface
             $boutiques = $this->paginationService->paginate($boutiqueRepository->findAll());
             $response = $this->responseData($boutiques, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des boutiques");
             $response = $this->response([]);
         }
@@ -126,7 +126,7 @@ $this->setStatusCode(500);
             }
             $response = $this->responseData($boutiques, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des boutiques de l'entreprise");
             $response = $this->response([]);
         }
@@ -163,7 +163,10 @@ $this->setStatusCode(500);
                 new OA\Property(property: "contact", type: "string", example: "+225 0123456789", description: "Contact"),
                 new OA\Property(property: "isActive", type: "boolean", example: true, description: "Statut"),
                 new OA\Property(property: "entreprise", type: "object", description: "Entreprise propriétaire"),
-                new OA\Property(property: "caisseBoutique", type: "object", description: "Caisse de la boutique",
+                new OA\Property(
+                    property: "caisseBoutique",
+                    type: "object",
+                    description: "Caisse de la boutique",
                     properties: [
                         new OA\Property(property: "id", type: "integer", example: 1),
                         new OA\Property(property: "reference", type: "string", example: "CAIS-2025-001"),
@@ -188,7 +191,7 @@ $this->setStatusCode(500);
                 $response = $this->response(null);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
             $response = $this->response([]);
         }
@@ -246,7 +249,10 @@ $this->setStatusCode(500);
                 new OA\Property(property: "contact", type: "string", example: "+225 0123456789"),
                 new OA\Property(property: "isActive", type: "boolean", example: true),
                 new OA\Property(property: "entreprise", type: "object"),
-                new OA\Property(property: "caisseBoutique", type: "object", description: "Caisse créée automatiquement",
+                new OA\Property(
+                    property: "caisseBoutique",
+                    type: "object",
+                    description: "Caisse créée automatiquement",
                     properties: [
                         new OA\Property(property: "reference", type: "string", example: "CAIS-2025-001"),
                         new OA\Property(property: "montant", type: "string", example: "0"),
@@ -275,6 +281,7 @@ $this->setStatusCode(500);
         $boutique = new Boutique();
         $boutique->setLibelle($data['libelle']);
         $boutique->setSituation($data['situation']);
+  
         $boutique->setEntreprise($this->getUser()->getEntreprise());
         $boutique->setContact($data['contact']);
         $boutique->setIsActive($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "boutique"));
@@ -293,6 +300,7 @@ $this->setStatusCode(500);
             $caisse = new CaisseBoutique();
             $caisse->setMontant("0");
             $caisse->setBoutique($boutique);
+            $caisse->isActive(true);
             $caisse->setReference($utils->generateReference('CAIS'));
             $caisse->setType(Caisse::TYPE['boutique']);
             $caisse->setEntreprise($this->getUser()->getEntreprise());
@@ -399,7 +407,7 @@ $this->setStatusCode(500);
                 $response = $this->response([]);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour de la boutique");
             $response = $this->response([]);
         }
@@ -455,7 +463,7 @@ $this->setStatusCode(500);
                 $response = $this->response([]);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression de la boutique");
             $response = $this->response([]);
         }
@@ -523,7 +531,7 @@ $this->setStatusCode(500);
             $this->setMessage("Operation effectuées avec succès");
             $response = $this->response([]);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des boutiques");
             $response = $this->response([]);
         }

@@ -130,6 +130,7 @@ class ApiTypeUserController extends ApiInterface
         $typeUser->setCode($data['code']);
         $typeUser->setCreatedAtValue(new DateTime());
         $typeUser->setCreatedBy($this->getuser());
+        $typeUser->isActive(true);
         $typeUser->setUpdatedBy($this->getuser());
         $errorResponse = $this->errorResponse($typeUser);
         if ($errorResponse !== null) {

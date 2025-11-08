@@ -295,6 +295,7 @@ class ApiClientController extends ApiInterface
         $client = new Client();
         $client->setEntreprise($this->getUser()->getEntreprise());
         $client->setPrenom($request->get('prenoms'));
+        $client->isActive(true);
         $client->setNom($request->get('nom'));
         $client->setNumero($request->get('numero'));
         
@@ -419,6 +420,7 @@ class ApiClientController extends ApiInterface
         $client = new Client();
         $client->setEntreprise($this->getUser()->getEntreprise());
         $client->setNom($request->get('nom'));
+        $client->isActive(true);
         $client->setPrenom($request->get('prenoms'));
         $client->setNumero($request->get('numero'));
 

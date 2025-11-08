@@ -327,6 +327,7 @@ class ApiSurccursaleController extends ApiInterface
         $surccursale->setEntreprise($this->getUser()->getEntreprise());
         $surccursale->setCreatedBy($this->getUser());
         $surccursale->setUpdatedBy($this->getUser());
+        $surccursale->isActive(true);
         $surccursale->setCreatedAtValue(new \DateTime());
         $surccursale->setUpdatedAt(new \DateTime());
 
@@ -340,6 +341,7 @@ class ApiSurccursaleController extends ApiInterface
             $caisse = new CaisseSuccursale();
             $caisse->setMontant(0);
             $caisse->setSuccursale($surccursale);
+            $caisse->isActive(true);
             $caisse->setReference($utils->generateReference('CAIS'));
             $caisse->setType(Caisse::TYPE['succursale']);
             $caisse->setEntreprise($this->getUser()->getEntreprise());
