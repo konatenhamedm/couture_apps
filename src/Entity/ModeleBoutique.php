@@ -54,6 +54,9 @@ class ModeleBoutique
     #[ORM\OneToMany(targetEntity: PaiementBoutiqueLigne::class, mappedBy: 'modeleBoutique')]
     private Collection $paiementBoutiqueLignes;
 
+    #[ORM\Column(length: 255)]
+    private ?string $taille = null;
+
 
 
     public function __construct()
@@ -202,6 +205,18 @@ class ModeleBoutique
                 $paiementBoutiqueLigne->setModeleBoutique(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getTaille(): ?string
+    {
+        return $this->taille;
+    }
+
+    public function setTaille(string $taille): static
+    {
+        $this->taille = $taille;
 
         return $this;
     }

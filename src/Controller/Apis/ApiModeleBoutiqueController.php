@@ -49,7 +49,10 @@ class ApiModeleBoutiqueController extends ApiInterface
                     new OA\Property(property: "id", type: "integer", example: 1, description: "Identifiant unique du modèle de boutique"),
                     new OA\Property(property: "prix", type: "number", format: "float", example: 15000, description: "Prix de vente du modèle dans cette boutique"),
                     new OA\Property(property: "quantite", type: "integer", example: 50, description: "Quantité en stock dans cette boutique"),
-                    new OA\Property(property: "modele", type: "object", description: "Modèle de vêtement associé",
+                    new OA\Property(
+                        property: "modele",
+                        type: "object",
+                        description: "Modèle de vêtement associé",
                         properties: [
                             new OA\Property(property: "id", type: "integer", example: 3),
                             new OA\Property(property: "libelle", type: "string", example: "Robe Wax Élégante"),
@@ -57,7 +60,10 @@ class ApiModeleBoutiqueController extends ApiInterface
                             new OA\Property(property: "quantiteGlobale", type: "integer", example: 150, description: "Stock total tous établissements confondus")
                         ]
                     ),
-                    new OA\Property(property: "boutique", type: "object", description: "Boutique concernée",
+                    new OA\Property(
+                        property: "boutique",
+                        type: "object",
+                        description: "Boutique concernée",
                         properties: [
                             new OA\Property(property: "id", type: "integer", example: 1),
                             new OA\Property(property: "libelle", type: "string", example: "Boutique Centre-Ville")
@@ -75,7 +81,7 @@ class ApiModeleBoutiqueController extends ApiInterface
             $modeleBoutiques = $this->paginationService->paginate($modeleBoutiqueRepository->findAll());
             $response = $this->responseData($modeleBoutiques, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des modèles de boutique");
             $response = $this->response('[]');
         }
@@ -134,7 +140,7 @@ $this->setStatusCode(500);
 
             $response = $this->responseData($modeles, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des modèles de la boutique");
             $response = $this->response('[]');
         }
@@ -199,7 +205,7 @@ $this->setStatusCode(500);
 
             $response = $this->responseData($modeleBoutiques, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des modèles de boutique");
             $response = $this->response('[]');
         }
@@ -233,7 +239,10 @@ $this->setStatusCode(500);
                 new OA\Property(property: "id", type: "integer", example: 1),
                 new OA\Property(property: "prix", type: "number", format: "float", example: 15000, description: "Prix de vente dans cette boutique"),
                 new OA\Property(property: "quantite", type: "integer", example: 50, description: "Quantité disponible en stock"),
-                new OA\Property(property: "modele", type: "object", description: "Modèle de vêtement",
+                new OA\Property(
+                    property: "modele",
+                    type: "object",
+                    description: "Modèle de vêtement",
                     properties: [
                         new OA\Property(property: "id", type: "integer", example: 3),
                         new OA\Property(property: "libelle", type: "string", example: "Robe Wax Élégante"),
@@ -266,7 +275,7 @@ $this->setStatusCode(500);
                 $response = $this->response(null);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
@@ -329,6 +338,7 @@ $this->setStatusCode(500);
                 new OA\Property(property: "prix", type: "number", example: 15000),
                 new OA\Property(property: "quantite", type: "integer", example: 50),
                 new OA\Property(property: "modele", type: "object"),
+                new OA\Property(property: "taille", type: "string", example: "M", description: "Taille du modèle dans cette boutique"),
                 new OA\Property(property: "boutique", type: "object"),
                 new OA\Property(property: "createdAt", type: "string", format: "date-time")
             ]
@@ -362,6 +372,7 @@ $this->setStatusCode(500);
         $modeleBoutique->setQuantite($data['quantite']);
         $modeleBoutique->setBoutique($boutique);
         $modeleBoutique->setModele($modele);
+        $modeleBoutique->setTaille($data['taille']);
         $modeleBoutique->setCreatedBy($this->getUser());
         $modeleBoutique->setUpdatedBy($this->getUser());
         $modeleBoutique->setCreatedAtValue(new \DateTime());
@@ -372,7 +383,7 @@ $this->setStatusCode(500);
             return $errorResponse;
         } else {
             $modeleBoutiqueRepository->add($modeleBoutique, true);
-            
+
             // Mise à jour de la quantité globale du modèle
             $modele->setQuantiteGlobale($modele->getQuantiteGlobale() + $modeleBoutique->getQuantite());
             $modeleRepository->add($modele, true);
@@ -433,9 +444,12 @@ $this->setStatusCode(500);
             type: "object",
             properties: [
                 new OA\Property(property: "id", type: "integer", example: 1),
+                new OA\Property(property: "modele", type: "object", description: "Modèle inchangé"),
+                new OA\Property(property: "taille", type: "string", example: "M", description: "Taille inchangée"),
                 new OA\Property(property: "prix", type: "number", example: 18000),
-                new OA\Property(property: "quantite", type: "integer", example: 50, description: "Quantité inchangée"),
-                new OA\Property(property: "updatedAt", type: "string", format: "date-time")
+                new OA\Property(property: "boutique", type: "object", description: "Boutique inchangée"),
+                
+               
             ]
         )
     )]
@@ -466,6 +480,10 @@ $this->setStatusCode(500);
                     $modeleBoutique->setPrix($data['prix']);
                 }
 
+                if (isset($data['taille'])) {
+                    $modeleBoutique->setTaille($data['taille']);
+                }
+
                 if (isset($data['boutique'])) {
                     $boutique = $boutiqueRepository->find($data['boutique']);
                     if (!$boutique) {
@@ -492,7 +510,7 @@ $this->setStatusCode(500);
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour du modèle de boutique");
             $response = $this->response('[]');
         }
@@ -548,7 +566,7 @@ $this->setStatusCode(500);
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression du modèle de boutique");
             $response = $this->response('[]');
         }
@@ -616,7 +634,7 @@ $this->setStatusCode(500);
             $this->setMessage("Operation effectuées avec succès");
             $response = $this->response('[]');
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des modèles de boutique");
             $response = $this->response('[]');
         }
