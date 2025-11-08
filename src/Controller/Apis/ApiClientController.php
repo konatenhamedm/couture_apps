@@ -65,7 +65,7 @@ class ApiClientController extends ApiInterface
             $clients = $this->paginationService->paginate($clientRepository->findAll());
             $response = $this->responseData($clients, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des clients");
             $response = $this->response([]);
         }
@@ -132,7 +132,7 @@ $this->setStatusCode(500);
 
             $response = $this->responseData($clients, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des clients");
             $response = $this->response([]);
         }
@@ -194,7 +194,7 @@ $this->setStatusCode(500);
                 $response = $this->response(null);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
             $response = $this->response([]);
         }
@@ -356,6 +356,12 @@ $this->setStatusCode(500);
                         description: "ID de la boutique à laquelle associer le client (obligatoire)"
                     ),
                     new OA\Property(
+                        property: "succursale",
+                        type: "integer",
+                        example: 1,
+                        description: "ID de la succursale à laquelle associer le client (obligatoire)"
+                    ),
+                    new OA\Property(
                         property: "photo",
                         type: "string",
                         format: "binary",
@@ -371,20 +377,20 @@ $this->setStatusCode(500);
         content: new OA\JsonContent(
             type: "object",
             properties: [
-                new OA\Property(property: "id", type: "integer", example: 5),
+
                 new OA\Property(property: "nom", type: "string", example: "Kouassi"),
                 new OA\Property(property: "prenom", type: "string", example: "Yao Jean"),
                 new OA\Property(property: "numero", type: "string", example: "+225 0123456789"),
                 new OA\Property(property: "photo", type: "string", nullable: true, example: "/uploads/clients/document_01_xyz789.jpg"),
                 new OA\Property(property: "boutique", type: "object"),
-                new OA\Property(property: "entreprise", type: "object")
+                new OA\Property(property: "succursale", type: "object"),
             ]
         )
     )]
     #[OA\Response(response: 400, description: "Données invalides ou fichier non accepté")]
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
-    public function createBoutique(Request $request, ClientRepository $clientRepository, BoutiqueRepository $boutiqueRepository): Response
+    public function createBoutique(Request $request, ClientRepository $clientRepository, BoutiqueRepository $boutiqueRepository, SurccursaleRepository $surccursaleRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
@@ -401,7 +407,13 @@ $this->setStatusCode(500);
         $client->setNom($request->get('nom'));
         $client->setPrenom($request->get('prenoms'));
         $client->setNumero($request->get('numero'));
-        $client->setBoutique($boutiqueRepository->find($request->get('boutique')));
+
+        if ($request->get('boutique')    && $request->get('boutique') != null) {
+            $client->setBoutique($boutiqueRepository->find($request->get('boutique')));
+        }
+        if ($request->get('surccursale')    && $request->get('surccursale') != null) {
+            $client->setSurccursale($surccursaleRepository->find($request->get('surccursale')));
+        }
 
         if ($uploadedFile) {
             if ($fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH)) {
@@ -467,6 +479,12 @@ $this->setStatusCode(500);
                         description: "Nouveau numéro de téléphone"
                     ),
                     new OA\Property(
+                        property: "boutique",
+                        type: "integer",
+                        example: 1,
+                        description: "ID de la boutique à laquelle associer le client (obligatoire)"
+                    ),
+                    new OA\Property(
                         property: "succursale",
                         type: "integer",
                         example: 2,
@@ -501,7 +519,7 @@ $this->setStatusCode(500);
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 404, description: "Client non trouvé")]
-    public function update(Request $request, Client $client, ClientRepository $clientRepository): Response
+    public function update(Request $request, Client $client, ClientRepository $clientRepository, BoutiqueRepository $boutiqueRepository, SurccursaleRepository $surccursaleRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
@@ -523,7 +541,10 @@ $this->setStatusCode(500);
                     $client->setNumero($request->get('numero'));
                 }
                 if ($request->get('surccursale')) {
-                    $client->setSurccursale($request->get('surccursale'));
+                    $client->setSurccursale($surccursaleRepository->find($request->get('surccursale')));
+                }
+                if ($request->get('boutique')) {
+                    $client->setBoutique($boutiqueRepository->find($request->get('boutique')));
                 }
 
                 $uploadedFile = $request->files->get('photo');
@@ -550,7 +571,7 @@ $this->setStatusCode(500);
                 $response = $this->response([]);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour du client");
             $response = $this->response([]);
         }
@@ -606,7 +627,7 @@ $this->setStatusCode(500);
                 $response = $this->response([]);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression du client");
             $response = $this->response([]);
         }
@@ -674,7 +695,7 @@ $this->setStatusCode(500);
             $this->setMessage("Operation effectuées avec succès");
             $response = $this->response([]);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des clients");
             $response = $this->response([]);
         }
