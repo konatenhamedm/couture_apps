@@ -331,7 +331,7 @@ class ApiUserController extends ApiInterface
             $entreprise->setLibelle($data['denominationEntreprise']);
             $entreprise->setEmail($data['emailEntreprise']);
             $entreprise->setNumero($data['numeroEntreprise']);
-            $entreprise->setsetIsActive(true);
+            $entreprise->setIsActive(true);
 
             $pays = $paysRepository->find($data['pays']);
             if (!$pays) {
@@ -345,7 +345,7 @@ class ApiUserController extends ApiInterface
             $user = new User();
             $user->setLogin($data['email']);
             $user->setEntreprise($entreprise);
-            $user->setsetsetIsActive(true);
+            $user->setIsActive(true);
             $user->setPassword($this->hasher->hashPassword($user, $data['password']));
             $user->setRoles(['ROLE_ADMIN']);
             $user->setType($typeUserRepository->findOneBy(['code' => 'SADM']));
@@ -479,7 +479,7 @@ class ApiUserController extends ApiInterface
                         'type' => $user->getType() ?? null,
                         'logo' => $user->getLogo() ?? null,
                         'roles' => $user->getRoles(),
-                        'is_active' => $user->setsetIsActive(),
+                        'is_active' => $user->isActive(),
                         'pays' => $user->getEntreprise()->getPays()->getId(),
                         'boutique' => $user->getBoutique() ? $user->getBoutique()->getId() : null,
                         'succursale' => $user->getSurccursale() ? $user->getSurccursale()->getId() : null,
@@ -636,7 +636,7 @@ class ApiUserController extends ApiInterface
                 }
             }
 
-            $user->setsetsetIsActive($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "user"));
+            $user->setIsActive($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "user"));
             $user->setPassword($this->hasher->hashPassword($user, $data['password']));
             $user->setRoles(['ROLE_MEMBRE']);
 

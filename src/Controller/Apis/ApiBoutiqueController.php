@@ -284,7 +284,7 @@ class ApiBoutiqueController extends ApiInterface
   
         $boutique->setEntreprise($this->getUser()->getEntreprise());
         $boutique->setContact($data['contact']);
-        $boutique->setsetIsActive($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "boutique"));
+        $boutique->setIsActive($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "boutique"));
         $boutique->setCreatedBy($this->getUser());
         $boutique->setUpdatedBy($this->getUser());
         $boutique->setCreatedAtValue(new \DateTime());

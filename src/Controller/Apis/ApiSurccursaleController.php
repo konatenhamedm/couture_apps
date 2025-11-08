@@ -323,11 +323,10 @@ class ApiSurccursaleController extends ApiInterface
         $surccursale = new Surccursale();
         $surccursale->setLibelle($data['libelle']);
         $surccursale->setContact($data['contact']);
-        $surccursale->setsetIsActive($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "succursale"));
+        $surccursale->setIsActive($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "succursale"));
         $surccursale->setEntreprise($this->getUser()->getEntreprise());
         $surccursale->setCreatedBy($this->getUser());
         $surccursale->setUpdatedBy($this->getUser());
-        $surccursale->setIsActive(true);
         $surccursale->setCreatedAtValue(new \DateTime());
         $surccursale->setUpdatedAt(new \DateTime());
 
