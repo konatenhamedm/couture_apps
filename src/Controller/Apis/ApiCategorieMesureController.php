@@ -115,7 +115,7 @@ class ApiCategorieMesureController extends ApiInterface
         try {
             $typeMesures = $this->paginationService->paginate(
                 $moduleRepository->findBy(
-                    ['isActive' => true],
+                    ['setIsActive' => true],
                     ['id' => 'ASC']
                 )
             );
@@ -253,7 +253,7 @@ class ApiCategorieMesureController extends ApiInterface
         $categorieMesure->setEntreprise($this->getUser()->getEntreprise());
         $categorieMesure->setCreatedBy($this->getUser());
         $categorieMesure->setUpdatedBy($this->getUser());
-        $categorieMesure->setIsActive(true);
+        $categorieMesure->setsetIsActive(true);
         $categorieMesure->setCreatedAtValue(new \DateTime());
         $categorieMesure->setUpdatedAt(new \DateTime());
 
@@ -396,7 +396,7 @@ class ApiCategorieMesureController extends ApiInterface
 
         try {
             if ($categorieMesure != null) {
-                $categorieMesure->isActive(false);
+                $categorieMesure->setIsActive(false);
                 $categorieMesure->setUpdatedBy($this->getUser());
                 $categorieMesure->setUpdatedAt(new \DateTime());
                 $villeRepository->add($categorieMesure, true);

@@ -179,7 +179,7 @@ class ApiBoutiqueController extends ApiInterface
         $boutique->setLibelle($data['libelle']);
         $boutique->setSituation($data['situation']);
         $boutique->setContact($data['contact']);
-        $boutique->isActive(true);
+        $boutique->setIsActive(true);
 
         $boutique->setCreatedBy($this->getUser());
         $boutique->setUpdatedBy($this->getUser());
@@ -193,7 +193,7 @@ class ApiBoutiqueController extends ApiInterface
             $caisse = new CaisseBoutique();
             $caisse->setMontant("0");
             $caisse->setBoutique($boutique);
-            $caisse->isActive(true);
+            $caisse->setIsActive(true);
             $caisse->setReference($utils->generateReference('CAIS'));
             $caisse->setType(Caisse::TYPE['boutique']);
             $caisse->setEntreprise($this->getUser()->getEntreprise());

@@ -250,7 +250,7 @@ class ApiTypeMesureController extends ApiInterface
         $typeMesure->setLibelle($data['libelle']);
         $typeMesure->setEntreprise($this->getUser()->getEntreprise());
         $typeMesure->setCreatedBy($this->getUser());
-        $typeMesure->isActive(true);
+        $typeMesure->setIsActive(true);
         $typeMesure->setUpdatedBy($this->getUser());
         $errorResponse = $this->errorResponse($typeMesure);
         // On vérifie si l'entreprise existe

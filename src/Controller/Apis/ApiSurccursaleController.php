@@ -51,7 +51,7 @@ class ApiSurccursaleController extends ApiInterface
                     new OA\Property(property: "id", type: "integer", example: 1, description: "Identifiant unique de la succursale"),
                     new OA\Property(property: "libelle", type: "string", example: "Succursale Abidjan Plateau", description: "Nom de la succursale"),
                     new OA\Property(property: "contact", type: "string", example: "+225 27 20 12 34 56", description: "Numéro de contact de la succursale"),
-                    new OA\Property(property: "isActive", type: "boolean", example: true, description: "Statut actif/inactif"),
+                    new OA\Property(property: "setIsActive", type: "boolean", example: true, description: "Statut actif/inactif"),
                     new OA\Property(
                         property: "entreprise",
                         type: "object",
@@ -114,7 +114,7 @@ class ApiSurccursaleController extends ApiInterface
                     new OA\Property(property: "id", type: "integer", example: 1),
                     new OA\Property(property: "libelle", type: "string", example: "Succursale Abidjan Plateau"),
                     new OA\Property(property: "contact", type: "string", example: "+225 27 20 12 34 56"),
-                    new OA\Property(property: "isActive", type: "boolean", example: true, description: "Toujours true dans cet endpoint"),
+                    new OA\Property(property: "setIsActive", type: "boolean", example: true, description: "Toujours true dans cet endpoint"),
                     new OA\Property(property: "entreprise", type: "object"),
                     new OA\Property(property: "caisse", type: "object", nullable: true)
                 ]
@@ -127,7 +127,7 @@ class ApiSurccursaleController extends ApiInterface
     {
         try {
             $surccursales = $this->paginationService->paginate($surccursaleRepository->findBy(
-                ['entreprise' => $this->getUser()->getEntreprise(), 'isActive' => true],
+                ['entreprise' => $this->getUser()->getEntreprise(), 'setIsActive' => true],
                 ['libelle' => 'ASC']
             ));
 
@@ -162,7 +162,7 @@ class ApiSurccursaleController extends ApiInterface
                     new OA\Property(property: "id", type: "integer", example: 1),
                     new OA\Property(property: "libelle", type: "string", example: "Succursale Abidjan Plateau"),
                     new OA\Property(property: "contact", type: "string", example: "+225 27 20 12 34 56"),
-                    new OA\Property(property: "isActive", type: "boolean", example: true),
+                    new OA\Property(property: "setIsActive", type: "boolean", example: true),
                     new OA\Property(property: "entreprise", type: "object"),
                     new OA\Property(property: "caisse", type: "object", nullable: true),
                     new OA\Property(property: "boutiques", type: "array", description: "Boutiques de la succursale", items: new OA\Items(type: "object"))
@@ -216,7 +216,7 @@ class ApiSurccursaleController extends ApiInterface
                 new OA\Property(property: "id", type: "integer", example: 1),
                 new OA\Property(property: "libelle", type: "string", example: "Succursale Abidjan Plateau"),
                 new OA\Property(property: "contact", type: "string", example: "+225 27 20 12 34 56"),
-                new OA\Property(property: "isActive", type: "boolean", example: true),
+                new OA\Property(property: "setIsActive", type: "boolean", example: true),
                 new OA\Property(property: "entreprise", type: "object", description: "Entreprise mère"),
                 new OA\Property(
                     property: "caisse",
@@ -323,11 +323,11 @@ class ApiSurccursaleController extends ApiInterface
         $surccursale = new Surccursale();
         $surccursale->setLibelle($data['libelle']);
         $surccursale->setContact($data['contact']);
-        $surccursale->setIsActive($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "succursale"));
+        $surccursale->setsetIsActive($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "succursale"));
         $surccursale->setEntreprise($this->getUser()->getEntreprise());
         $surccursale->setCreatedBy($this->getUser());
         $surccursale->setUpdatedBy($this->getUser());
-        $surccursale->isActive(true);
+        $surccursale->setIsActive(true);
         $surccursale->setCreatedAtValue(new \DateTime());
         $surccursale->setUpdatedAt(new \DateTime());
 
@@ -341,7 +341,7 @@ class ApiSurccursaleController extends ApiInterface
             $caisse = new CaisseSuccursale();
             $caisse->setMontant(0);
             $caisse->setSuccursale($surccursale);
-            $caisse->isActive(true);
+            $caisse->setIsActive(true);
             $caisse->setReference($utils->generateReference('CAIS'));
             $caisse->setType(Caisse::TYPE['succursale']);
             $caisse->setEntreprise($this->getUser()->getEntreprise());

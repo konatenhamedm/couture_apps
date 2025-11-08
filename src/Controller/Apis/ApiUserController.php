@@ -73,7 +73,7 @@ class ApiUserController extends ApiInterface
                             new OA\Property(property: "login", type: "string", example: "admin@fashionci.com"),
                             new OA\Property(property: "nom", type: "string", example: "Kouassi", nullable: true),
                             new OA\Property(property: "prenoms", type: "string", example: "Jean", nullable: true),
-                            new OA\Property(property: "isActive", type: "boolean", example: true),
+                            new OA\Property(property: "setsetIsActive", type: "boolean", example: true),
                             new OA\Property(property: "roles", type: "array", items: new OA\Items(type: "string", example: "ROLE_ADMIN")),
                             new OA\Property(property: "type", type: "object", description: "Type d'utilisateur (SADM, ADMIN, GESTIONNAIRE, etc.)"),
                             new OA\Property(property: "entreprise", type: "object"),
@@ -139,7 +139,7 @@ class ApiUserController extends ApiInterface
     {
         try {
             $users = $this->paginationService->paginate($userRepository->findBy(
-                ['entreprise' => $this->getUser()->getEntreprise(), 'isActive' => true],
+                ['entreprise' => $this->getUser()->getEntreprise(), 'setsetIsActive' => true],
                 ['nom' => 'ASC']
             ));
 
@@ -331,7 +331,7 @@ class ApiUserController extends ApiInterface
             $entreprise->setLibelle($data['denominationEntreprise']);
             $entreprise->setEmail($data['emailEntreprise']);
             $entreprise->setNumero($data['numeroEntreprise']);
-            $entreprise->isActive(true);
+            $entreprise->setsetIsActive(true);
 
             $pays = $paysRepository->find($data['pays']);
             if (!$pays) {
@@ -345,7 +345,7 @@ class ApiUserController extends ApiInterface
             $user = new User();
             $user->setLogin($data['email']);
             $user->setEntreprise($entreprise);
-            $user->setIsActive(true);
+            $user->setsetsetIsActive(true);
             $user->setPassword($this->hasher->hashPassword($user, $data['password']));
             $user->setRoles(['ROLE_ADMIN']);
             $user->setType($typeUserRepository->findOneBy(['code' => 'SADM']));
@@ -479,7 +479,7 @@ class ApiUserController extends ApiInterface
                         'type' => $user->getType() ?? null,
                         'logo' => $user->getLogo() ?? null,
                         'roles' => $user->getRoles(),
-                        'is_active' => $user->isActive(),
+                        'is_active' => $user->setsetIsActive(),
                         'pays' => $user->getEntreprise()->getPays()->getId(),
                         'boutique' => $user->getBoutique() ? $user->getBoutique()->getId() : null,
                         'succursale' => $user->getSurccursale() ? $user->getSurccursale()->getId() : null,
@@ -636,7 +636,7 @@ class ApiUserController extends ApiInterface
                 }
             }
 
-            $user->setIsActive($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "user"));
+            $user->setsetsetIsActive($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "user"));
             $user->setPassword($this->hasher->hashPassword($user, $data['password']));
             $user->setRoles(['ROLE_MEMBRE']);
 

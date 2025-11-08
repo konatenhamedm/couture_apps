@@ -74,7 +74,7 @@ class PaiementService
         $paiement->setMontant($moduleAbonnement->getMontant());
         $paiement->setModuleAbonnement($moduleAbonnement);
         $paiement->setEntreprise($entreprise);
-        $paiement->isActive(true);
+        $paiement->setIsActive(true);
         $paiement->setCreatedAtValue(new \DateTime());
         $reference = $this->generateReference('ABNT');
         $paiement->setReference($reference);
@@ -195,7 +195,7 @@ class PaiementService
         $abonnement = new Abonnement();
         $abonnement->setModuleAbonnement($paiement->getModuleAbonnement());
         $abonnement->setEntreprise($paiement->getEntreprise());
-        $abonnement->isActive(true);
+        $abonnement->setIsActive(true);
         $abonnement->setType('payant');
         $abonnement->setEtat('actif');
 
@@ -232,7 +232,7 @@ class PaiementService
             foreach ($paiement->getDataUser() as $user) {
 
                 $data = $this->userRepository->find($user);
-                $data->setIsActive(false);
+                $data->setsetIsActive(false);
                 $this->userRepository->add($data, true);
             }
         }
@@ -240,7 +240,7 @@ class PaiementService
             foreach ($paiement->getDataSuccursale() as $succursale) {
 
                 $data = $this->surccursaleRepository->find($succursale);
-                $data->setIsActive(false);
+                $data->setsetIsActive(false);
                 $this->surccursaleRepository->add($data, true);
             }
         }
@@ -248,7 +248,7 @@ class PaiementService
             foreach ($paiement->getDataBoutique() as $boutique) {
 
                 $data = $this->boutiqueRepository->find($boutique);
-                $data->setIsActive(false);
+                $data->setsetIsActive(false);
                 $this->boutiqueRepository->add($data, true);
             }
         }

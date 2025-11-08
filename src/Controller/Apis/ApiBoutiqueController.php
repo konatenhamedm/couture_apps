@@ -52,7 +52,7 @@ class ApiBoutiqueController extends ApiInterface
                     new OA\Property(property: "libelle", type: "string", example: "Boutique Centre-Ville", description: "Nom de la boutique"),
                     new OA\Property(property: "situation", type: "string", example: "Avenue 12, Abidjan", description: "Adresse/localisation de la boutique"),
                     new OA\Property(property: "contact", type: "string", example: "+225 0123456789", description: "Numéro de contact de la boutique"),
-                    new OA\Property(property: "isActive", type: "boolean", example: true, description: "Indique si la boutique est active"),
+                    new OA\Property(property: "setIsActive", type: "boolean", example: true, description: "Indique si la boutique est active"),
                     new OA\Property(property: "entreprise", type: "object", description: "Entreprise propriétaire"),
                     new OA\Property(property: "createdAt", type: "string", format: "date-time", example: "2025-01-15T10:30:00+00:00")
                 ]
@@ -96,7 +96,7 @@ class ApiBoutiqueController extends ApiInterface
                     new OA\Property(property: "libelle", type: "string", example: "Boutique Centre-Ville", description: "Nom de la boutique"),
                     new OA\Property(property: "situation", type: "string", example: "Avenue 12, Abidjan", description: "Adresse de la boutique"),
                     new OA\Property(property: "contact", type: "string", example: "+225 0123456789", description: "Contact"),
-                    new OA\Property(property: "isActive", type: "boolean", example: true, description: "Statut d'activité"),
+                    new OA\Property(property: "setIsActive", type: "boolean", example: true, description: "Statut d'activité"),
                     new OA\Property(property: "entreprise", type: "object", description: "Informations de l'entreprise"),
                     new OA\Property(property: "caisseBoutique", type: "object", description: "Caisse associée à la boutique")
                 ]
@@ -161,7 +161,7 @@ class ApiBoutiqueController extends ApiInterface
                 new OA\Property(property: "libelle", type: "string", example: "Boutique Centre-Ville", description: "Nom de la boutique"),
                 new OA\Property(property: "situation", type: "string", example: "Avenue 12, Abidjan", description: "Adresse"),
                 new OA\Property(property: "contact", type: "string", example: "+225 0123456789", description: "Contact"),
-                new OA\Property(property: "isActive", type: "boolean", example: true, description: "Statut"),
+                new OA\Property(property: "setIsActive", type: "boolean", example: true, description: "Statut"),
                 new OA\Property(property: "entreprise", type: "object", description: "Entreprise propriétaire"),
                 new OA\Property(
                     property: "caisseBoutique",
@@ -247,7 +247,7 @@ class ApiBoutiqueController extends ApiInterface
                 new OA\Property(property: "libelle", type: "string", example: "Boutique Centre-Ville"),
                 new OA\Property(property: "situation", type: "string", example: "Avenue 12, Abidjan"),
                 new OA\Property(property: "contact", type: "string", example: "+225 0123456789"),
-                new OA\Property(property: "isActive", type: "boolean", example: true),
+                new OA\Property(property: "setIsActive", type: "boolean", example: true),
                 new OA\Property(property: "entreprise", type: "object"),
                 new OA\Property(
                     property: "caisseBoutique",
@@ -284,7 +284,7 @@ class ApiBoutiqueController extends ApiInterface
   
         $boutique->setEntreprise($this->getUser()->getEntreprise());
         $boutique->setContact($data['contact']);
-        $boutique->setIsActive($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "boutique"));
+        $boutique->setsetIsActive($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "boutique"));
         $boutique->setCreatedBy($this->getUser());
         $boutique->setUpdatedBy($this->getUser());
         $boutique->setCreatedAtValue(new \DateTime());
@@ -300,7 +300,7 @@ class ApiBoutiqueController extends ApiInterface
             $caisse = new CaisseBoutique();
             $caisse->setMontant("0");
             $caisse->setBoutique($boutique);
-            $caisse->isActive(true);
+            $caisse->setIsActive(true);
             $caisse->setReference($utils->generateReference('CAIS'));
             $caisse->setType(Caisse::TYPE['boutique']);
             $caisse->setEntreprise($this->getUser()->getEntreprise());
