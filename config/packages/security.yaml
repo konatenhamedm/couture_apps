@@ -38,6 +38,7 @@ security:
     access_control:
             # Routes publiques (API)
             - { path: ^/api/login, roles: PUBLIC_ACCESS }
+            - { path: ^/api/logout, roles: PUBLIC_ACCESS }
             - { path: ^/api/user/create, roles: PUBLIC_ACCESS }
             - { path: ^/api/user/qr-code, roles: PUBLIC_ACCESS }
             - { path: ^/api/device-token, roles: PUBLIC_ACCESS }
