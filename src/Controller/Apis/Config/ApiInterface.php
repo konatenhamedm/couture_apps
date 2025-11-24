@@ -11,6 +11,7 @@ use App\Repository\UserRepository;
 use App\Service\Menu;
 use App\Service\PaginationService;
 use App\Service\SendMailService;
+use App\Service\StatistiquesService;
 use App\Service\SubscriptionChecker;
 use App\Service\Utils;
 use Doctrine\ORM\EntityManagerInterface;
@@ -72,6 +73,7 @@ class ApiInterface extends AbstractController
         SerializerInterface $serializer,
         ValidatorInterface $validator,
         UserRepository $userRepository,
+        protected StatistiquesService $statistiquesService,
         protected PaginationService $paginationService,
        #[Autowire(param: 'SEND_MAIL')] string $sendMail,
         #[Autowire(param: 'SUPER_ADMIN')] string $superAdmin

@@ -18,8 +18,10 @@ use App\Repository\ClientRepository;
 use App\Repository\EntrepriseRepository;
 use App\Repository\FactureRepository;
 use App\Repository\TypeMesureRepository;
+use App\Repository\TypeUserRepository;
 use App\Repository\UserRepository;
 use App\Service\Utils;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use OpenApi\Attributes as OA;
@@ -121,17 +123,28 @@ class ApiFactureController extends ApiInterface
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
-    public function indexAll(FactureRepository $factureRepository): Response
+    public function indexAll(FactureRepository $factureRepository, TypeUserRepository $typeUserRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
+
+
         try {
-            $factures = $this->paginationService->paginate($factureRepository->findBy(
-                ['entreprise' => $this->getUser()->getEntreprise()],
-                ['id' => 'DESC']
-            ));
+
+            if ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'SADM'])) {
+                $factures = $this->paginationService->paginate($factureRepository->findBy(
+                    ['entreprise' => $this->getUser()->getEntreprise()],
+                    ['id' => 'DESC']
+                ));
+            } else {
+                $factures = $this->paginationService->paginate($factureRepository->findBy(
+                    ['succursale' => $this->getUser()->getSurccursale()],
+                    ['id' => 'DESC']
+                ));
+            }
+
             $response = $this->responseData($factures, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
@@ -218,6 +231,23 @@ class ApiFactureController extends ApiInterface
 
     /**
      * Crée une nouvelle facture avec mesures et paiement
+     * 
+     * Structure des données attendues :
+     * - Champs simples : clientId, succursaleId, avance, remise, montantTotal, resteArgent, dateRetrait
+     * - Fichier signature : signature (optionnel)
+     * - Mesures (JSON string) : 
+     *   [
+     *     {
+     *       "typeMesureId": 1,
+     *       "montant": 25000,
+     *       "remise": 2000,
+     *       "ligneMesures": [
+     *         {"categorieId": 1, "taille": "85cm"},
+     *         {"categorieId": 2, "taille": "120cm"}
+     *       ]
+     *     }
+     *   ]
+     * - Photos des mesures : mesures[0][photoPagne], mesures[0][photoModele], etc.
      */
     #[Route('/create', methods: ['POST'])]
     #[OA\Post(
@@ -237,56 +267,44 @@ class ApiFactureController extends ApiInterface
                     new OA\Property(
                         property: "clientId",
                         type: "integer",
-                        nullable: true,
                         example: 5,
-                        description: "ID du client existant (optionnel, si null un nouveau client sera créé)"
+                        description: "ID du client existant (obligatoire)"
                     ),
                     new OA\Property(
-                        property: "nom",
-                        type: "string",
-                        example: "Kouassi",
-                        description: "Nom du nouveau client (requis si clientId est null)"
-                    ),
-                    new OA\Property(
-                        property: "numero",
-                        type: "string",
-                        example: "+225 0123456789",
-                        description: "Numéro du nouveau client (requis si clientId est null)"
+                        property: "succursaleId",
+                        type: "integer",
+                        example: 1,
+                        description: "ID de la succursale (obligatoire)"
                     ),
                     new OA\Property(
                         property: "avance",
                         type: "number",
-                        format: "float",
                         example: 20000,
                         description: "Montant de l'avance payée (optionnel)"
                     ),
                     new OA\Property(
                         property: "remise",
                         type: "number",
-                        format: "float",
                         example: 5000,
                         description: "Montant de la remise accordée (optionnel)"
                     ),
                     new OA\Property(
                         property: "montantTotal",
                         type: "number",
-                        format: "float",
                         example: 50000,
                         description: "Montant total de la facture (obligatoire)"
                     ),
                     new OA\Property(
                         property: "resteArgent",
                         type: "number",
-                        format: "float",
                         example: 30000,
                         description: "Reste à payer après avance et remise"
                     ),
                     new OA\Property(
                         property: "dateRetrait",
                         type: "string",
-                        format: "date-time",
-                        example: "2025-02-01T14:00:00",
-                        description: "Date de retrait prévue de la commande"
+                        example: "2025-02-01 14:00:00",
+                        description: "Date de retrait prévue (format: Y-m-d H:i:s)"
                     ),
                     new OA\Property(
                         property: "signature",
@@ -296,69 +314,33 @@ class ApiFactureController extends ApiInterface
                     ),
                     new OA\Property(
                         property: "mesures",
-                        type: "array",
-                        description: "Liste des mesures de couture à prendre (obligatoire)",
-                        items: new OA\Items(
-                            type: "object",
-                            required: ["typeMesureId", "montant"],
-                            properties: [
-                                new OA\Property(
-                                    property: "typeMesureId",
-                                    type: "integer",
-                                    example: 1,
-                                    description: "ID du type de mesure (ex: Robe, Pantalon, Chemise)"
-                                ),
-                                new OA\Property(
-                                    property: "montant",
-                                    type: "number",
-                                    format: "float",
-                                    example: 25000,
-                                    description: "Prix de cette mesure"
-                                ),
-                                new OA\Property(
-                                    property: "remise",
-                                    type: "number",
-                                    format: "float",
-                                    example: 2000,
-                                    description: "Remise sur cette mesure spécifique"
-                                ),
-                                new OA\Property(
-                                    property: "ligneMesures",
-                                    type: "array",
-                                    description: "Détails des mesures prises (tour de taille, longueur, etc.)",
-                                    items: new OA\Items(
-                                        type: "object",
-                                        required: ["categorieId", "taille"],
-                                        properties: [
-                                            new OA\Property(
-                                                property: "categorieId",
-                                                type: "integer",
-                                                example: 1,
-                                                description: "ID de la catégorie de mesure (ex: Tour de taille, Longueur)"
-                                            ),
-                                            new OA\Property(
-                                                property: "taille",
-                                                type: "string",
-                                                example: "85cm",
-                                                description: "Valeur de la mesure prise"
-                                            )
-                                        ]
-                                    )
-                                ),
-                                new OA\Property(
-                                    property: "photoPagne",
-                                    type: "string",
-                                    format: "binary",
-                                    description: "Photo du tissu/pagne choisi (optionnel)"
-                                ),
-                                new OA\Property(
-                                    property: "photoModele",
-                                    type: "string",
-                                    format: "binary",
-                                    description: "Photo du modèle à réaliser (optionnel)"
-                                )
-                            ]
-                        )
+                        type: "string",
+                        description: "Données des mesures au format JSON string (obligatoire). Structure: [{typeMesureId, montant, remise?, ligneMesures: [{categorieId, taille}]}]",
+                        example: '[{"typeMesureId":1,"montant":25000,"remise":2000,"ligneMesures":[{"categorieId":1,"taille":"85cm"},{"categorieId":2,"taille":"120cm"}]},{"typeMesureId":2,"montant":20000,"ligneMesures":[{"categorieId":3,"taille":"90cm"},{"categorieId":4,"taille":"42cm"}]}]'
+                    ),
+                    new OA\Property(
+                        property: "mesures[0][photoPagne]",
+                        type: "string",
+                        format: "binary",
+                        description: "Photo du tissu/pagne pour la mesure 0 (optionnel)"
+                    ),
+                    new OA\Property(
+                        property: "mesures[0][photoModele]",
+                        type: "string",
+                        format: "binary",
+                        description: "Photo du modèle pour la mesure 0 (optionnel)"
+                    ),
+                    new OA\Property(
+                        property: "mesures[1][photoPagne]",
+                        type: "string",
+                        format: "binary",
+                        description: "Photo du tissu/pagne pour la mesure 1 (optionnel)"
+                    ),
+                    new OA\Property(
+                        property: "mesures[1][photoModele]",
+                        type: "string",
+                        format: "binary",
+                        description: "Photo du modèle pour la mesure 1 (optionnel)"
                     )
                 ]
             )
@@ -395,7 +377,8 @@ class ApiFactureController extends ApiInterface
         ClientRepository $clientRepository,
         CategorieMesureRepository $categorieMesureRepository,
         FactureRepository $factureRepository,
-        EntrepriseRepository $entrepriseRepository
+        EntrepriseRepository $entrepriseRepository,
+        EntityManagerInterface $entityManager
     ): Response {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
@@ -404,28 +387,11 @@ class ApiFactureController extends ApiInterface
         $names = 'document_' . '01';
         $filePrefix = str_slug($names);
         $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
-        $data = json_decode($request->getContent(), true);
-
         $facture = new Facture();
         $facture->setEntreprise($this->getUser()->getEntreprise());
         $admin = $userRepository->getUserByCodeType($this->getUser()->getEntreprise());
 
-        // Gestion du client (nouveau ou existant)
-        if ($request->get('clientId') == null) {
-            $client = new Client();
-            $client->setNom($data['nom']);
-            $client->setEntreprise($this->getUser()->getEntreprise());
-            $client->setNumero($data['numero']);
-            $client->setSurccursale($this->getUser()->getSurccursale());
-            $client->setCreatedBy($this->getUser());
-            $client->setUpdatedBy($this->getUser());
-            $client->setCreatedAtValue(new \DateTime());
-            $client->setUpdatedAt(new \DateTime());
-            $facture->setClient($client);
-        } else {
-            $facture->setClient($clientRepository->find($request->get('clientId')));
-        }
-
+        $facture->setClient($clientRepository->find($request->get('clientId')));
         $facture->setDateDepot(new \DateTime());
         $facture->setAvance($request->get('avance'));
 
@@ -445,8 +411,9 @@ class ApiFactureController extends ApiInterface
         $facture->setCreatedAtValue(new \DateTime());
         $facture->setUpdatedAt(new \DateTime());
 
-        // Gestion des mesures
-        $lignesMesure = $request->get('mesures');
+        // Gestion des mesures depuis formData
+        $mesuresJson = $request->get('mesures');
+        $lignesMesure = $mesuresJson ? json_decode($mesuresJson, true) : [];
         $uploadedFiles = $request->files->get('mesures');
 
         if (isset($lignesMesure) && is_array($lignesMesure)) {
@@ -478,15 +445,26 @@ class ApiFactureController extends ApiInterface
                         $ligneMesure = new LigneMesure();
                         $ligneMesure->setCategorieMesure($categorieMesureRepository->find($ligneData['categorieId']));
                         $ligneMesure->setTaille($ligneData['taille']);
+                        $entityManager->persist($ligneMesure);
                         $mesure->addLigneMesure($ligneMesure);
                     }
                 }
 
+                $entityManager->persist($mesure);
                 $facture->addMesure($mesure);
             }
         }
 
-        // Création automatique du paiement
+        // Validation AVANT la persistence
+        $errorResponse = $this->errorResponse($facture);
+        if ($errorResponse !== null) {
+            return $errorResponse;
+        }
+
+        // Persister la facture
+        $entityManager->persist($facture);
+
+        // Créer le paiement
         $paiement = new PaiementFacture();
         $paiement->setMontant($facture->getAvance() ?? 0);
         $paiement->setType('paiementFacture');
@@ -495,13 +473,14 @@ class ApiFactureController extends ApiInterface
         $paiement->setUpdatedBy($this->getUser());
         $paiement->setCreatedAtValue(new \DateTime());
         $paiement->setUpdatedAt(new \DateTime());
+        $paiement->setFacture($facture);
+        
+        $entityManager->persist($paiement);
         $facture->addPaiementFacture($paiement);
-
-
 
         // Mise à jour de la caisse si avance
         if ($request->get('avance') != null && $request->get('avance') > 0) {
-            $caisse = $caisseSuccursaleRepository->findOneBy(['surccursale' => $this->getUser()->getSurccursale()]);
+            $caisse = $caisseSuccursaleRepository->findOneBy(['succursale' => $request->get('succursaleId')]);
             if ($caisse) {
                 $caisse->setMontant((int)$caisse->getMontant() + (int)$request->get('avance'));
                 $caisse->setType('caisse_succursale');
@@ -530,7 +509,6 @@ class ApiFactureController extends ApiInterface
                     ),
                     "titre" => "Paiement facture - " . ($this->getUser()->getSurccursale() ? $this->getUser()->getSurccursale()->getLibelle() : ""),
                 ]);
-
             }
 
             $this->sendMailService->send(
@@ -544,16 +522,10 @@ class ApiFactureController extends ApiInterface
                     "date" => (new \DateTime())->format('d/m/Y H:i'),
                 ]
             );
-
-
         }
 
-        $errorResponse = $this->errorResponse($facture);
-        if ($errorResponse !== null) {
-            return $errorResponse;
-        } else {
-            $factureRepository->add($facture, true);
-        }
+        // Flush final pour tout sauvegarder
+        $entityManager->flush();
 
         return $this->responseData($facture, 'group1', ['Content-Type' => 'application/json']);
     }
@@ -583,38 +555,28 @@ class ApiFactureController extends ApiInterface
                 type: "object",
                 properties: [
                     new OA\Property(property: "clientId", type: "integer", example: 5, description: "Nouvel ID du client"),
-                    new OA\Property(property: "avance", type: "number", format: "float", example: 25000, description: "Nouveau montant de l'avance"),
-                    new OA\Property(property: "remise", type: "number", format: "float", example: 7000, description: "Nouvelle remise"),
-                    new OA\Property(property: "montantTotal", type: "number", format: "float", example: 55000, description: "Nouveau montant total"),
-                    new OA\Property(property: "resteArgent", type: "number", format: "float", example: 28000, description: "Nouveau reste à payer"),
-                    new OA\Property(property: "dateRetrait", type: "string", format: "date-time", example: "2025-02-05T15:00:00", description: "Nouvelle date de retrait"),
+                    new OA\Property(property: "avance", type: "number", example: 25000, description: "Nouveau montant de l'avance"),
+                    new OA\Property(property: "remise", type: "number", example: 7000, description: "Nouvelle remise"),
+                    new OA\Property(property: "montantTotal", type: "number", example: 55000, description: "Nouveau montant total"),
+                    new OA\Property(property: "resteArgent", type: "number", example: 28000, description: "Nouveau reste à payer"),
+                    new OA\Property(property: "dateRetrait", type: "string", example: "2025-02-05 15:00:00", description: "Nouvelle date de retrait"),
                     new OA\Property(
                         property: "mesures",
-                        type: "array",
-                        description: "Mesures à mettre à jour (inclure 'id' pour modifier, exclure pour ajouter)",
-                        items: new OA\Items(
-                            type: "object",
-                            properties: [
-                                new OA\Property(property: "id", type: "integer", nullable: true, example: 1, description: "ID de la mesure existante (pour mise à jour)"),
-                                new OA\Property(property: "typeMesureId", type: "integer", example: 1),
-                                new OA\Property(property: "montant", type: "number", format: "float", example: 27000),
-                                new OA\Property(property: "remise", type: "number", format: "float", example: 2500),
-                                new OA\Property(
-                                    property: "ligneMesures",
-                                    type: "array",
-                                    items: new OA\Items(
-                                        type: "object",
-                                        properties: [
-                                            new OA\Property(property: "id", type: "integer", nullable: true, example: 1, description: "ID de la ligne existante"),
-                                            new OA\Property(property: "categorieId", type: "integer", example: 1),
-                                            new OA\Property(property: "taille", type: "string", example: "90cm")
-                                        ]
-                                    )
-                                ),
-                                new OA\Property(property: "photoPagne", type: "string", format: "binary", description: "Nouvelle photo du pagne"),
-                                new OA\Property(property: "photoModele", type: "string", format: "binary", description: "Nouvelle photo du modèle")
-                            ]
-                        )
+                        type: "string",
+                        description: "Mesures au format JSON string. Structure: [{id?, typeMesureId, montant, remise?, ligneMesures: [{id?, categorieId, taille}]}]",
+                        example: '[{"id":1,"typeMesureId":1,"montant":27000,"remise":2500,"ligneMesures":[{"id":1,"categorieId":1,"taille":"90cm"},{"categorieId":2,"taille":"125cm"}]},{"typeMesureId":2,"montant":22000,"ligneMesures":[{"categorieId":3,"taille":"95cm"}]}]'
+                    ),
+                    new OA\Property(
+                        property: "mesures[0][photoPagne]",
+                        type: "string",
+                        format: "binary",
+                        description: "Nouvelle photo du pagne pour la mesure 0"
+                    ),
+                    new OA\Property(
+                        property: "mesures[0][photoModele]",
+                        type: "string",
+                        format: "binary",
+                        description: "Nouvelle photo du modèle pour la mesure 0"
                     )
                 ]
             )
@@ -645,14 +607,29 @@ class ApiFactureController extends ApiInterface
         TypeMesureRepository $typeMesureRepository,
         ClientRepository $clientRepository,
         CategorieMesureRepository $categorieMesureRepository,
-        Utils $utils
+        Utils $utils,
+        EntityManagerInterface $entityManager
     ): Response {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         try {
-            $data = json_decode($request->getContent(), true);
+            // Récupération des données depuis formData
+            $mesuresJson = $request->get('mesures');
+            $data = [];
+            if ($mesuresJson) {
+                $data['mesures'] = json_decode($mesuresJson, true);
+            }
+            
+            // Récupération des autres champs
+            if ($request->get('clientId')) $data['clientId'] = $request->get('clientId');
+            if ($request->get('avance')) $data['avance'] = $request->get('avance');
+            if ($request->get('remise')) $data['remise'] = $request->get('remise');
+            if ($request->get('montantTotal')) $data['montantTotal'] = $request->get('montantTotal');
+            if ($request->get('resteArgent')) $data['resteArgent'] = $request->get('resteArgent');
+            if ($request->get('dateRetrait')) $data['dateRetrait'] = $request->get('dateRetrait');
+            
             $uploadedFiles = $request->files->get('mesures');
 
             if ($facture === null) {
@@ -698,6 +675,10 @@ class ApiFactureController extends ApiInterface
                         $mesure->setTypeMesure($typeMesureRepository->find($mesureData['typeMesureId']));
                         $mesure->setMontant($mesureData['montant']);
                         $mesure->setRemise($mesureData['remise'] ?? 0);
+                        
+                        if (!isset($mesureData['id'])) {
+                            $entityManager->persist($mesure);
+                        }
 
                         // Gestion des fichiers uploadés
                         if (isset($uploadedFiles[$index])) {
@@ -737,6 +718,9 @@ class ApiFactureController extends ApiInterface
                                 if ($ligneMesure) {
                                     $ligneMesure->setCategorieMesure($categorieMesureRepository->find($ligneData['categorieId']));
                                     $ligneMesure->setTaille($ligneData['taille']);
+                                    if (!isset($ligneData['id'])) {
+                                        $entityManager->persist($ligneMesure);
+                                    }
                                 }
                             }
                         }

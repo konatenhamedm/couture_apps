@@ -30,7 +30,14 @@ class StatistiquesService
             'commandesTotales' => $this->getCommandesTotales($dateDebut, $dateFin, $datesPrecedentes),
             'revenus' => $this->getRevenus($dateDebut, $dateFin, $datesPrecedentes),
             'nouveauxClients' => $this->getNouveauxClients($dateDebut, $dateFin, $datesPrecedentes),
+            'totalClients' => $this->getTotalClients($dateDebut, $dateFin, $datesPrecedentes),
+            'nombreReservations' => $this->getNombreReservations($dateDebut, $dateFin, $datesPrecedentes),
+            'nombreVentes' => $this->getNombreVentes($dateDebut, $dateFin, $datesPrecedentes),
+            'nombreFactures' => $this->getNombreFactures($dateDebut, $dateFin, $datesPrecedentes),
             'tauxReservation' => $this->getTauxReservation($dateDebut, $dateFin, $datesPrecedentes),
+            'panierMoyen' => $this->getPanierMoyen($dateDebut, $dateFin, $datesPrecedentes),
+            'tauxConversion' => $this->getTauxConversion($dateDebut, $dateFin, $datesPrecedentes),
+            'clientsActifs' => $this->getClientsActifs($dateDebut, $dateFin, $datesPrecedentes),
             'periode' => [
                 'debut' => $dateDebut->format('Y-m-d'),
                 'fin' => $dateFin->format('Y-m-d')
@@ -294,13 +301,122 @@ class StatistiquesService
     private function formatTypeLabel(string $type): string
     {
         $labels = [
-            'paiementFacture' => 'Factures',
-            'paiementReservation' => 'Réservations',
-            'paiementBoutique' => 'Boutique',
-            'paiementAbonnement' => 'Abonnements',
-            'paiementSuccursale' => 'Succursale'
+            'PaiementFacture' => 'Factures',
+            'PaiementReservation' => 'Réservations', 
+            'PaiementBoutique' => 'Boutique',
+            'PaiementAbonnement' => 'Abonnements'
         ];
         
         return $labels[$type] ?? $type;
+    }
+
+    private function getTotalClients(\DateTime $debut, \DateTime $fin, array $precedent): array
+    {
+        $actuel = $this->clientRepo->createQueryBuilder('c')
+            ->select('COUNT(c.id)')
+            ->where('c.createdAt <= :fin')
+            ->setParameter('fin', $fin)
+            ->getQuery()
+            ->getSingleScalarResult();
+            
+        $precedentTotal = $this->clientRepo->createQueryBuilder('c')
+            ->select('COUNT(c.id)')
+            ->where('c.createdAt <= :fin')
+            ->setParameter('fin', $precedent['fin'])
+            ->getQuery()
+            ->getSingleScalarResult();
+        
+        return [
+            'valeur' => $actuel,
+            'variation' => $this->calculateVariationPercent($actuel, $precedentTotal)
+        ];
+    }
+
+    private function getNombreReservations(\DateTime $debut, \DateTime $fin, array $precedent): array
+    {
+        $actuel = $this->reservationRepo->countByDateRange($debut, $fin);
+        $precedentTotal = $this->reservationRepo->countByDateRange($precedent['debut'], $precedent['fin']);
+        
+        return [
+            'valeur' => $actuel,
+            'variation' => $this->calculateVariationPercent($actuel, $precedentTotal)
+        ];
+    }
+
+    private function getNombreVentes(\DateTime $debut, \DateTime $fin, array $precedent): array
+    {
+        $actuel = $this->factureRepo->countByDateRange($debut, $fin);
+        $precedentTotal = $this->factureRepo->countByDateRange($precedent['debut'], $precedent['fin']);
+        
+        return [
+            'valeur' => $actuel,
+            'variation' => $this->calculateVariationPercent($actuel, $precedentTotal)
+        ];
+    }
+
+    private function getPanierMoyen(\DateTime $debut, \DateTime $fin, array $precedent): array
+    {
+        $revenus = $this->getRevenusTotal($debut, $fin);
+        $commandes = $this->getCommandesTotal($debut, $fin);
+        $actuel = $commandes > 0 ? $revenus / $commandes : 0;
+        
+        $revenusPrecedent = $this->getRevenusTotal($precedent['debut'], $precedent['fin']);
+        $commandesPrecedent = $this->getCommandesTotal($precedent['debut'], $precedent['fin']);
+        $precedentTotal = $commandesPrecedent > 0 ? $revenusPrecedent / $commandesPrecedent : 0;
+        
+        return [
+            'valeur' => round($actuel, 2),
+            'valeurFormatee' => $this->formatMontant($actuel),
+            'variation' => $this->calculateVariationPercent($actuel, $precedentTotal)
+        ];
+    }
+
+    private function getTauxConversion(\DateTime $debut, \DateTime $fin, array $precedent): array
+    {
+        $reservations = $this->reservationRepo->countByDateRange($debut, $fin);
+        $factures = $this->factureRepo->countByDateRange($debut, $fin);
+        $actuel = $reservations > 0 ? ($factures / $reservations) * 100 : 0;
+        
+        $reservationsPrecedent = $this->reservationRepo->countByDateRange($precedent['debut'], $precedent['fin']);
+        $facturesPrecedent = $this->factureRepo->countByDateRange($precedent['debut'], $precedent['fin']);
+        $precedentTotal = $reservationsPrecedent > 0 ? ($facturesPrecedent / $reservationsPrecedent) * 100 : 0;
+        
+        return [
+            'valeur' => round($actuel, 1),
+            'variation' => round($actuel - $precedentTotal, 1)
+        ];
+    }
+
+    private function getClientsActifs(\DateTime $debut, \DateTime $fin, array $precedent): array
+    {
+        // Clients ayant fait au moins un paiement dans la période
+        $sql = "SELECT COUNT(DISTINCT COALESCE(f.client_id, r.client_id)) as clients_actifs
+                FROM paiement p
+                LEFT JOIN paiement_facture pf ON pf.id = p.id
+                LEFT JOIN facture f ON f.id = pf.facture_id
+                LEFT JOIN paiement_reservation pr ON pr.id = p.id
+                LEFT JOIN reservation r ON r.id = pr.reservation_id
+                WHERE p.created_at BETWEEN ? AND ?
+                AND (f.client_id IS NOT NULL OR r.client_id IS NOT NULL)";
+        
+        $conn = $this->paiementRepo->getEntityManager()->getConnection();
+        $actuel = $conn->executeQuery($sql, [$debut->format('Y-m-d H:i:s'), $fin->format('Y-m-d H:i:s')])->fetchOne();
+        $precedentTotal = $conn->executeQuery($sql, [$precedent['debut']->format('Y-m-d H:i:s'), $precedent['fin']->format('Y-m-d H:i:s')])->fetchOne();
+        
+        return [
+            'valeur' => (int) $actuel,
+            'variation' => $this->calculateVariationPercent($actuel, $precedentTotal)
+        ];
+    }
+
+    private function getNombreFactures(\DateTime $debut, \DateTime $fin, array $precedent): array
+    {
+        $actuel = $this->factureRepo->countByDateRange($debut, $fin);
+        $precedentTotal = $this->factureRepo->countByDateRange($precedent['debut'], $precedent['fin']);
+        
+        return [
+            'valeur' => $actuel,
+            'variation' => $this->calculateVariationPercent($actuel, $precedentTotal)
+        ];
     }
 }

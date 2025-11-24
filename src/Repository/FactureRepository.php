@@ -37,21 +37,30 @@ class FactureRepository extends ServiceEntityRepository
     {
         $format = match ($groupBy) {
             'jour' => '%Y-%m-%d',
-            'semaine' => '%Y-%U',
+            'semaine' => '%Y-%u',
             'mois' => '%Y-%m',
             default => '%Y-%m-%d'
         };
 
+        $sql = "SELECT DATE_FORMAT(created_at, ?) as periode, COUNT(id) as nombre 
+                FROM facture 
+                WHERE created_at BETWEEN ? AND ? 
+                GROUP BY periode 
+                ORDER BY periode ASC";
+
+        $conn = $this->getEntityManager()->getConnection();
+        return $conn->executeQuery($sql, [$format, $debut->format('Y-m-d H:i:s'), $fin->format('Y-m-d H:i:s')])->fetchAllAssociative();
+    }
+
+    public function countByDateRange(\DateTime $debut, \DateTime $fin): int
+    {
         return $this->createQueryBuilder('f')
-            ->select("DATE_FORMAT(f.dateCreated, '$format') as periode")
-            ->addSelect('COUNT(f.id) as nombre')
-            ->where('f.dateCreated BETWEEN :debut AND :fin')
+            ->select('COUNT(f.id)')
+            ->where('f.createdAt BETWEEN :debut AND :fin')
             ->setParameter('debut', $debut)
             ->setParameter('fin', $fin)
-            ->groupBy('periode')
-            ->orderBy('periode', 'ASC')
             ->getQuery()
-            ->getResult();
+            ->getSingleScalarResult();
     }
     //    /**
     //     * @return Facture[] Returns an array of Facture objects

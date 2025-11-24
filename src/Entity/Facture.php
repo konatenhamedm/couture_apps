@@ -63,7 +63,8 @@ class Facture
     /**
      * @var Collection<int, PaiementFacture>
      */
-    #[ORM\OneToMany(targetEntity: PaiementFacture::class, mappedBy: 'facture')]
+    #[ORM\OneToMany(targetEntity: PaiementFacture::class, mappedBy: 'facture',cascade: ['persist', 'remove'],
+    orphanRemoval: true)]
     #[Groups(["group1", "group_type"])]
     private Collection $paiementFactures;
 

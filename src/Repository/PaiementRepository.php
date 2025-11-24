@@ -37,61 +37,90 @@ class PaiementRepository extends ServiceEntityRepository
     {
         $format = match ($groupBy) {
             'jour' => '%Y-%m-%d',
-            'semaine' => '%Y-%U',
+            'semaine' => '%Y-%u',
             'mois' => '%Y-%m',
             default => '%Y-%m-%d'
         };
 
-        return $this->createQueryBuilder('p')
-            ->select("DATE_FORMAT(p.dateCreated, '$format') as periode")
-            ->addSelect('SUM(p.montant) as montant')
-            ->where('p.dateCreated BETWEEN :debut AND :fin')
-            ->setParameter('debut', $debut)
-            ->setParameter('fin', $fin)
-            ->groupBy('periode')
-            ->orderBy('periode', 'ASC')
-            ->getQuery()
-            ->getResult();
+        $sql = "SELECT DATE_FORMAT(created_at, ?) as periode, SUM(montant) as montant 
+                FROM paiement 
+                WHERE created_at BETWEEN ? AND ? 
+                GROUP BY periode 
+                ORDER BY periode ASC";
+
+        $conn = $this->getEntityManager()->getConnection();
+        return $conn->executeQuery($sql, [$format, $debut->format('Y-m-d H:i:s'), $fin->format('Y-m-d H:i:s')])->fetchAllAssociative();
     }
 
     public function getRevenusParType(\DateTime $debut, \DateTime $fin): array
     {
-        return $this->createQueryBuilder('p')
-            ->select('p.type')
-            ->addSelect('SUM(p.montant) as montant')
-            ->addSelect('COUNT(p.id) as nombre')
-            ->where('p.dateCreated BETWEEN :debut AND :fin')
-            ->setParameter('debut', $debut)
-            ->setParameter('fin', $fin)
-            ->groupBy('p.type')
-            ->orderBy('montant', 'DESC')
-            ->getQuery()
-            ->getResult();
+        $sql = "SELECT discr as type, SUM(montant) as montant, COUNT(id) as nombre 
+                FROM paiement 
+                WHERE created_at BETWEEN ? AND ? 
+                GROUP BY discr 
+                ORDER BY montant DESC";
+
+        $conn = $this->getEntityManager()->getConnection();
+        return $conn->executeQuery($sql, [$debut->format('Y-m-d H:i:s'), $fin->format('Y-m-d H:i:s')])->fetchAllAssociative();
     }
 
     public function getTopClients(\DateTime $debut, \DateTime $fin, int $limit): array
     {
-        return $this->createQueryBuilder('p')
-            ->select('c.id')
-            ->addSelect('c.nom')
-            ->addSelect('c.prenom')
-            ->addSelect('SUM(p.montant) as totalDepense')
-            ->addSelect('COUNT(p.id) as nombrePaiements')
-            ->leftJoin('App\Entity\PaiementFacture', 'pf', 'WITH', 'pf.id = p.id')
-            ->leftJoin('pf.facture', 'f')
-            ->leftJoin('f.client', 'c')
-            ->leftJoin('App\Entity\PaiementReservation', 'pr', 'WITH', 'pr.id = p.id')
-            ->leftJoin('pr.reservation', 'r')
-            ->leftJoin('r.client', 'c2')
-            ->where('p.dateCreated BETWEEN :debut AND :fin')
-            ->andWhere('c.id IS NOT NULL OR c2.id IS NOT NULL')
+        // Clients from PaiementFacture
+        $clientsFacture = $this->getEntityManager()->createQueryBuilder()
+            ->select('c.id, c.nom, c.prenom, SUM(p.montant) as totalDepense, COUNT(p.id) as nombrePaiements')
+            ->from('App\Entity\PaiementFacture', 'pf')
+            ->join('pf.facture', 'f')
+            ->join('f.client', 'c')
+            ->join('App\Entity\Paiement', 'p', 'WITH', 'p.id = pf.id')
+            ->where('p.createdAt BETWEEN :debut AND :fin')
             ->setParameter('debut', $debut)
             ->setParameter('fin', $fin)
-            ->groupBy('c.id, c2.id')
-            ->orderBy('totalDepense', 'DESC')
-            ->setMaxResults($limit)
+            ->groupBy('c.id')
             ->getQuery()
             ->getResult();
+
+        // Clients from PaiementReservation
+        $clientsReservation = $this->getEntityManager()->createQueryBuilder()
+            ->select('c.id, c.nom, c.prenom, SUM(p.montant) as totalDepense, COUNT(p.id) as nombrePaiements')
+            ->from('App\Entity\PaiementReservation', 'pr')
+            ->join('pr.reservation', 'r')
+            ->join('r.client', 'c')
+            ->join('App\Entity\Paiement', 'p', 'WITH', 'p.id = pr.id')
+            ->where('p.createdAt BETWEEN :debut AND :fin')
+            ->setParameter('debut', $debut)
+            ->setParameter('fin', $fin)
+            ->groupBy('c.id')
+            ->getQuery()
+            ->getResult();
+
+        // Merge and sort results
+        $merged = [];
+        foreach (array_merge($clientsFacture, $clientsReservation) as $client) {
+            $id = $client['id'];
+            if (isset($merged[$id])) {
+                $merged[$id]['totalDepense'] += $client['totalDepense'];
+                $merged[$id]['nombrePaiements'] += $client['nombrePaiements'];
+            } else {
+                $merged[$id] = $client;
+            }
+        }
+
+        usort($merged, fn($a, $b) => $b['totalDepense'] <=> $a['totalDepense']);
+        return array_slice($merged, 0, $limit);
+    }
+
+    public function sumMontantByDateRange(\DateTime $debut, \DateTime $fin): float
+    {
+        $result = $this->createQueryBuilder('p')
+            ->select('SUM(p.montant)')
+            ->where('p.createdAt BETWEEN :debut AND :fin')
+            ->setParameter('debut', $debut)
+            ->setParameter('fin', $fin)
+            ->getQuery()
+            ->getSingleScalarResult();
+        
+        return (float) ($result ?? 0);
     }
     //    /**
     //     * @return Paiement[] Returns an array of Paiement objects
