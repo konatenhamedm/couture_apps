@@ -14,19 +14,19 @@ class EntreStock
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-     #[Groups(["group1", "group_type","group_ligne"])]
+     #[Groups(["group1", "group_type","group_ligne","group_details"])]
     private ?int $id = null;
 
     #[ORM\Column(nullable: true)]
-     #[Groups(["group1", "group_type","group_ligne"])]
+     #[Groups(["group1", "group_type","group_ligne","group_details"])]
     private ?\DateTime $date = null;
 
     #[ORM\Column]
-     #[Groups(["group1", "group_type","group_ligne"])]
+     #[Groups(["group1", "group_type","group_ligne","group_details"])]
     private ?int $quantite = null;
 
     #[ORM\ManyToOne(inversedBy: 'entreStocks')]
-     #[Groups(["group1", "group_type",])]
+     #[Groups(["group1", "group_type"])]
     private ?Entreprise $entreprise = null;
 
     #[ORM\ManyToOne(inversedBy: 'entreStocks')]
@@ -46,6 +46,7 @@ class EntreStock
     public function __construct()
     {
         $this->ligneEntres = new ArrayCollection();
+        $this->date = new \DateTime();
     }
 
     public function getId(): ?int

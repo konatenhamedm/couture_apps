@@ -29,7 +29,7 @@ trait TraitEntity
 
     #[ORM\Column]
     #[Group(["group1", "group_type"])]
-    private ?bool $isActive = null;
+    private ?bool $isActive = true; // ✅ Valeur par défaut ajoutée
 
     /* 
     #[ORM\PrePersist] */

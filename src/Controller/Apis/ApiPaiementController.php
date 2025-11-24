@@ -29,6 +29,7 @@ use App\Repository\TypeUserRepository;
 use App\Repository\UserRepository;
 use App\Service\PaiementService;
 use App\Service\Utils;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use OpenApi\Attributes as OA;
@@ -221,7 +222,7 @@ class ApiPaiementController extends ApiInterface
     #[Route('/facture/{id}', methods: ['POST'])]
     #[OA\Post(
         path: "/api/paiement/facture/{id}",
-        summary: "Créer un paiement de facture",
+        summary: "Faire un paiement sur une facture ",
         description: "Permet d'enregistrer un paiement (acompte ou solde) pour une facture existante. Met automatiquement à jour le reste à payer de la facture, la caisse de la succursale, et envoie des notifications. Nécessite un abonnement actif.",
         tags: ['paiement']
     )]
@@ -354,10 +355,10 @@ class ApiPaiementController extends ApiInterface
                 $this->sendMailService->send(
                     $this->sendMail,
                     $this->superAdmin,
-                    "Paiement facture - " . $this->getUser()->getEntreprise()->getNom(),
+                    "Paiement facture - " . $this->getUser()->getEntreprise()->getLibelle(),
                     "paiement_email",
                     [
-                        "boutique_libelle" => $this->getUser()->getEntreprise()->getNom(),
+                        "boutique_libelle" => $this->getUser()->getEntreprise()->getLibelle(),
                         "montant" => number_format($data['montant'], 0, ',', ' ') . " FCFA",
                         "date" => (new \DateTime())->format('d/m/Y H:i'),
                     ]
@@ -461,7 +462,8 @@ class ApiPaiementController extends ApiInterface
         CaisseBoutiqueRepository $caisseBoutiqueRepository,
         BoutiqueRepository $boutiqueRepository,
         FactureRepository $factureRepository,
-        PaiementFactureRepository $paiementRepository
+        PaiementFactureRepository $paiementRepository,
+        EntityManagerInterface $entityManager
     ): Response {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
@@ -470,9 +472,68 @@ class ApiPaiementController extends ApiInterface
         $admin = $userRepository->getUserByCodeType($this->getUser()->getEntreprise());
         $data = json_decode($request->getContent(), true);
 
-        // Création du paiement boutique
+        // ✅ Validation des données
+        if (!isset($data['montant']) || !isset($data['quantite']) || !isset($data['modeleBoutiqueId'])) {
+            return $this->json([
+                'status' => 'ERROR',
+                'message' => 'Données manquantes (montant, quantite ou modeleBoutiqueId requis)'
+            ], 400);
+        }
+
+        $quantite = (int)$data['quantite'];
+        $montant = (int)$data['montant'];
+
+        if ($quantite <= 0) {
+            return $this->json([
+                'status' => 'ERROR',
+                'message' => 'La quantité doit être supérieure à 0'
+            ], 400);
+        }
+
+        if ($montant <= 0) {
+            return $this->json([
+                'status' => 'ERROR',
+                'message' => 'Le montant doit être supérieur à 0'
+            ], 400);
+        }
+
+        // Récupérer le modèle boutique
+        $modeleBoutique = $modeleBoutiqueRepository->find($data['modeleBoutiqueId']);
+        if (!$modeleBoutique) {
+            return $this->json([
+                'status' => 'ERROR',
+                'message' => 'Modèle de boutique non trouvé'
+            ], 404);
+        }
+
+        // ✅ Vérification du stock AVANT toute modification
+        if ($modeleBoutique->getQuantite() < $quantite) {
+            return $this->json([
+                'status' => 'ERROR',
+                'message' => "Stock insuffisant pour ce modèle (disponible: {$modeleBoutique->getQuantite()}, demandé: {$quantite})"
+            ], 400);
+        }
+
+        // Vérifier que le modèle appartient à la bonne boutique
+        if ($modeleBoutique->getBoutique()->getId() !== $boutique->getId()) {
+            return $this->json([
+                'status' => 'ERROR',
+                'message' => 'Ce modèle n\'appartient pas à cette boutique'
+            ], 400);
+        }
+
+        // Récupérer la caisse
+        $caisse = $caisseBoutiqueRepository->findOneBy(['boutique' => $boutique->getId()]);
+        if (!$caisse) {
+            return $this->json([
+                'status' => 'ERROR',
+                'message' => 'Caisse de boutique introuvable'
+            ], 404);
+        }
+
+        // Créer le paiement boutique
         $paiement = new PaiementBoutique();
-        $paiement->setMontant($data['montant']);
+        $paiement->setMontant($montant);
 
         if (isset($data['client']) && $data['client']) {
             $client = $clientRepository->find($data['client']);
@@ -484,91 +545,100 @@ class ApiPaiementController extends ApiInterface
         $paiement->setType(Paiement::TYPE["paiementBoutique"]);
         $paiement->setBoutique($boutique);
         $paiement->setReference($utils->generateReference('PMT'));
-        $paiement->setQuantite($data['quantite']);
+        $paiement->setQuantite($quantite);
         $paiement->setCreatedBy($this->getUser());
         $paiement->setUpdatedBy($this->getUser());
         $paiement->setIsActive(true);
         $paiement->setCreatedAtValue(new \DateTime());
         $paiement->setUpdatedAt(new \DateTime());
 
-        // Mise à jour de la caisse boutique
-        $caisse = $caisseBoutiqueRepository->findOneBy(['boutique' => $boutique->getId()]);
-        $caisse->setMontant((int)$caisse->getMontant() + (int)$data['montant']);
-
         $errorResponse = $this->errorResponse($paiement);
         if ($errorResponse !== null) {
             return $errorResponse;
-        } else {
-            // Création de la ligne de paiement
-            $ligne = new PaiementBoutiqueLigne();
-            $ligne->setPaiementBoutique($paiement);
-
-            $modeleBoutique = $modeleBoutiqueRepository->find($data['modeleBoutiqueId']);
-            if (!$modeleBoutique) {
-                $this->setMessage("Modèle de boutique non trouvé");
-                return $this->response('[]', 404);
-            }
-
-            // Vérification du stock disponible
-            if ($modeleBoutique->getQuantite() < $data['quantite']) {
-                return $this->json([
-                    'status' => 'ERROR',
-                    'message' => "Stock insuffisant pour ce modèle (disponible: {$modeleBoutique->getQuantite()}, demandé: {$data['quantite']})"
-                ], 400);
-            }
-
-            $ligne->setModeleBoutique($modeleBoutique);
-            $ligne->setQuantite($data['quantite']);
-            $ligne->setMontant($data['montant']);
-            $paiementBoutiqueLigneRepository->add($ligne, true);
-
-            // Mise à jour du stock
-            $modeleBoutique->setQuantite((int)$modeleBoutique->getQuantite() - (int)$data['quantite']);
-            $modeleBoutiqueRepository->add($modeleBoutique, true);
-
-            $paiementRepository->add($paiement, true);
-            $caisseBoutiqueRepository->add($caisse, true);
-
-            // Envoi des notifications
-            if ($admin) {
-                $this->sendMailService->sendNotification([
-                    'entreprise' => $this->getUser()->getEntreprise(),
-                    "user" => $admin,
-                    "libelle" => sprintf(
-                        "Bonjour %s,\n\n" .
-                            "Nous vous informons qu'une nouvelle vente vient d'être enregistrée dans la boutique **%s**.\n\n" .
-                            "- Montant : %s FCFA\n" .
-                            "- Effectué par : %s\n" .
-                            "- Date : %s\n\n" .
-                            "Cordialement,\nVotre application de gestion.",
-                        $admin->getLogin(),
-                        $boutique->getLibelle(),
-                        number_format($data['montant'], 0, ',', ' '),
-                        $this->getUser()->getNom() && $this->getUser()->getPrenoms()
-                            ? $this->getUser()->getNom() . " " . $this->getUser()->getPrenoms()
-                            : $this->getUser()->getLogin(),
-                        (new \DateTime())->format('d/m/Y H:i')
-                    ),
-                    "titre" => "Vente - " . $boutique->getLibelle(),
-                ]);
-
-                $this->sendMailService->send(
-                    $this->sendMail,
-                    $this->superAdmin,
-                    "Vente - " . $this->getUser()->getEntreprise()->getNom(),
-                    "vente_email",
-                    [
-                        "boutique_libelle" => $this->getUser()->getEntreprise()->getNom(),
-                        "montant" => number_format($data['montant'], 0, ',', ' ') . " FCFA",
-                        "date" => (new \DateTime())->format('d/m/Y H:i'),
-                    ]
-                );
-            }
         }
 
-        return $this->responseDataWith_([
-            'data' => $paiement,
-        ], 'group1', ['Content-Type' => 'application/json']);
+        // 🔒 Transaction pour garantir la cohérence
+        $entityManager->beginTransaction();
+
+        try {
+            // ✅ 1. Persister le paiement AVANT la ligne (résout l'erreur de cascade)
+            $entityManager->persist($paiement);
+
+            // 2. Créer la ligne de paiement
+            $ligne = new PaiementBoutiqueLigne();
+            $ligne->setPaiementBoutique($paiement);
+            $ligne->setModeleBoutique($modeleBoutique);
+            $ligne->setQuantite($quantite);
+            $ligne->setMontant($montant);
+            $entityManager->persist($ligne);
+
+            // 3. Mise à jour du stock
+            $modeleBoutique->setQuantite($modeleBoutique->getQuantite() - $quantite);
+
+            // 4. Mise à jour de la quantité globale si nécessaire
+            $modele = $modeleBoutique->getModele();
+            if ($modele && $modele->getQuantiteGlobale() >= $quantite) {
+                $modele->setQuantiteGlobale($modele->getQuantiteGlobale() - $quantite);
+            }
+
+            // 5. Mise à jour de la caisse
+            $caisse->setMontant($caisse->getMontant() + $montant);
+
+            // ✅ Un seul flush pour tout
+            $entityManager->flush();
+            $entityManager->commit();
+
+            // Envoi des notifications (après la transaction réussie)
+            if ($admin) {
+                try {
+                    $this->sendMailService->sendNotification([
+                        'entreprise' => $this->getUser()->getEntreprise(),
+                        "user" => $admin,
+                        "libelle" => sprintf(
+                            "Bonjour %s,\n\n" .
+                                "Nous vous informons qu'une nouvelle vente vient d'être enregistrée dans la boutique **%s**.\n\n" .
+                                "- Montant : %s FCFA\n" .
+                                "- Effectué par : %s\n" .
+                                "- Date : %s\n\n" .
+                                "Cordialement,\nVotre application de gestion.",
+                            $admin->getLogin(),
+                            $boutique->getLibelle(),
+                            number_format($montant, 0, ',', ' '),
+                            $this->getUser()->getNom() && $this->getUser()->getPrenoms()
+                                ? $this->getUser()->getNom() . " " . $this->getUser()->getPrenoms()
+                                : $this->getUser()->getLogin(),
+                            (new \DateTime())->format('d/m/Y H:i')
+                        ),
+                        "titre" => "Vente - " . $boutique->getLibelle(),
+                    ]);
+
+                    $this->sendMailService->send(
+                        $this->sendMail,
+                        $this->superAdmin,
+                        "Vente - " . $this->getUser()->getEntreprise()->getLibelle(),
+                        "vente_email",
+                        [
+                            "boutique_libelle" => $this->getUser()->getEntreprise()->getLibelle(),
+                            "montant" => number_format($montant, 0, ',', ' ') . " FCFA",
+                            "date" => (new \DateTime())->format('d/m/Y H:i'),
+                        ]
+                    );
+                } catch (\Exception $e) {
+                    // Ne pas bloquer la vente si l'envoi d'email échoue
+                    // Vous pouvez logger l'erreur ici
+                }
+            }
+
+            return $this->responseDataWith_([
+                'data' => $paiement,
+            ], 'group1', ['Content-Type' => 'application/json']);
+        } catch (\Exception $e) {
+            $entityManager->rollback();
+            return $this->json([
+                'status' => 'ERROR',
+                'message' => 'Erreur lors de la création du paiement: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -679,16 +749,114 @@ class ApiPaiementController extends ApiInterface
         CaisseBoutiqueRepository $caisseBoutiqueRepository,
         BoutiqueRepository $boutiqueRepository,
         FactureRepository $factureRepository,
-        PaiementFactureRepository $paiementRepository
+        PaiementFactureRepository $paiementRepository,
+        EntityManagerInterface $entityManager
     ): Response {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         $data = json_decode($request->getContent(), true);
+        $lignes = $data['lignes'] ?? [];
+
+        // ✅ Validation préalable
+        if (empty($lignes) || !is_array($lignes)) {
+            return $this->json([
+                'status' => 'ERROR',
+                'message' => 'Aucune ligne de vente à traiter'
+            ], 400);
+        }
+
+        // Récupérer tous les ModeleBoutique en une seule requête
+        $modeleBoutiqueIds = array_column($lignes, 'modeleBoutiqueId');
+        $modeleBoutiques = $modeleBoutiqueRepository->findBy(['id' => $modeleBoutiqueIds]);
+
+        // Indexer par ID pour un accès rapide
+        $modeleBoutiquesMap = [];
+        foreach ($modeleBoutiques as $mb) {
+            $modeleBoutiquesMap[$mb->getId()] = $mb;
+        }
+
+        // ✅ VALIDATION COMPLÈTE DES STOCKS AVANT TOUTE MODIFICATION
+        foreach ($lignes as $index => $ligneData) {
+            $modeleBoutiqueId = $ligneData['modeleBoutiqueId'] ?? null;
+            $quantite = $ligneData['quantite'] ?? null;
+            $montant = $ligneData['montant'] ?? null;
+
+            // Vérifier que les données sont présentes
+            if ($modeleBoutiqueId === null) {
+                return $this->json([
+                    'status' => 'ERROR',
+                    'message' => "modeleBoutiqueId manquant à la ligne " . ($index + 1)
+                ], 400);
+            }
+
+            if ($quantite === null || $montant === null) {
+                return $this->json([
+                    'status' => 'ERROR',
+                    'message' => "quantite ou montant manquant à la ligne " . ($index + 1)
+                ], 400);
+            }
+
+            $quantite = (int)$quantite;
+            $montant = (int)$montant;
+
+            // Vérifier que les valeurs sont positives
+            if ($quantite <= 0) {
+                return $this->json([
+                    'status' => 'ERROR',
+                    'message' => "La quantité doit être supérieure à 0 à la ligne " . ($index + 1)
+                ], 400);
+            }
+
+            if ($montant <= 0) {
+                return $this->json([
+                    'status' => 'ERROR',
+                    'message' => "Le montant doit être supérieur à 0 à la ligne " . ($index + 1)
+                ], 400);
+            }
+
+            // Vérifier que le ModeleBoutique existe
+            if (!isset($modeleBoutiquesMap[$modeleBoutiqueId])) {
+                return $this->json([
+                    'status' => 'ERROR',
+                    'message' => "Modèle de boutique non trouvé avec ID: {$modeleBoutiqueId}"
+                ], 400);
+            }
+
+            $modeleBoutique = $modeleBoutiquesMap[$modeleBoutiqueId];
+
+            // Vérifier que le modèle appartient à la bonne boutique
+            if ($modeleBoutique->getBoutique()->getId() !== $boutique->getId()) {
+                return $this->json([
+                    'status' => 'ERROR',
+                    'message' => "Le modèle ID {$modeleBoutiqueId} n'appartient pas à cette boutique"
+                ], 400);
+            }
+
+            // ✅ Vérification CRITIQUE du stock disponible
+            if ($modeleBoutique->getQuantite() < $quantite) {
+                return $this->json([
+                    'status' => 'ERROR',
+                    'message' => "Stock insuffisant pour le modèle '{$modeleBoutique->getModele()->getNom()}' " .
+                        "(disponible: {$modeleBoutique->getQuantite()}, demandé: {$quantite})"
+                ], 400);
+            }
+        }
+
+        // Récupérer la caisse
+        $caisse = $caisseBoutiqueRepository->findOneBy(['boutique' => $boutique->getId()]);
+        if (!$caisse) {
+            return $this->json([
+                'status' => 'ERROR',
+                'message' => 'Caisse de boutique introuvable'
+            ], 404);
+        }
+
+        // Récupérer l'admin pour les notifications
         $admin = $userRepository->getUserByCodeType($this->getUser()->getEntreprise());
 
-        // Création du paiement boutique
+        // Créer le paiement boutique
         $paiement = new PaiementBoutique();
         $paiement->setType(Paiement::TYPE["paiementBoutique"]);
         $paiement->setBoutique($boutique);
@@ -707,96 +875,109 @@ class ApiPaiementController extends ApiInterface
         $paiement->setCreatedAtValue(new \DateTime());
         $paiement->setUpdatedAt(new \DateTime());
 
-        $caisse = $caisseBoutiqueRepository->findOneBy(['boutique' => $boutique->getId()]);
+        // 🔒 Transaction pour garantir la cohérence atomique
+        $entityManager->beginTransaction();
 
-        $sommeMontant = 0;
-        $sommeQuantite = 0;
+        try {
+            $sommeMontant = 0;
+            $sommeQuantite = 0;
 
-        // Traitement de toutes les lignes de vente
-        foreach ($data['lignes'] as $ligneData) {
-            $modeleBoutique = $modeleBoutiqueRepository->find($ligneData['modeleBoutiqueId']);
+            // ✅ Persister le paiement AVANT les lignes (résout l'erreur de cascade)
+            $entityManager->persist($paiement);
 
-            if (!$modeleBoutique) {
-                return $this->json([
-                    'status' => 'ERROR',
-                    'message' => "Modèle de boutique non trouvé avec ID: " . $ligneData['modeleBoutiqueId']
-                ], 400);
+            // Traiter toutes les lignes sans flush intermédiaire
+            foreach ($lignes as $ligneData) {
+                $modeleBoutique = $modeleBoutiquesMap[$ligneData['modeleBoutiqueId']];
+                $modele = $modeleBoutique->getModele();
+                $quantite = (int)$ligneData['quantite'];
+                $montant = (int)$ligneData['montant'];
+
+                // Créer la ligne de paiement
+                $ligne = new PaiementBoutiqueLigne();
+                $ligne->setPaiementBoutique($paiement);
+                $ligne->setModeleBoutique($modeleBoutique);
+                $ligne->setQuantite($quantite);
+                $ligne->setMontant($montant);
+
+                $entityManager->persist($ligne);
+
+                // Mise à jour du stock boutique
+                $modeleBoutique->setQuantite($modeleBoutique->getQuantite() - $quantite);
+
+                // Mise à jour de la quantité globale
+                if ($modele && $modele->getQuantiteGlobale() >= $quantite) {
+                    $modele->setQuantiteGlobale($modele->getQuantiteGlobale() - $quantite);
+                }
+
+                $sommeMontant += $montant;
+                $sommeQuantite += $quantite;
             }
 
-            // Vérification du stock disponible
-            if ($modeleBoutique->getQuantite() < $ligneData['quantite']) {
-                return $this->json([
-                    'status' => 'ERROR',
-                    'message' => "Stock insuffisant pour le modèle ID {$modeleBoutique->getId()} " .
-                        "(disponible: {$modeleBoutique->getQuantite()}, demandé: {$ligneData['quantite']})"
-                ], 400);
+            // Mise à jour du paiement avec les totaux
+            $paiement->setMontant($sommeMontant);
+            $paiement->setQuantite($sommeQuantite);
+
+            // Mise à jour de la caisse
+            $caisse->setMontant($caisse->getMontant() + $sommeMontant);
+
+            // ✅ Un seul flush pour tout
+            $entityManager->flush();
+            $entityManager->commit();
+
+            // Envoi des notifications (après la transaction réussie)
+            if ($admin) {
+                try {
+                    $this->sendMailService->sendNotification([
+                        'entreprise' => $this->getUser()->getEntreprise(),
+                        "user" => $admin,
+                        "libelle" => sprintf(
+                            "Bonjour %s,\n\n" .
+                                "Nous vous informons qu'une nouvelle vente vient d'être enregistrée dans la boutique **%s**.\n\n" .
+                                "- Montant : %s FCFA\n" .
+                                "- Effectué par : %s\n" .
+                                "- Date : %s\n\n" .
+                                "Cordialement,\nVotre application de gestion.",
+                            $admin->getLogin(),
+                            $boutique->getLibelle(),
+                            number_format($sommeMontant, 0, ',', ' '),
+                            $this->getUser()->getNom() && $this->getUser()->getPrenoms()
+                                ? $this->getUser()->getNom() . " " . $this->getUser()->getPrenoms()
+                                : $this->getUser()->getLogin(),
+                            (new \DateTime())->format('d/m/Y H:i')
+                        ),
+                        "titre" => "Vente - " . $boutique->getLibelle(),
+                    ]);
+
+                  
+                } catch (\Exception $e) {
+                    // Ne pas bloquer la vente si l'envoi d'email échoue
+                    // Vous pouvez logger l'erreur ici
+                }
             }
-
-            $ligne = new PaiementBoutiqueLigne();
-            $ligne->setPaiementBoutique($paiement);
-            $ligne->setModeleBoutique($modeleBoutique);
-            $ligne->setQuantite($ligneData['quantite']);
-            $ligne->setMontant($ligneData['montant']);
-            //$ligne->setIsActive(true);
-
-            $sommeMontant += $ligneData['montant'];
-            $sommeQuantite += $ligneData['quantite'];
-
-            // Mise à jour du stock
-            $modeleBoutique->setQuantite((int)$modeleBoutique->getQuantite() - (int)$ligneData['quantite']);
-            $modeleBoutiqueRepository->add($modeleBoutique, true);
-            $paiementBoutiqueLigneRepository->add($ligne, true);
-        }
-
-        // Mise à jour de la caisse
-        $caisse->setMontant((int)$caisse->getMontant() + (int)$sommeMontant);
-        $caisseBoutiqueRepository->add($caisse, true);
-
-        $paiement->setMontant($sommeMontant);
-        $paiement->setQuantite($sommeQuantite);
-        $paiementRepository->add($paiement, true);
-
-        // Envoi des notifications
-        if ($admin) {
-            $this->sendMailService->sendNotification([
-                'entreprise' => $this->getUser()->getEntreprise(),
-                "user" => $admin,
-                "libelle" => sprintf(
-                    "Bonjour %s,\n\n" .
-                        "Nous vous informons qu'une nouvelle vente vient d'être enregistrée dans la boutique **%s**.\n\n" .
-                        "- Montant : %s FCFA\n" .
-                        "- Effectué par : %s\n" .
-                        "- Date : %s\n\n" .
-                        "Cordialement,\nVotre application de gestion.",
-                    $admin->getLogin(),
-                    $boutique->getLibelle(),
-                    number_format($sommeMontant, 0, ',', ' '),
-                    $this->getUser()->getNom() && $this->getUser()->getPrenoms()
-                        ? $this->getUser()->getNom() . " " . $this->getUser()->getPrenoms()
-                        : $this->getUser()->getLogin(),
-                    (new \DateTime())->format('d/m/Y H:i')
-                ),
-                "titre" => "Vente - " . $boutique->getLibelle(),
-            ]);
-
+            
             $this->sendMailService->send(
                 $this->sendMail,
                 $this->superAdmin,
-                "Vente - " . $this->getUser()->getEntreprise()->getNom(),
+                "Vente - " . $this->getUser()->getEntreprise()->getLibelle(),
                 "vente_email",
                 [
-                    "boutique_libelle" => $this->getUser()->getEntreprise()->getNom(),
+                    "boutique_libelle" => $this->getUser()->getEntreprise()->getLibelle(),
                     "montant" => number_format($sommeMontant, 0, ',', ' ') . " FCFA",
                     "date" => (new \DateTime())->format('d/m/Y H:i'),
                 ]
             );
+
+            return $this->responseDataWith_([
+                'data' => $paiement,
+            ], 'group1', ['Content-Type' => 'application/json']);
+        } catch (\Exception $e) {
+            $entityManager->rollback();
+            return $this->json([
+                'status' => 'ERROR',
+                'message' => 'Erreur lors de la création du paiement: ' . $e->getMessage()
+            ], 500);
         }
-
-        return $this->responseDataWith_([
-            'data' => $paiement,
-        ], 'group1', ['Content-Type' => 'application/json']);
     }
-
     /**
      * Webhook pour les notifications de paiement externes
      */

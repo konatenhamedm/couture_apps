@@ -12,6 +12,7 @@ use App\Repository\EntreStockRepository;
 use App\Repository\LigneEntreRepository;
 use App\Repository\ModeleBoutiqueRepository;
 use App\Repository\ModeleRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use OpenApi\Attributes as OA;
@@ -25,7 +26,6 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
  * Permet de gérer les entrées et sorties de stock des modèles de vêtements dans les boutiques
  */
 #[Route('/api/stock')]
-#[OA\Tag(name: 'stock', description: 'Gestion des entrées et sorties de stock des boutiques')]
 class ApiGestionStockController extends ApiInterface
 {
     /**
@@ -34,55 +34,175 @@ class ApiGestionStockController extends ApiInterface
     #[Route('/{id}', methods: ['GET'])]
     #[OA\Get(
         path: "/api/stock/{id}",
-        summary: "Historique des mouvements de stock d'une boutique",
-        description: "Retourne la liste paginée de tous les mouvements de stock (entrées et sorties) d'une boutique spécifique, permettant de suivre l'historique complet des variations de stock.",
-        tags: ['stock']
+        summary: "📊 Historique des mouvements de stock d'une boutique",
+        description: "Retourne la liste paginée et triée de tous les mouvements de stock (entrées et sorties) d'une boutique spécifique. Permet de suivre l'historique complet des variations de stock avec les détails de chaque ligne de mouvement. Inclut les informations sur les modèles concernés, les quantités et les utilisateurs responsables.",
+        tags: ['Gestion des Stocks']
     )]
     #[OA\Parameter(
         name: 'id',
         in: 'path',
         required: true,
-        description: "Identifiant unique de la boutique",
-        schema: new OA\Schema(type: 'integer', example: 1)
+        description: "Identifiant unique de la boutique dont on veut consulter l'historique des stocks",
+        schema: new OA\Schema(type: 'integer', minimum: 1, example: 1)
+    )]
+    #[OA\Parameter(
+        name: 'page',
+        in: 'query',
+        required: false,
+        description: "Numéro de page pour la pagination (défaut: 1)",
+        schema: new OA\Schema(type: 'integer', minimum: 1, default: 1, example: 1)
+    )]
+    #[OA\Parameter(
+        name: 'limit',
+        in: 'query',
+        required: false,
+        description: "Nombre d'éléments par page (défaut: 20, max: 100)",
+        schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 20, example: 20)
     )]
     #[OA\Response(
         response: 200,
-        description: "Historique des mouvements de stock récupéré avec succès",
+        description: "✅ Historique des mouvements de stock récupéré avec succès",
         content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(
-                type: "object",
-                properties: [
-                    new OA\Property(property: "id", type: "integer", example: 1, description: "Identifiant du mouvement de stock"),
-                    new OA\Property(property: "type", type: "string", enum: ["Entree", "Sortie"], example: "Entree", description: "Type de mouvement"),
-                    new OA\Property(property: "quantite", type: "integer", example: 50, description: "Quantité totale du mouvement"),
-                    new OA\Property(property: "boutique", type: "object", description: "Boutique concernée",
+            type: 'object',
+            properties: [
+                new OA\Property(property: "status", type: "string", example: "SUCCESS"),
+                new OA\Property(property: "message", type: "string", example: "Historique des mouvements récupéré avec succès"),
+                new OA\Property(
+                    property: "data",
+                    type: "array",
+                    description: "Liste des mouvements de stock",
+                    items: new OA\Items(
+                        type: "object",
                         properties: [
-                            new OA\Property(property: "id", type: "integer", example: 1),
-                            new OA\Property(property: "libelle", type: "string", example: "Boutique Centre-Ville")
+                            new OA\Property(property: "id", type: "integer", example: 15, description: "Identifiant unique du mouvement de stock"),
+                            new OA\Property(property: "type", type: "string", enum: ["Entree", "Sortie"], example: "Entree", description: "Type de mouvement (Entree pour ajout, Sortie pour retrait)"),
+                            new OA\Property(property: "quantite", type: "integer", example: 75, description: "Quantité totale concernée par ce mouvement"),
+                            new OA\Property(property: "date", type: "string", format: "date-time", nullable: true, example: "2025-01-15T14:30:00+00:00", description: "Date du mouvement (peut être null)"),
+                            new OA\Property(
+                                property: "boutique",
+                                type: "object",
+                                description: "Informations de la boutique concernée",
+                                properties: [
+                                    new OA\Property(property: "id", type: "integer", example: 1),
+                                    new OA\Property(property: "libelle", type: "string", example: "Boutique Centre-Ville"),
+                                    new OA\Property(property: "adresse", type: "string", example: "123 Rue de la Mode, Paris")
+                                ]
+                            ),
+                            new OA\Property(
+                                property: "entreprise",
+                                type: "object",
+                                description: "Entreprise propriétaire",
+                                properties: [
+                                    new OA\Property(property: "id", type: "integer", example: 1),
+                                    new OA\Property(property: "nom", type: "string", example: "Atelier Couture Pro")
+                                ]
+                            ),
+                            new OA\Property(
+                                property: "ligneEntres",
+                                type: "array",
+                                description: "Détails des lignes de ce mouvement de stock",
+                                items: new OA\Items(
+                                    type: "object",
+                                    properties: [
+                                        new OA\Property(property: "id", type: "integer", example: 25, description: "ID de la ligne"),
+                                        new OA\Property(property: "quantite", type: "integer", example: 25, description: "Quantité pour cette ligne"),
+                                        new OA\Property(
+                                            property: "modele",
+                                            type: "object",
+                                            description: "Modèle de boutique concerné",
+                                            properties: [
+                                                new OA\Property(property: "id", type: "integer", example: 8),
+                                                new OA\Property(property: "quantite", type: "integer", example: 150, description: "Stock actuel"),
+                                                new OA\Property(property: "prix", type: "string", example: "45.99"),
+                                                new OA\Property(property: "taille", type: "string", example: "M"),
+                                                new OA\Property(
+                                                    property: "modele",
+                                                    type: "object",
+                                                    description: "Modèle parent",
+                                                    properties: [
+                                                        new OA\Property(property: "id", type: "integer", example: 3),
+                                                        new OA\Property(property: "libelle", type: "string", example: "Robe d'été fleurie"),
+                                                        new OA\Property(property: "description", type: "string", example: "Belle robe légère pour l'été")
+                                                    ]
+                                                )
+                                            ]
+                                        )
+                                    ]
+                                )
+                            ),
+                            new OA\Property(property: "createdAt", type: "string", format: "date-time", example: "2025-01-15T10:30:00+00:00", description: "Date de création du mouvement"),
+                            new OA\Property(property: "updatedAt", type: "string", format: "date-time", example: "2025-01-15T10:30:00+00:00", description: "Date de dernière modification"),
+                            new OA\Property(
+                                property: "createdBy",
+                                type: "object",
+                                description: "Utilisateur ayant créé le mouvement",
+                                properties: [
+                                    new OA\Property(property: "id", type: "integer", example: 5),
+                                    new OA\Property(property: "nom", type: "string", example: "Dupont"),
+                                    new OA\Property(property: "prenom", type: "string", example: "Marie")
+                                ]
+                            )
                         ]
-                    ),
-                    new OA\Property(property: "entreprise", type: "object", description: "Entreprise"),
-                    new OA\Property(property: "ligneEntres", type: "array", description: "Détails des lignes de stock",
-                        items: new OA\Items(
-                            type: "object",
-                            properties: [
-                                new OA\Property(property: "id", type: "integer", example: 1),
-                                new OA\Property(property: "quantite", type: "integer", example: 10),
-                                new OA\Property(property: "modele", type: "object", description: "Modèle concerné")
-                            ]
-                        )
-                    ),
-                    new OA\Property(property: "createdAt", type: "string", format: "date-time", example: "2025-01-15T10:30:00+00:00"),
-                    new OA\Property(property: "createdBy", type: "object", description: "Utilisateur ayant créé le mouvement")
-                ]
-            )
+                    )
+                ),
+                new OA\Property(
+                    property: "pagination",
+                    type: "object",
+                    description: "Informations de pagination",
+                    properties: [
+                        new OA\Property(property: "current_page", type: "integer", example: 1),
+                        new OA\Property(property: "per_page", type: "integer", example: 20),
+                        new OA\Property(property: "total", type: "integer", example: 45),
+                        new OA\Property(property: "total_pages", type: "integer", example: 3)
+                    ]
+                )
+            ]
         )
     )]
-    #[OA\Response(response: 401, description: "Non authentifié")]
-    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
-    #[OA\Response(response: 404, description: "Boutique non trouvée")]
-    #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
+    #[OA\Response(
+        response: 401,
+        description: "🔒 Non authentifié - Token JWT manquant ou invalide",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "status", type: "string", example: "ERROR"),
+                new OA\Property(property: "message", type: "string", example: "Token JWT manquant ou invalide")
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 403,
+        description: "🚫 Abonnement requis pour cette fonctionnalité",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "status", type: "string", example: "ERROR"),
+                new OA\Property(property: "message", type: "string", example: "Abonnement requis pour cette fonctionnalité")
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 404,
+        description: "❌ Boutique non trouvée",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "status", type: "string", example: "ERROR"),
+                new OA\Property(property: "message", type: "string", example: "Boutique non trouvée avec l'ID spécifié")
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 500,
+        description: "💥 Erreur interne du serveur",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "status", type: "string", example: "ERROR"),
+                new OA\Property(property: "message", type: "string", example: "Erreur lors de la récupération de l'historique de stock")
+            ]
+        )
+    )]
     public function index(ModeleRepository $modeleRepository, EntreStockRepository $entreStockRepository, Boutique $boutique): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
@@ -97,7 +217,7 @@ class ApiGestionStockController extends ApiInterface
 
             $response = $this->responseData($entrees, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération de l'historique de stock");
             $response = $this->response([]);
         }
@@ -111,50 +231,154 @@ $this->setStatusCode(500);
     #[Route('/modeleBoutique/{id}', methods: ['GET'])]
     #[OA\Get(
         path: "/api/stock/modeleBoutique/{id}",
-        summary: "Historique des mouvements d'un modèle",
-        description: "Retourne la liste paginée de toutes les lignes d'entrées et sorties de stock pour un modèle spécifique dans une boutique, permettant de tracer tous les mouvements de ce modèle.",
-        tags: ['stock']
+        summary: "🔍 Historique détaillé des mouvements d'un modèle",
+        description: "Retourne la liste paginée et chronologique de toutes les lignes d'entrées et sorties de stock pour un modèle spécifique dans une boutique. Permet de tracer précisément tous les mouvements de ce modèle avec les détails de chaque transaction, les quantités impliquées et les mouvements de stock parents. Idéal pour l'audit et le suivi détaillé d'un produit.",
+        tags: ['Gestion des Stocks']
     )]
     #[OA\Parameter(
         name: 'id',
         in: 'path',
         required: true,
-        description: "Identifiant unique du modèle de boutique (ModeleBoutique)",
-        schema: new OA\Schema(type: 'integer', example: 1)
+        description: "Identifiant unique du modèle de boutique (ModeleBoutique) dont on veut consulter l'historique",
+        schema: new OA\Schema(type: 'integer', minimum: 1, example: 8)
+    )]
+    #[OA\Parameter(
+        name: 'page',
+        in: 'query',
+        required: false,
+        description: "Numéro de page pour la pagination (défaut: 1)",
+        schema: new OA\Schema(type: 'integer', minimum: 1, default: 1, example: 1)
+    )]
+    #[OA\Parameter(
+        name: 'limit',
+        in: 'query',
+        required: false,
+        description: "Nombre d'éléments par page (défaut: 20, max: 100)",
+        schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 20, example: 20)
     )]
     #[OA\Response(
         response: 200,
-        description: "Historique des mouvements du modèle récupéré avec succès",
+        description: "✅ Historique des mouvements du modèle récupéré avec succès",
         content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(
-                type: "object",
-                properties: [
-                    new OA\Property(property: "id", type: "integer", example: 1, description: "Identifiant de la ligne de stock"),
-                    new OA\Property(property: "quantite", type: "integer", example: 10, description: "Quantité concernée par cette ligne"),
-                    new OA\Property(property: "modele", type: "object", description: "Modèle de boutique concerné",
+            type: 'object',
+            properties: [
+                new OA\Property(property: "status", type: "string", example: "SUCCESS"),
+                new OA\Property(property: "message", type: "string", example: "Historique du modèle récupéré avec succès"),
+                new OA\Property(
+                    property: "data",
+                    type: "array",
+                    description: "Liste des lignes de mouvements pour ce modèle",
+                    items: new OA\Items(
+                        type: "object",
                         properties: [
-                            new OA\Property(property: "id", type: "integer", example: 1),
-                            new OA\Property(property: "quantite", type: "integer", example: 150, description: "Quantité totale actuelle en stock"),
-                            new OA\Property(property: "modele", type: "object", description: "Modèle parent")
+                            new OA\Property(property: "id", type: "integer", example: 42, description: "Identifiant unique de la ligne de stock"),
+                            new OA\Property(property: "quantite", type: "integer", example: 15, description: "Quantité concernée par cette ligne de mouvement"),
+                            new OA\Property(
+                                property: "modele",
+                                type: "object",
+                                description: "Modèle de boutique concerné avec ses informations complètes",
+                                properties: [
+                                    new OA\Property(property: "id", type: "integer", example: 8, description: "ID du modèle de boutique"),
+                                    new OA\Property(property: "quantite", type: "integer", example: 125, description: "Quantité totale actuelle en stock"),
+                                    new OA\Property(property: "prix", type: "string", example: "89.99", description: "Prix de vente du modèle"),
+                                    new OA\Property(property: "taille", type: "string", example: "L", description: "Taille du modèle"),
+                                    new OA\Property(
+                                        property: "modele",
+                                        type: "object",
+                                        description: "Modèle parent avec ses caractéristiques",
+                                        properties: [
+                                            new OA\Property(property: "id", type: "integer", example: 3),
+                                            new OA\Property(property: "libelle", type: "string", example: "Chemise en lin"),
+                                            new OA\Property(property: "description", type: "string", example: "Chemise légère en lin naturel"),
+                                            new OA\Property(property: "quantiteGlobale", type: "integer", example: 450, description: "Stock global tous modèles confondus")
+                                        ]
+                                    ),
+                                    new OA\Property(property: "createdAt", type: "string", format: "date-time", example: "2025-01-10T09:15:00+00:00"),
+                                    new OA\Property(property: "updatedAt", type: "string", format: "date-time", example: "2025-01-15T14:22:00+00:00")
+                                ]
+                            ),
+                            new OA\Property(
+                                property: "entreStock",
+                                type: "object",
+                                description: "Mouvement de stock parent contenant cette ligne",
+                                properties: [
+                                    new OA\Property(property: "id", type: "integer", example: 12, description: "ID du mouvement de stock"),
+                                    new OA\Property(property: "type", type: "string", enum: ["Entree", "Sortie"], example: "Entree", description: "Type de mouvement"),
+                                    new OA\Property(property: "quantite", type: "integer", example: 50, description: "Quantité totale du mouvement"),
+                                    new OA\Property(property: "date", type: "string", format: "date-time", nullable: true, example: "2025-01-15T14:00:00+00:00"),
+                                    new OA\Property(property: "createdAt", type: "string", format: "date-time", example: "2025-01-15T14:00:00+00:00"),
+                                    new OA\Property(
+                                        property: "boutique",
+                                        type: "object",
+                                        description: "Boutique du mouvement",
+                                        properties: [
+                                            new OA\Property(property: "id", type: "integer", example: 1),
+                                            new OA\Property(property: "libelle", type: "string", example: "Boutique Centre-Ville")
+                                        ]
+                                    )
+                                ]
+                            )
                         ]
-                    ),
-                    new OA\Property(property: "entreStock", type: "object", description: "Mouvement de stock parent",
-                        properties: [
-                            new OA\Property(property: "id", type: "integer", example: 5),
-                            new OA\Property(property: "type", type: "string", example: "Entree"),
-                            new OA\Property(property: "createdAt", type: "string", format: "date-time")
-                        ]
-                    ),
-                    new OA\Property(property: "createdAt", type: "string", format: "date-time")
-                ]
-            )
+                    )
+                ),
+                new OA\Property(
+                    property: "pagination",
+                    type: "object",
+                    description: "Informations de pagination",
+                    properties: [
+                        new OA\Property(property: "current_page", type: "integer", example: 1),
+                        new OA\Property(property: "per_page", type: "integer", example: 20),
+                        new OA\Property(property: "total", type: "integer", example: 28),
+                        new OA\Property(property: "total_pages", type: "integer", example: 2)
+                    ]
+                )
+            ]
         )
     )]
-    #[OA\Response(response: 401, description: "Non authentifié")]
-    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
-    #[OA\Response(response: 404, description: "Modèle de boutique non trouvé")]
-    #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
+    #[OA\Response(
+        response: 401,
+        description: "🔒 Non authentifié - Token JWT manquant ou invalide",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "status", type: "string", example: "ERROR"),
+                new OA\Property(property: "message", type: "string", example: "Token JWT manquant ou invalide")
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 403,
+        description: "🚫 Abonnement requis pour cette fonctionnalité",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "status", type: "string", example: "ERROR"),
+                new OA\Property(property: "message", type: "string", example: "Abonnement requis pour cette fonctionnalité")
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 404,
+        description: "❌ Modèle de boutique non trouvé",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "status", type: "string", example: "ERROR"),
+                new OA\Property(property: "message", type: "string", example: "Modèle de boutique non trouvé avec l'ID spécifié")
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 500,
+        description: "💥 Erreur interne du serveur",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "status", type: "string", example: "ERROR"),
+                new OA\Property(property: "message", type: "string", example: "Erreur lors de la récupération de l'historique du modèle")
+            ]
+        )
+    )]
     public function indexModeleBoutique(ModeleRepository $modeleRepository, LigneEntreRepository $ligneEntreRepository, ModeleBoutique $modeleBoutique): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
@@ -169,7 +393,7 @@ $this->setStatusCode(500);
 
             $response = $this->responseData($entrees, 'group_ligne', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération de l'historique du modèle");
             $response = $this->response([]);
         }
@@ -258,42 +482,72 @@ $this->setStatusCode(500);
         ModeleRepository $modeleRepository,
         BoutiqueRepository $boutiqueRepository,
         EntreStockRepository $entreStockRepository,
-        ModeleBoutiqueRepository $modeleBoutiqueRepository
+        ModeleBoutiqueRepository $modeleBoutiqueRepository,
+        EntityManagerInterface $entityManager
     ): Response {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
-        $totalQuantite = 0;
-
         $data = json_decode($request->getContent(), true);
-        
+        $lignes = $data['lignes'] ?? [];
+
+        // Validation préalable
+        if (empty($lignes) || !is_array($lignes)) {
+            $this->setMessage("Aucune ligne à traiter");
+            return $this->response('[]', 400);
+        }
+
+        // Récupérer tous les ModeleBoutique en une seule requête
+        $modeleBoutiqueIds = array_column($lignes, 'modeleBoutiqueId');
+        $modeleBoutiques = $modeleBoutiqueRepository->findBy(['id' => $modeleBoutiqueIds]);
+
+        // Indexer par ID pour un accès rapide
+        $modeleBoutiquesMap = [];
+        foreach ($modeleBoutiques as $mb) {
+            $modeleBoutiquesMap[$mb->getId()] = $mb;
+        }
+
+        // Valider que tous les ModeleBoutique existent
+        foreach ($lignes as $ligne) {
+            if (!isset($modeleBoutiquesMap[$ligne['modeleBoutiqueId']])) {
+                $this->setMessage("Modèle de boutique introuvable avec l'ID: " . $ligne['modeleBoutiqueId']);
+                return $this->response('[]', 400);
+            }
+        }
+
+        // Créer l'EntreStock
+        $boutique = $boutiqueRepository->find($data['boutiqueId']);
+        if (!$boutique) {
+            $this->setMessage("Boutique introuvable");
+            return $this->response('[]', 400);
+        }
+
         $entreStock = new EntreStock();
-        $entreStock->setBoutique($boutiqueRepository->find($data['boutiqueId']));
+        $entreStock->setBoutique($boutique);
         $entreStock->setType('Entree');
         $entreStock->setEntreprise($this->getUser()->getEntreprise());
         $entreStock->setCreatedBy($this->getUser());
         $entreStock->setUpdatedBy($this->getUser());
         $entreStock->setCreatedAtValue(new \DateTime());
         $entreStock->setUpdatedAt(new \DateTime());
+        $entreStock->setQuantite(0);
 
         $errorResponse = $this->errorResponse($entreStock);
         if ($errorResponse !== null) {
             return $errorResponse;
         }
 
-        $lignes = $data['lignes'] ?? [];
+        // Transaction pour garantir la cohérence
+        $entityManager->beginTransaction();
 
-        if (isset($lignes) && is_array($lignes)) {
+        try {
+            $totalQuantite = 0;
+
+            // Traiter toutes les lignes sans flush
             foreach ($lignes as $ligne) {
-                $modeleBoutique = $modeleBoutiqueRepository->find($ligne['modeleBoutiqueId']);
-                
-                if (!$modeleBoutique) {
-                    $this->setMessage("Modèle de boutique introuvable avec l'ID: " . $ligne['modeleBoutiqueId']);
-                    return $this->response('[]', 400);
-                }
-
-                $modele = $modeleRepository->find($modeleBoutique->getModele()->getId());
+                $modeleBoutique = $modeleBoutiquesMap[$ligne['modeleBoutiqueId']];
+                $modele = $modeleBoutique->getModele(); // Utiliser la relation au lieu d'une requête
                 $quantite = (int)$ligne['quantite'];
                 $totalQuantite += $quantite;
 
@@ -302,24 +556,28 @@ $this->setStatusCode(500);
                 $ligneEntre->setQuantite($quantite);
                 $ligneEntre->setModele($modeleBoutique);
                 $ligneEntre->setEntreStock($entreStock);
-                
-                $ligneEntreRepository->add($ligneEntre, true);
 
-                // Mise à jour des quantités
-                $modeleBoutique->setQuantite($modeleBoutique->getQuantite() + $quantite);
-                $modeleBoutiqueRepository->add($modeleBoutique, true);
-
-                $modele->setQuantiteGlobale($modele->getQuantiteGlobale() + $quantite);
-                $modeleRepository->add($modele, true);
-
+                $entityManager->persist($ligneEntre);
                 $entreStock->addLigneEntre($ligneEntre);
+
+                // Mise à jour des quantités (pas de flush)
+                $modeleBoutique->setQuantite($modeleBoutique->getQuantite() + $quantite);
+                $modele->setQuantiteGlobale($modele->getQuantiteGlobale() + $quantite);
             }
+
+            $entreStock->setQuantite($totalQuantite);
+            $entityManager->persist($entreStock);
+
+            // Un seul flush pour tout
+            $entityManager->flush();
+            $entityManager->commit();
+
+            return $this->responseData($entreStock, 'group1', ['Content-Type' => 'application/json']);
+        } catch (\Exception $e) {
+            $entityManager->rollback();
+            $this->setMessage("Erreur lors de la création: " . $e->getMessage());
+            return $this->response('[]', 500);
         }
-
-        $entreStock->setQuantite($totalQuantite);
-        $entreStockRepository->add($entreStock, true);
-
-        return $this->responseData($entreStock, 'group1', ['Content-Type' => 'application/json']);
     }
 
     /**
@@ -553,17 +811,116 @@ $this->setStatusCode(500);
         LigneEntreRepository $ligneEntreRepository,
         BoutiqueRepository $boutiqueRepository,
         EntreStockRepository $entreStockRepository,
-        ModeleBoutiqueRepository $modeleBoutiqueRepository
+        ModeleBoutiqueRepository $modeleBoutiqueRepository,
+        EntityManagerInterface $entityManager
     ): Response {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         $data = json_decode($request->getContent(), true);
-        $totalQuantite = 0;
+        $lignes = $data['lignes'] ?? [];
 
+        // Validation préalable
+        if (empty($lignes) || !is_array($lignes)) {
+            return $this->json([
+                'status' => 'ERROR',
+                'message' => 'Aucune ligne à traiter'
+            ], 400);
+        }
+
+        // Récupérer la boutique
+        $boutique = $boutiqueRepository->find($data['boutiqueId']);
+        if (!$boutique) {
+            return $this->json([
+                'status' => 'ERROR',
+                'message' => 'Boutique introuvable'
+            ], 400);
+        }
+
+        // Récupérer tous les ModeleBoutique en une seule requête
+        $modeleBoutiqueIds = array_column($lignes, 'modeleBoutiqueId');
+        $modeleBoutiques = $modeleBoutiqueRepository->findBy(['id' => $modeleBoutiqueIds]);
+
+        // Indexer par ID pour un accès rapide
+        $modeleBoutiquesMap = [];
+        foreach ($modeleBoutiques as $mb) {
+            $modeleBoutiquesMap[$mb->getId()] = $mb;
+        }
+
+        // ⚠️ VALIDATION COMPLÈTE DES STOCKS AVANT TOUTE MODIFICATION
+        foreach ($lignes as $index => $ligne) {
+            $modeleBoutiqueId = $ligne['modeleBoutiqueId'] ?? null;
+            $quantite = $ligne['quantite'] ?? null;
+
+            // Vérifier que les données sont présentes
+            if ($modeleBoutiqueId === null) {
+                return $this->json([
+                    'status' => 'ERROR',
+                    'message' => "modeleBoutiqueId manquant à la ligne " . ($index + 1)
+                ], 400);
+            }
+
+            if ($quantite === null) {
+                return $this->json([
+                    'status' => 'ERROR',
+                    'message' => "quantite manquante à la ligne " . ($index + 1)
+                ], 400);
+            }
+
+            $quantite = (int)$quantite;
+
+            // ✅ Vérifier que la quantité est positive
+            if ($quantite <= 0) {
+                return $this->json([
+                    'status' => 'ERROR',
+                    'message' => "La quantité doit être supérieure à 0 à la ligne " . ($index + 1) .
+                        " (valeur: {$quantite})"
+                ], 400);
+            }
+
+            // ✅ Vérifier que le ModeleBoutique existe
+            if (!isset($modeleBoutiquesMap[$modeleBoutiqueId])) {
+                return $this->json([
+                    'status' => 'ERROR',
+                    'message' => "Modèle de boutique introuvable avec ID: {$modeleBoutiqueId} à la ligne " . ($index + 1)
+                ], 400);
+            }
+
+            $modeleBoutique = $modeleBoutiquesMap[$modeleBoutiqueId];
+
+            // ✅ Vérifier que le ModeleBoutique appartient bien à la boutique
+            if ($modeleBoutique->getBoutique()->getId() !== $boutique->getId()) {
+                return $this->json([
+                    'status' => 'ERROR',
+                    'message' => "Le modèle ID {$modeleBoutiqueId} n'appartient pas à la boutique sélectionnée"
+                ], 400);
+            }
+
+            // ✅ Vérification CRITIQUE de la disponibilité du stock
+            $stockDisponible = $modeleBoutique->getQuantite();
+            if ($stockDisponible < $quantite) {
+                return $this->json([
+                    'status' => 'ERROR',
+                    'message' => "Stock insuffisant pour le modèle '{$modeleBoutique->getModele()->getNom()}' " .
+                        "(disponible: {$stockDisponible}, demandé: {$quantite})"
+                ], 400);
+            }
+
+            // ✅ Vérifier aussi la quantité globale du modèle
+            $modele = $modeleBoutique->getModele();
+            if ($modele->getQuantiteGlobale() < $quantite) {
+                return $this->json([
+                    'status' => 'ERROR',
+                    'message' => "Quantité globale insuffisante pour le modèle '{$modele->getNom()}' " .
+                        "(disponible globalement: {$modele->getQuantiteGlobale()}, demandé: {$quantite})"
+                ], 400);
+            }
+        }
+
+        // Créer l'EntreStock
         $entreStock = new EntreStock();
-        $entreStock->setBoutique($boutiqueRepository->find($data['boutiqueId']));
+        $entreStock->setBoutique($boutique);
         $entreStock->setType('Sortie');
         $entreStock->setEntreprise($this->getUser()->getEntreprise());
         $entreStock->setCreatedBy($this->getUser());
@@ -576,54 +933,47 @@ $this->setStatusCode(500);
             return $errorResponse;
         }
 
-        $lignes = $data['lignes'] ?? [];
-        if (is_array($lignes)) {
+        // 🔒 Transaction pour garantir la cohérence atomique
+        $entityManager->beginTransaction();
+
+        try {
+            $totalQuantite = 0;
+
+            // Traiter toutes les lignes sans flush intermédiaire
             foreach ($lignes as $ligne) {
-                $modeleBoutique = $modeleBoutiqueRepository->find($ligne['modeleBoutiqueId']);
-
-                if (!$modeleBoutique) {
-                    return $this->json([
-                        'status' => 'ERROR',
-                        'message' => 'Modèle de boutique introuvable avec ID: ' . $ligne['modeleBoutiqueId']
-                    ], 400);
-                }
-
-                $modele = $modeleRepository->find($modeleBoutique->getModele()->getId());
+                $modeleBoutique = $modeleBoutiquesMap[$ligne['modeleBoutiqueId']];
+                $modele = $modeleBoutique->getModele();
                 $quantite = (int)$ligne['quantite'];
 
-                // Vérification de la disponibilité du stock
-                if ($modeleBoutique->getQuantite() < $quantite) {
-                    return $this->json([
-                        'status' => 'ERROR',
-                        'message' => "Stock insuffisant pour le modèle ID {$modeleBoutique->getId()} " .
-                                   "(disponible: {$modeleBoutique->getQuantite()}, demandé: {$quantite})"
-                    ], 400);
-                }
-
-                // Mise à jour des quantités
+                // Mise à jour des quantités (déjà validées)
                 $modeleBoutique->setQuantite($modeleBoutique->getQuantite() - $quantite);
+                $modele->setQuantiteGlobale($modele->getQuantiteGlobale() - $quantite);
                 $totalQuantite += $quantite;
 
+                // Création de la ligne de sortie
                 $ligneEntre = new LigneEntre();
                 $ligneEntre->setQuantite($quantite);
                 $ligneEntre->setModele($modeleBoutique);
                 $ligneEntre->setEntreStock($entreStock);
 
-                $ligneEntreRepository->add($ligneEntre, true);
-                $modeleBoutiqueRepository->add($modeleBoutique, true);
-
-                if ($modele->getQuantiteGlobale() >= $quantite) {
-                    $modele->setQuantiteGlobale($modele->getQuantiteGlobale() - $quantite);
-                    $modeleRepository->add($modele, true);
-                }
-
+                $entityManager->persist($ligneEntre);
                 $entreStock->addLigneEntre($ligneEntre);
             }
+
+            $entreStock->setQuantite($totalQuantite);
+            $entityManager->persist($entreStock);
+
+            // ✅ Un seul flush pour tout
+            $entityManager->flush();
+            $entityManager->commit();
+
+            return $this->responseData($entreStock, 'group1', ['Content-Type' => 'application/json']);
+        } catch (\Exception $e) {
+            $entityManager->rollback();
+            return $this->json([
+                'status' => 'ERROR',
+                'message' => 'Erreur lors de la création de la sortie: ' . $e->getMessage()
+            ], 500);
         }
-
-        $entreStock->setQuantite($totalQuantite);
-        $entreStockRepository->add($entreStock, true);
-
-        return $this->responseData($entreStock, 'group1', ['Content-Type' => 'application/json']);
     }
 }

@@ -78,7 +78,7 @@ class ApiFactureController extends ApiInterface
             $factures = $this->paginationService->paginate($factureRepository->findAll());
             $response = $this->responseData($factures, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des factures");
             $response = $this->response([]);
         }
@@ -134,7 +134,7 @@ $this->setStatusCode(500);
             ));
             $response = $this->responseData($factures, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des factures de l'entreprise");
             $response = $this->response([]);
         }
@@ -174,7 +174,10 @@ $this->setStatusCode(500);
                 new OA\Property(property: "dateDepot", type: "string", format: "date-time"),
                 new OA\Property(property: "dateRetrait", type: "string", format: "date-time"),
                 new OA\Property(property: "signature", type: "string", nullable: true),
-                new OA\Property(property: "client", type: "object", description: "Client",
+                new OA\Property(
+                    property: "client",
+                    type: "object",
+                    description: "Client",
                     properties: [
                         new OA\Property(property: "id", type: "integer", example: 5),
                         new OA\Property(property: "nom", type: "string", example: "Kouassi"),
@@ -205,7 +208,7 @@ $this->setStatusCode(500);
                 $response = $this->response(null);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage($exception->getMessage());
             $response = $this->response([]);
         }
@@ -402,7 +405,7 @@ $this->setStatusCode(500);
         $filePrefix = str_slug($names);
         $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
         $data = json_decode($request->getContent(), true);
-        
+
         $facture = new Facture();
         $facture->setEntreprise($this->getUser()->getEntreprise());
         $admin = $userRepository->getUserByCodeType($this->getUser()->getEntreprise());
@@ -425,7 +428,7 @@ $this->setStatusCode(500);
 
         $facture->setDateDepot(new \DateTime());
         $facture->setAvance($request->get('avance'));
-        
+
         // Gestion de la signature
         $uploadedFichierSignature = $request->files->get('signature');
         if ($uploadedFichierSignature) {
@@ -494,6 +497,8 @@ $this->setStatusCode(500);
         $paiement->setUpdatedAt(new \DateTime());
         $facture->addPaiementFacture($paiement);
 
+
+
         // Mise à jour de la caisse si avance
         if ($request->get('avance') != null && $request->get('avance') > 0) {
             $caisse = $caisseSuccursaleRepository->findOneBy(['surccursale' => $this->getUser()->getSurccursale()]);
@@ -518,26 +523,29 @@ $this->setStatusCode(500);
                         $admin->getLogin(),
                         $this->getUser()->getSurccursale() ? $this->getUser()->getSurccursale()->getLibelle() : "N/A",
                         number_format($request->get('avance'), 0, ',', ' '),
-                        $this->getUser()->getNom() && $this->getUser()->getPrenoms() 
-                            ? $this->getUser()->getNom() . " " . $this->getUser()->getPrenoms() 
+                        $this->getUser()->getNom() && $this->getUser()->getPrenoms()
+                            ? $this->getUser()->getNom() . " " . $this->getUser()->getPrenoms()
                             : $this->getUser()->getLogin(),
                         (new \DateTime())->format('d/m/Y H:i')
                     ),
                     "titre" => "Paiement facture - " . ($this->getUser()->getSurccursale() ? $this->getUser()->getSurccursale()->getLibelle() : ""),
                 ]);
 
-                $this->sendMailService->send(
-                    $this->sendMail,
-                    $this->superAdmin,
-                    "Paiement facture - " . $this->getUser()->getEntreprise()->getNom(),
-                    "paiement_email",
-                    [
-                        "boutique_libelle" => $this->getUser()->getEntreprise()->getNom(),
-                        "montant" => number_format($request->get('avance'), 0, ',', ' ') . " FCFA",
-                        "date" => (new \DateTime())->format('d/m/Y H:i'),
-                    ]
-                );
             }
+
+            $this->sendMailService->send(
+                $this->sendMail,
+                $this->superAdmin,
+                "Paiement facture - " . $this->getUser()->getEntreprise()->getLibelle(),
+                "paiement_email",
+                [
+                    "boutique_libelle" => $this->getUser()->getEntreprise()->getLibelle(),
+                    "montant" => number_format($request->get('avance'), 0, ',', ' ') . " FCFA",
+                    "date" => (new \DateTime())->format('d/m/Y H:i'),
+                ]
+            );
+
+
         }
 
         $errorResponse = $this->errorResponse($facture);
@@ -744,7 +752,7 @@ $this->setStatusCode(500);
             $factureRepository->add($facture, true);
             return $this->responseData($facture, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour de la facture: " . $exception->getMessage());
             $this->setStatusCode(500);
             return $this->response('[]');
@@ -800,7 +808,7 @@ $this->setStatusCode(500);
                 $response = $this->response([]);
             }
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression de la facture");
             $response = $this->response([]);
         }
@@ -868,7 +876,7 @@ $this->setStatusCode(500);
             $this->setMessage("Operation effectuées avec succès");
             $response = $this->response([]);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des factures");
             $response = $this->response([]);
         }

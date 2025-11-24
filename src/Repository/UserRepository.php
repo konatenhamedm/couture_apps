@@ -51,7 +51,7 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     public function getUserByCodeType($entreprise): ?User
     {
         return $this->createQueryBuilder('u')
-            ->innerJoin('u.typeUser', 't')
+            ->innerJoin('u.type','t')
             ->where('t.code = :code')
             ->andWhere('u.entreprise = :entreprise')
             ->setParameter('code', "SADM")

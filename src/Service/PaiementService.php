@@ -110,11 +110,13 @@ class PaiementService
                 'customerEmail'        => $data['email'],
                 'customerPhoneNumber'  => $data['numero'],
                 'description'          => 'Abonnement ' . $moduleAbonnement->getCode(),
-                'notificationURL'      => "https://backend.ateliya.com/api/paiement/webhook",  //$this->urlGenerator->generate('webhook_paiement', [], UrlGeneratorInterface::ABSOLUTE_URL),
-                'returnURL'            => 'https://ton-site.com/paiement/retour',
+                'notificationURL'      => "https://backend.ateliya.com/api/paiement/webhook",
+                'returnURL'            => $data['returnURL'] ?? 'ateliya://payment/success',
                 'returnContext'        => http_build_query([
                     'paiement_id' => $paiement->getId(),
-                    'user_id'     => $user->getId()
+                    'user_id'     => $user->getId(),
+                    'reference'   => $reference,
+                    'status'      => 'pending'
                 ]),
                 /*  'api'                  => $this->apiKey,
                 'service'              => 'PAIEMENT', */

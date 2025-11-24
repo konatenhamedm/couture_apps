@@ -14,26 +14,27 @@ class Reservation
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-     #[Groups(["group1"])]
+     #[Groups(["group1","group_details"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-     #[Groups(["group1"])]
+     #[Groups(["group1","group_details"])]
     private ?string $montant = null;
 
     #[ORM\Column(nullable: true)]
-     #[Groups(["group1"])]
+     #[Groups(["group1","group_details"])]
     private ?\DateTime $dateRetrait = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-     #[Groups(["group1"])]
+     #[Groups(["group1","group_details"])]
     private ?string $avance = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-     #[Groups(["group1"])]
+     #[Groups(["group1","group_details"])]
     private ?string $reste = null;
 
     #[ORM\ManyToOne(inversedBy: 'reservations')]
+     #[Groups(["group1","group_details"])]
     private ?Client $client = null;
 
     /**

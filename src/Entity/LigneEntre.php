@@ -12,13 +12,13 @@ class LigneEntre
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-     #[Groups(["group1", "group_type","group_ligne"])]
+     #[Groups(["group1", "group_type","group_ligne","group_details"])]
     private ?int $id = null;
 
 
 
     #[ORM\Column]
-     #[Groups(["group1", "group_type","group_ligne"])]
+     #[Groups(["group1", "group_type","group_ligne","group_details"])]
     private ?int $quantite = null;
 
     #[ORM\ManyToOne(inversedBy: 'ligneEntres')]
@@ -26,7 +26,7 @@ class LigneEntre
     private ?ModeleBoutique $modele = null;
 
     #[ORM\ManyToOne(inversedBy: 'ligneEntres',cascade: ['persist'])]
-    #[Groups(["group_ligne"])]
+    #[Groups(["group_ligne" ,"group_details"])]
     private ?EntreStock $entreStock = null;
 
     public function getId(): ?int

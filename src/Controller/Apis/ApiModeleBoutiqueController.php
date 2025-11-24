@@ -28,6 +28,163 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 #[OA\Tag(name: 'modeleBoutique', description: 'Gestion des modèles de vêtements dans les boutiques (prix et stock par boutique)')]
 class ApiModeleBoutiqueController extends ApiInterface
 {
+
+
+
+
+    /**
+     * Récupère toutes les informations liées à un modèle de boutique
+     */
+    #[Route('/details/{id}', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/modeleBoutique/details/{id}",
+        summary: "Détails complets d'un modèle de boutique",
+        description: "Retourne toutes les informations liées à un modèle de boutique : entrées de stock, réservations et paiements boutique. Permet d'avoir une vue d'ensemble complète de l'activité d'un modèle dans une boutique.",
+        tags: ['modeleBoutique']
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: "Identifiant unique du modèle de boutique",
+        schema: new OA\Schema(type: 'integer', example: 1)
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Détails du modèle de boutique récupérés avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(
+                    property: "modeleBoutique",
+                    type: "object",
+                    description: "Informations du modèle de boutique",
+                    properties: [
+                        new OA\Property(property: "id", type: "integer", example: 1),
+                        new OA\Property(property: "prix", type: "string", example: "25000"),
+                        new OA\Property(property: "quantite", type: "integer", example: 45),
+                        new OA\Property(property: "taille", type: "string", example: "M"),
+                        new OA\Property(property: "modele", type: "object", description: "Modèle parent"),
+                        new OA\Property(property: "boutique", type: "object", description: "Boutique")
+                    ]
+                ),
+                new OA\Property(
+                    property: "entreesStock",
+                    type: "array",
+                    description: "Historique des entrées de stock pour ce modèle",
+                    items: new OA\Items(
+                        type: "object",
+                        properties: [
+                            new OA\Property(property: "id", type: "integer", example: 5),
+                            new OA\Property(property: "quantite", type: "integer", example: 20),
+                            new OA\Property(
+                                property: "entreStock",
+                                type: "object",
+                                properties: [
+                                    new OA\Property(property: "id", type: "integer", example: 12),
+                                    new OA\Property(property: "type", type: "string", example: "Entree"),
+                                    new OA\Property(property: "quantite", type: "integer", example: 100),
+                                    new OA\Property(property: "createdAt", type: "string", format: "date-time")
+                                ]
+                            )
+                        ]
+                    )
+                ),
+                new OA\Property(
+                    property: "reservations",
+                    type: "array",
+                    description: "Réservations incluant ce modèle",
+                    items: new OA\Items(
+                        type: "object",
+                        properties: [
+                            new OA\Property(property: "id", type: "integer", example: 8),
+                            new OA\Property(property: "quantite", type: "integer", example: 2),
+                            new OA\Property(
+                                property: "reservation",
+                                type: "object",
+                                properties: [
+                                    new OA\Property(property: "id", type: "integer", example: 3),
+                                    new OA\Property(property: "montant", type: "number", example: 50000),
+                                    new OA\Property(property: "avance", type: "number", example: 20000),
+                                    new OA\Property(property: "dateRetrait", type: "string", format: "date-time"),
+                                    new OA\Property(property: "client", type: "object", description: "Client")
+                                ]
+                            )
+                        ]
+                    )
+                ),
+                new OA\Property(
+                    property: "paiementsBoutique",
+                    type: "array",
+                    description: "Paiements boutique pour ce modèle",
+                    items: new OA\Items(
+                        type: "object",
+                        properties: [
+                            new OA\Property(property: "id", type: "integer", example: 15),
+                            new OA\Property(property: "quantite", type: "integer", example: 1),
+                            new OA\Property(property: "prix", type: "string", example: "25000"),
+                            new OA\Property(
+                                property: "paiementBoutique",
+                                type: "object",
+                                properties: [
+                                    new OA\Property(property: "id", type: "integer", example: 7),
+                                    new OA\Property(property: "montant", type: "number", example: 25000),
+                                    new OA\Property(property: "reference", type: "string", example: "PMT250115001"),
+                                    new OA\Property(property: "createdAt", type: "string", format: "date-time")
+                                ]
+                            )
+                        ]
+                    )
+                )
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 404, description: "Modèle de boutique non trouvé")]
+    #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
+    public function getDetails(
+        int $id,
+        ModeleBoutiqueRepository $modeleBoutiqueRepository
+    ): Response {
+       /*  if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+            return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
+        } */
+
+        try {
+            $modeleBoutique = $modeleBoutiqueRepository->find($id);
+            
+            if (!$modeleBoutique) {
+                $this->setMessage("Modèle de boutique non trouvé");
+                return $this->response('[]', 404);
+            }
+
+            // Récupérer les entrées de stock
+            $entreesStock = $modeleBoutique->getLigneEntres();
+
+            // Récupérer les réservations
+            $reservations = $modeleBoutique->getLigneReservations();
+
+            // Récupérer les paiements boutique
+            $paiementsBoutique = $modeleBoutique->getPaiementBoutiqueLignes();
+
+            $result = [
+                'modeleBoutique' => $modeleBoutique,
+                'entreesStock' => $entreesStock->toArray(),
+                'reservations' => $reservations->toArray(),
+                'paiementsBoutique' => $paiementsBoutique->toArray()
+            ];
+
+            $response = $this->responseData($result, 'group_details', ['Content-Type' => 'application/json']);
+        } catch (\Exception $exception) {
+            $this->setStatusCode(500);
+            $this->setMessage("Erreur lors de la récupération des détails du modèle");
+            $response = $this->response([]);
+        }
+
+        return $response;
+    } 
+
     /**
      * Liste tous les modèles de boutique du système
      */

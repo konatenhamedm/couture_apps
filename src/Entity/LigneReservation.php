@@ -14,22 +14,24 @@ class LigneReservation
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-     #[Groups(["group1"])]
+     #[Groups(["group1","group_details"])]
     private ?int $id = null;
 
 
 
     #[ORM\Column]
-     #[Groups(["group1"])]
+     #[Groups(["group1","group_details"])]
     private ?int $quantite = null;
 
     #[ORM\ManyToOne(inversedBy: 'ligneReservations')]
+    #[Groups(["group1","group_details"])]
     private ?Reservation $reservation = null;
 
     #[ORM\ManyToOne(inversedBy: 'ligneReservations')]
     private ?ModeleBoutique $modele = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(["group1","group_details"])]
     private ?string $avanceModele = null;
 
     public function getId(): ?int

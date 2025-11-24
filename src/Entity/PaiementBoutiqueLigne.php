@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\PaiementBoutiqueLigneRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: PaiementBoutiqueLigneRepository::class)]
 class PaiementBoutiqueLigne
@@ -11,18 +12,22 @@ class PaiementBoutiqueLigne
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(["group_details"])]
     private ?int $id = null;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(["group_details"])]
     private ?int $quantite = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(["group_details"])]
     private ?string $montant = null;
 
     #[ORM\ManyToOne(inversedBy: 'paiementBoutiqueLignes')]
     private ?ModeleBoutique $modeleBoutique = null;
 
     #[ORM\ManyToOne(inversedBy: 'paiementBoutiqueLignes')]
+    #[Groups(["group_details"])]
     private ?PaiementBoutique $paiementBoutique = null;
 
     public function getId(): ?int

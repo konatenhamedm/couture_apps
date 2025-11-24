@@ -218,7 +218,7 @@ class ApiClientController extends ApiInterface
             mediaType: "multipart/form-data",
             schema: new OA\Schema(
                 type: "object",
-                required: ["nom", "prenoms", "numero", "succursale"],
+                required: ["nom", "prenoms", "numero"],
                 properties: [
                     new OA\Property(
                         property: "nom",

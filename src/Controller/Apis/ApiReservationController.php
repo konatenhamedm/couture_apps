@@ -26,6 +26,7 @@ use App\Repository\PaiementReservationRepository;
 use App\Repository\TypeUserRepository;
 use App\Repository\UserRepository;
 use App\Service\Utils;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use OpenApi\Attributes as OA;
@@ -301,6 +302,12 @@ class ApiReservationController extends ApiInterface
                                 description: "ID du modèle à réserver (obligatoire)"
                             ),
                             new OA\Property(
+                                property: "avanceModele",
+                                type: "number",
+                                example: 3,
+                                description: "ID du modèle de l'acompte (obligatoire)"
+                            ),
+                            new OA\Property(
                                 property: "quantite",
                                 type: "integer",
                                 example: 2,
@@ -349,90 +356,341 @@ class ApiReservationController extends ApiInterface
         ClientRepository $clientRepository,
         BoutiqueRepository $boutiqueRepository,
         Utils $utils,
-        ReservationRepository $reservationRepository
+        ReservationRepository $reservationRepository,
+        UserRepository $userRepository,
+        EntityManagerInterface $entityManager
     ): Response {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         $data = json_decode($request->getContent(), true);
+        $lignes = $data['ligne'] ?? [];
 
-        // Création de la réservation
-        $reservation = new Reservation();
-        $reservation->setAvance($data['avance']);
-        $reservation->setDateRetrait(new \DateTime($data['dateRetrait']));
+        // ✅ Validation préalable des données
+        if (empty($lignes) || !is_array($lignes)) {
+            return $this->json([
+                'status' => 'ERROR',
+                'message' => 'Aucune ligne de réservation à traiter'
+            ], 400);
+        }
 
+        // Validation des champs requis
+        $requiredFields = ['avance', 'dateRetrait', 'client', 'boutique', 'montant', 'reste'];
+        foreach ($requiredFields as $field) {
+            if (!isset($data[$field])) {
+                return $this->json([
+                    'status' => 'ERROR',
+                    'message' => "Le champ '{$field}' est requis"
+                ], 400);
+            }
+        }
+
+        $avance = (int)$data['avance'];
+        $montant = (int)$data['montant'];
+        $reste = (int)$data['reste'];
+
+        // Validation des montants
+        if ($montant <= 0) {
+            return $this->json([
+                'status' => 'ERROR',
+                'message' => 'Le montant doit être supérieur à 0'
+            ], 400);
+        }
+
+        if ($avance < 0) {
+            return $this->json([
+                'status' => 'ERROR',
+                'message' => 'L\'avance ne peut pas être négative'
+            ], 400);
+        }
+
+        if ($reste < 0) {
+            return $this->json([
+                'status' => 'ERROR',
+                'message' => 'Le reste ne peut pas être négatif'
+            ], 400);
+        }
+
+        if ($avance + $reste !== $montant) {
+            return $this->json([
+                'status' => 'ERROR',
+                'message' => 'Incohérence : avance + reste doit être égal au montant total'
+            ], 400);
+        }
+
+        // Validation de la date de retrait
+        try {
+            $dateRetrait = new \DateTime($data['dateRetrait']);
+            $now = new \DateTime();
+            $now->setTime(0, 0, 0); // Réinitialiser à minuit pour comparer uniquement les dates
+            $dateRetrait->setTime(0, 0, 0);
+
+            if ($dateRetrait < $now) {
+                return $this->json([
+                    'status' => 'ERROR',
+                    'message' => 'La date de retrait ne peut pas être dans le passé'
+                ], 400);
+            }
+        } catch (\Exception $e) {
+            return $this->json([
+                'status' => 'ERROR',
+                'message' => 'Format de date invalide pour dateRetrait'
+            ], 400);
+        }
+
+        // Récupérer le client
         $client = $clientRepository->find($data['client']);
         if (!$client) {
-            $this->setMessage("Client non trouvé");
-            return $this->response('[]', 404);
+            return $this->json([
+                'status' => 'ERROR',
+                'message' => 'Client non trouvé'
+            ], 404);
         }
-        $reservation->setClient($client);
 
+        // Récupérer la boutique
         $boutique = $boutiqueRepository->find($data['boutique']);
         if (!$boutique) {
-            $this->setMessage("Boutique non trouvée");
-            return $this->response('[]', 404);
+            return $this->json([
+                'status' => 'ERROR',
+                'message' => 'Boutique non trouvée'
+            ], 404);
         }
-        $reservation->setBoutique($boutique);
 
+        // Récupérer tous les ModeleBoutique en une seule requête
+        $modeleBoutiqueIds = array_column($lignes, 'modele');
+        $modeleBoutiques = $modeleBoutiqueRepository->findBy(['id' => $modeleBoutiqueIds]);
+
+        // Indexer par ID pour un accès rapide
+        $modeleBoutiquesMap = [];
+        foreach ($modeleBoutiques as $mb) {
+            $modeleBoutiquesMap[$mb->getId()] = $mb;
+        }
+
+        // ✅ Validation des lignes et des stocks AVANT toute modification
+        $totalQuantiteReservee = 0;
+        foreach ($lignes as $index => $ligneData) {
+            $modeleId = $ligneData['modele'] ?? null;
+            $quantite = $ligneData['quantite'] ?? null;
+
+            if ($modeleId === null) {
+                return $this->json([
+                    'status' => 'ERROR',
+                    'message' => "modele manquant à la ligne " . ($index + 1)
+                ], 400);
+            }
+
+            if ($quantite === null) {
+                return $this->json([
+                    'status' => 'ERROR',
+                    'message' => "quantite manquante à la ligne " . ($index + 1)
+                ], 400);
+            }
+
+            $quantite = (int)$quantite;
+
+            if ($quantite <= 0) {
+                return $this->json([
+                    'status' => 'ERROR',
+                    'message' => "La quantité doit être supérieure à 0 à la ligne " . ($index + 1)
+                ], 400);
+            }
+
+            // Vérifier que le ModeleBoutique existe
+            if (!isset($modeleBoutiquesMap[$modeleId])) {
+                return $this->json([
+                    'status' => 'ERROR',
+                    'message' => "Modèle de boutique non trouvé avec ID: {$modeleId}"
+                ], 404);
+            }
+
+            $modeleBoutique = $modeleBoutiquesMap[$modeleId];
+
+            // Vérifier que le modèle appartient à la bonne boutique
+            if ($modeleBoutique->getBoutique()->getId() !== $boutique->getId()) {
+                return $this->json([
+                    'status' => 'ERROR',
+                    'message' => "Le modèle ID {$modeleId} n'appartient pas à cette boutique"
+                ], 400);
+            }
+
+            // ✅ Vérification CRITIQUE du stock disponible (pour réservation)
+            if ($modeleBoutique->getQuantite() < $quantite) {
+                return $this->json([
+                    'status' => 'ERROR',
+                    'message' => "Stock insuffisant pour le modèle '{$modeleBoutique->getModele()->getNom()}' " .
+                        "(disponible: {$modeleBoutique->getQuantite()}, demandé: {$quantite})"
+                ], 400);
+            }
+
+            // ✅ Vérifier aussi la quantité globale
+            $modele = $modeleBoutique->getModele();
+            if ($modele->getQuantiteGlobale() < $quantite) {
+                return $this->json([
+                    'status' => 'ERROR',
+                    'message' => "Quantité globale insuffisante pour le modèle '{$modele->getNom()}' " .
+                        "(disponible globalement: {$modele->getQuantiteGlobale()}, demandé: {$quantite})"
+                ], 400);
+            }
+
+            $totalQuantiteReservee += $quantite;
+        }
+
+        // Récupérer l'admin pour les notifications
+        $admin = $userRepository->getUserByCodeType($this->getUser()->getEntreprise());
+
+        // Créer la réservation
+        $reservation = new Reservation();
+        $reservation->setAvance($avance);
+        $reservation->setDateRetrait($dateRetrait);
+        $reservation->setClient($client);
+        $reservation->setBoutique($boutique);
         $reservation->setEntreprise($this->getUser()->getEntreprise());
-        $reservation->setMontant($data['montant']);
-        $reservation->setReste($data['reste']);
+        $reservation->setMontant($montant);
+        $reservation->setReste($reste);
         $reservation->setCreatedAtValue(new \DateTime());
         $reservation->setUpdatedAt(new \DateTime());
         $reservation->setCreatedBy($this->getUser());
         $reservation->setUpdatedBy($this->getUser());
 
-        // Ajout des lignes de réservation
-        foreach ($data['ligne'] as $key => $value) {
-            $modeleBoutique = $modeleBoutiqueRepository->find($value['modele']);
-            if (!$modeleBoutique) {
-                $this->setMessage("Modèle de boutique non trouvé avec ID: " . $value['modele']);
-                return $this->response('[]', 404);
-            }
-
-            $ligne = new LigneReservation();
-            $ligne->setQuantite($value['quantite']);
-            $ligne->setModele($modeleBoutique);
-            $ligne->setCreatedAtValue(new \DateTime());
-            $ligne->setUpdatedAt(new \DateTime());
-            $ligne->setCreatedBy($this->getUser());
-            $ligne->setUpdatedBy($this->getUser());
-            $reservation->addLigneReservation($ligne);
-        }
-
         $errorResponse = $this->errorResponse($reservation);
         if ($errorResponse !== null) {
             return $errorResponse;
-        } else {
-            // Enregistrement du paiement de l'acompte
-            $paiementReservation = new PaiementReservation();
-            $paiementReservation->setReservation($reservation);
-            $paiementReservation->setType(Paiement::TYPE["paiementReservation"]);
-            $paiementReservation->setMontant($data['avance'] ?? 0);
-            $paiementReservation->setReference($utils->generateReference('PMT'));
-            $paiementReservation->setCreatedAtValue(new \DateTime());
-            $paiementReservation->setUpdatedAt(new \DateTime());
-            $paiementReservation->setCreatedBy($this->getUser());
-            $paiementReservation->setUpdatedBy($this->getUser());
-            $paiementReservationRepository->add($paiementReservation, true);
-
-            // Mise à jour de la caisse boutique
-            $caisseBoutique = $caisseBoutiqueRepository->findOneBy(['boutique' => $boutique->getId()]);
-            if ($caisseBoutique) {
-                $caisseBoutique->setMontant((int)$caisseBoutique->getMontant() + (int)$data['avance']);
-                $caisseBoutique->setUpdatedBy($this->getUser());
-                $caisseBoutique->setUpdatedAt(new \DateTime());
-                $caisseBoutiqueRepository->add($caisseBoutique, true);
-            }
-
-            $reservationRepository->add($reservation, true);
         }
 
-        return $this->responseData($reservation, 'group1', ['Content-Type' => 'application/json']);
-    }
+        // 🔒 Transaction pour garantir la cohérence atomique
+        $entityManager->beginTransaction();
 
+        try {
+            // ✅ Persister la réservation d'abord (parent)
+            $entityManager->persist($reservation);
+
+            // Ajouter les lignes de réservation ET réduire les stocks
+            foreach ($lignes as $ligneData) {
+                $modeleBoutique = $modeleBoutiquesMap[$ligneData['modele']];
+                $modele = $modeleBoutique->getModele();
+                $quantite = (int)$ligneData['quantite'];
+
+                // Créer la ligne de réservation
+                $ligne = new LigneReservation();
+                $ligne->setQuantite($quantite);
+                $ligne->setModele($modeleBoutique);
+                $ligne->setAvanceModele($ligneData['avanceModele']);
+                $ligne->setCreatedAtValue(new \DateTime());
+                $ligne->setUpdatedAt(new \DateTime());
+                $ligne->setCreatedBy($this->getUser());
+                $ligne->setUpdatedBy($this->getUser());
+
+                $reservation->addLigneReservation($ligne);
+                $entityManager->persist($ligne);
+
+                // 🔥 RÉDUIRE LE STOCK (articles réservés = bloqués)
+                $modeleBoutique->setQuantite($modeleBoutique->getQuantite() - $quantite);
+
+                // Mise à jour de la quantité globale avec vérification (cohérent avec le code de vente)
+                if ($modele && $modele->getQuantiteGlobale() >= $quantite) {
+                    $modele->setQuantiteGlobale($modele->getQuantiteGlobale() - $quantite);
+                }
+            }
+
+            // Créer un paiement seulement si l'avance est supérieure à zéro
+            if ($avance > 0) {
+                $paiementReservation = new PaiementReservation();
+                $paiementReservation->setReservation($reservation);
+                $paiementReservation->setType(Paiement::TYPE["paiementReservation"]);
+                $paiementReservation->setMontant($avance);
+                $paiementReservation->setReference($utils->generateReference('PMT'));
+                $paiementReservation->setCreatedAtValue(new \DateTime());
+                $paiementReservation->setUpdatedAt(new \DateTime());
+                $paiementReservation->setCreatedBy($this->getUser());
+                $paiementReservation->setUpdatedBy($this->getUser());
+
+                $entityManager->persist($paiementReservation);
+
+                // Mise à jour de la caisse boutique
+                $caisseBoutique = $caisseBoutiqueRepository->findOneBy(['boutique' => $boutique->getId()]);
+                if ($caisseBoutique) {
+                    $caisseBoutique->setMontant($caisseBoutique->getMontant() + $avance);
+                    $caisseBoutique->setUpdatedBy($this->getUser());
+                    $caisseBoutique->setUpdatedAt(new \DateTime());
+                } else {
+                    $entityManager->rollback();
+                    return $this->json([
+                        'status' => 'ERROR',
+                        'message' => 'Caisse de boutique introuvable'
+                    ], 404);
+                }
+            }
+
+            // ✅ Un seul flush pour tout
+            $entityManager->flush();
+            $entityManager->commit();
+
+            // Envoi des notifications (après la transaction réussie)
+            if ($admin) {
+                try {
+                    $this->sendMailService->sendNotification([
+                        'entreprise' => $this->getUser()->getEntreprise(),
+                        "user" => $admin,
+                        "libelle" => sprintf(
+                            "Bonjour %s,\n\n" .
+                                "Nous vous informons qu'une nouvelle réservation vient d'être enregistrée dans la boutique **%s**.\n\n" .
+                                "- Client : %s\n" .
+                                "- Montant total : %s FCFA\n" .
+                                "- Avance versée : %s FCFA\n" .
+                                "- Reste à payer : %s FCFA\n" .
+                                "- Quantité totale : %d article(s)\n" .
+                                "- Date de retrait prévue : %s\n" .
+                                "- Effectué par : %s\n" .
+                                "- Date de réservation : %s\n\n" .
+                                "Cordialement,\nVotre application de gestion.",
+                            $admin->getLogin(),
+                            $boutique->getLibelle(),
+                            $client->getNom() . ' ' . $client->getPrenom(),
+                            number_format($montant, 0, ',', ' '),
+                            number_format($avance, 0, ',', ' '),
+                            number_format($reste, 0, ',', ' '),
+                            $totalQuantiteReservee,
+                            $dateRetrait->format('d/m/Y'),
+                            $this->getUser()->getNom() && $this->getUser()->getPrenoms()
+                                ? $this->getUser()->getNom() . " " . $this->getUser()->getPrenoms()
+                                : $this->getUser()->getLogin(),
+                            (new \DateTime())->format('d/m/Y H:i')
+                        ),
+                        "titre" => "Réservation - " . $boutique->getLibelle(),
+                    ]);
+
+                    $this->sendMailService->send(
+                        $this->sendMail,
+                        $this->superAdmin,
+                        "Réservation - " . $this->getUser()->getEntreprise()->getLibelle(),
+                        "reservation_email",
+                        [
+                            "boutique_libelle" => $this->getUser()->getEntreprise()->getLibelle(),
+                            "client" => $client->getNom() . ' ' . $client->getPrenom(),
+                            "montant_total" => number_format($montant, 0, ',', ' ') . " FCFA",
+                            "avance" => number_format($avance, 0, ',', ' ') . " FCFA",
+                            "reste" => number_format($reste, 0, ',', ' ') . " FCFA",
+                            "quantite" => $totalQuantiteReservee,
+                            "date_retrait" => $dateRetrait->format('d/m/Y'),
+                            "date" => (new \DateTime())->format('d/m/Y H:i'),
+                        ]
+                    );
+                } catch (\Exception $e) {
+                    // Ne pas bloquer la réservation si l'envoi d'email échoue
+                    // Vous pouvez logger l'erreur ici si vous avez un logger
+                }
+            }
+
+            return $this->responseData($reservation, 'group1', ['Content-Type' => 'application/json']);
+        } catch (\Exception $e) {
+            $entityManager->rollback();
+            return $this->json([
+                'status' => 'ERROR',
+                'message' => 'Erreur lors de la création de la réservation: ' . $e->getMessage()
+            ], 500);
+        }
+    }
     /**
      * Met à jour une réservation existante
      */
@@ -585,6 +843,189 @@ class ApiReservationController extends ApiInterface
         }
 
         return $response;
+    }
+
+    /**
+     * Effectuer un paiement sur une réservation
+     */
+    #[Route('/paiement/{id}', methods: ['POST'])]
+    #[OA\Post(
+        path: "/api/reservation/paiement/{id}",
+        summary: "Effectuer un paiement sur une réservation",
+        description: "Permet d'enregistrer un paiement (acompte ou solde) sur une réservation existante. Met automatiquement à jour la caisse de la boutique et recalcule le reste à payer. Nécessite un abonnement actif.",
+        tags: ['reservation']
+    )]
+    #[OA\Parameter(
+        name: "id",
+        in: "path",
+        required: true,
+        description: "Identifiant unique de la réservation",
+        schema: new OA\Schema(type: "integer", example: 1)
+    )]
+    #[OA\RequestBody(
+        required: true,
+        description: "Données du paiement à effectuer",
+        content: new OA\JsonContent(
+            type: "object",
+            required: ["montant"],
+            properties: [
+                new OA\Property(
+                    property: "montant",
+                    type: "number",
+                    example: 15000,
+                    description: "Montant du paiement (obligatoire, doit être > 0)"
+                ),
+                new OA\Property(
+                    property: "notes",
+                    type: "string",
+                    example: "Paiement par carte bancaire",
+                    description: "Notes sur le paiement (optionnel)"
+                )
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 201,
+        description: "Paiement enregistré avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "id", type: "integer", example: 15, description: "ID du paiement créé"),
+                new OA\Property(property: "reference", type: "string", example: "PMT250115143025001", description: "Référence unique du paiement"),
+                new OA\Property(property: "montant", type: "number", example: 15000),
+                new OA\Property(property: "type", type: "string", example: "paiementReservation"),
+                new OA\Property(
+                    property: "reservation",
+                    type: "object",
+                    description: "Réservation mise à jour",
+                    properties: [
+                        new OA\Property(property: "id", type: "integer", example: 1),
+                        new OA\Property(property: "montant", type: "number", example: 50000),
+                        new OA\Property(property: "avance", type: "number", example: 35000, description: "Total des acomptes versés"),
+                        new OA\Property(property: "reste", type: "number", example: 15000, description: "Reste à payer")
+                    ]
+                ),
+                new OA\Property(property: "createdAt", type: "string", format: "date-time")
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 400,
+        description: "Données invalides ou montant supérieur au reste à payer",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "status", type: "string", example: "ERROR"),
+                new OA\Property(property: "message", type: "string", example: "Le montant du paiement (20000) dépasse le reste à payer (15000)")
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 404, description: "Réservation non trouvée")]
+    public function paiement(
+        int $id,
+        Request $request,
+        ReservationRepository $reservationRepository,
+        PaiementReservationRepository $paiementReservationRepository,
+        CaisseBoutiqueRepository $caisseBoutiqueRepository,
+        Utils $utils,
+        UserRepository $userRepository
+    ): Response {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+            return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
+        }
+
+        $admin = $userRepository->getUserByCodeType($this->getUser()->getEntreprise());
+
+
+        $reservation = $reservationRepository->find($id);
+        if (!$reservation) {
+            $this->setMessage("Réservation non trouvée");
+            return $this->response('[]', 404);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $montantPaiement = $data['montant'] ?? 0;
+
+        if ($montantPaiement <= 0) {
+            $this->setMessage("Le montant du paiement doit être supérieur à zéro");
+            return $this->response('[]', 400);
+        }
+
+        if ($montantPaiement > $reservation->getReste()) {
+            $this->setMessage("Le montant du paiement ({$montantPaiement}) dépasse le reste à payer ({$reservation->getReste()})");
+            return $this->response('[]', 400);
+        }
+
+        // Créer le paiement
+        $paiementReservation = new PaiementReservation();
+        $paiementReservation->setReservation($reservation);
+        $paiementReservation->setType(Paiement::TYPE["paiementReservation"]);
+        $paiementReservation->setMontant($montantPaiement);
+        $paiementReservation->setReference($utils->generateReference('PMT'));
+        $paiementReservation->setCreatedAtValue(new \DateTime());
+        $paiementReservation->setUpdatedAt(new \DateTime());
+        $paiementReservation->setCreatedBy($this->getUser());
+        $paiementReservation->setUpdatedBy($this->getUser());
+
+        $paiementReservationRepository->add($paiementReservation, true);
+
+        // Mettre à jour la réservation
+        $nouvelleAvance = $reservation->getAvance() + $montantPaiement;
+        $nouveauReste = $reservation->getMontant() - $nouvelleAvance;
+
+        $reservation->setAvance($nouvelleAvance);
+        $reservation->setReste($nouveauReste);
+        $reservation->setUpdatedAt(new \DateTime());
+        $reservation->setUpdatedBy($this->getUser());
+        $reservationRepository->add($reservation, true);
+
+        // Mettre à jour la caisse boutique
+        $caisseBoutique = $caisseBoutiqueRepository->findOneBy(['boutique' => $reservation->getBoutique()->getId()]);
+        if ($caisseBoutique) {
+            $caisseBoutique->setMontant((int)$caisseBoutique->getMontant() + (int)$montantPaiement);
+            $caisseBoutique->setUpdatedBy($this->getUser());
+            $caisseBoutique->setUpdatedAt(new \DateTime());
+            $caisseBoutiqueRepository->add($caisseBoutique, true);
+        }
+
+
+        $this->sendMailService->sendNotification([
+            'entreprise' => $this->getUser()->getEntreprise(),
+            "user" => $admin,
+            "libelle" => sprintf(
+                "Bonjour %s,\n\n" .
+                    "Nous vous informons qu'un nouveau paiement vient d'être enregistré dans la succursale **%s**.\n\n" .
+                    "- Montant : %s FCFA\n" .
+                    "- Effectué par : %s\n" .
+                    "- Date : %s\n\n" .
+                    "Cordialement,\nVotre application de gestion.",
+                $admin->getLogin(),
+                $this->getUser()->getSurccursale() ? $this->getUser()->getSurccursale()->getLibelle() : "N/A",
+                number_format($data['montant'], 0, ',', ' '),
+                $this->getUser()->getNom() && $this->getUser()->getPrenoms()
+                    ? $this->getUser()->getNom() . " " . $this->getUser()->getPrenoms()
+                    : $this->getUser()->getLogin(),
+                (new \DateTime())->format('d/m/Y H:i')
+            ),
+            "titre" => "Paiement facture - " . ($this->getUser()->getSurccursale() ? $this->getUser()->getSurccursale()->getLibelle() : ""),
+        ]);
+
+
+        $this->sendMailService->send(
+            $this->sendMail,
+            $this->superAdmin,
+            "Paiement facture - " . $this->getUser()->getEntreprise()->getLibelle(),
+            "paiement_email",
+            [
+                "boutique_libelle" => $this->getUser()->getEntreprise()->getLibelle(),
+                "montant" => number_format($request->get('avance'), 0, ',', ' ') . " FCFA",
+                "date" => (new \DateTime())->format('d/m/Y H:i'),
+            ]
+        );
+
+        return $this->responseData($paiementReservation, 'group1', ['Content-Type' => 'application/json']);
     }
 
     /**

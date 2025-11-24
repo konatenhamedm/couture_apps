@@ -17,10 +17,11 @@ class PaiementBoutique extends Paiement
     private ?Boutique $boutique = null;
 
     #[ORM\Column(nullable: true)]
-     #[Groups(["group1", "group_type"])]
+     #[Groups(["group1", "group_type","group_details"])]
     private ?int $quantite = null;
 
     #[ORM\ManyToOne(inversedBy: 'paiementBoutiques')]
+    #[Groups(["group_details"])]
     private ?Client $client = null;
 
     /**

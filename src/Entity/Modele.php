@@ -16,11 +16,11 @@ class Modele
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["group1"])]
+    #[Groups(["group1","group_details"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["group1"])]
+    #[Groups(["group1","group_details"])]
     private ?string $libelle = null;
 
 
@@ -31,6 +31,7 @@ class Modele
 
 
     #[ORM\Column]
+    #[Groups(["group1","group_details"])]
     private ?int $quantiteGlobale = null;
 
     /**

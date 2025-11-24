@@ -412,7 +412,7 @@ class ApiUserController extends ApiInterface
                 $abonnementRepository->add($abonnement, true);
 
                 // Initialisation des paramètres et catégories
-                //$addCategorie->setParametreForEntreprise($user);
+                $addCategorie->initializeCategorieTypeMesureForEntreprise($entreprise, $user);
                 $addCategorie->setting($entreprise, [
                     'succursale' => $nombresuccursale,
                     'user' => $nombreUser,
