@@ -167,6 +167,7 @@ http://localhost:8000/api/doc
 - **Réservations**: `/api/reservations/*`
 - **Mesures**: `/api/mesures/*`
 - **Paiements**: `/api/paiements/*`
+- **Statistiques**: `/api/statistique/*` - [Documentation détaillée](API_STATISTICS.md)
 
 ## 📁 Structure du projet
 
@@ -201,6 +202,27 @@ Incluez le token dans l'en-tête Authorization :
 ```
 Authorization: Bearer votre_token_jwt
 ```
+
+### API Statistiques
+
+1. **Dashboard avec métriques avancées**
+```bash
+POST /api/statistique/dashboard
+```
+
+2. **Graphiques d'évolution**
+```bash
+POST /api/statistique/revenus/evolution
+POST /api/statistique/commandes/evolution
+```
+
+3. **Analyses clients**
+```bash
+POST /api/statistique/top-clients
+POST /api/statistique/comparatif
+```
+
+📊 **[Voir la documentation complète des statistiques](API_STATISTICS.md)**
 
 ### Gestion des mesures
 
