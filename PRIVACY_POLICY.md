@@ -121,7 +121,7 @@ Conformément au RGPD et aux lois applicables, vous avez le droit de :
 
 ### 7.4 Exercice de vos droits
 
-Pour exercer vos droits, contactez-nous à : privacy@ateliya.com
+Pour exercer vos droits, contactez-nous à : supports@ateliya.com
 
 Nous répondrons dans un délai de 30 jours maximum.
 

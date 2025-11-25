@@ -1,6 +1,6 @@
 # Conditions Générales d'Utilisation - Ateliya
 
-**Dernière mise à jour : [Date]**
+**Dernière mise à jour : 15 janvier 2024**
 
 ## 1. Acceptation des conditions
 
@@ -179,13 +179,13 @@ Si la négociation échoue, nous pouvons recourir à la médiation avant toute a
 
 ### 11.3 Juridiction compétente
 
-Les tribunaux de [Ville, Pays] auront compétence exclusive pour tout litige relatif à ces CGU.
+Les tribunaux de Paris, France auront compétence exclusive pour tout litige relatif à ces CGU.
 
 ## 12. Dispositions générales
 
 ### 12.1 Droit applicable
 
-Ces CGU sont régies par le droit de [Pays] sans égard aux principes de conflit de lois.
+Ces CGU sont régies par le droit français sans égard aux principes de conflit de lois.
 
 ### 12.2 Divisibilité
 
@@ -204,16 +204,31 @@ L'absence d'exercice d'un droit ne constitue pas une renonciation à ce droit.
 Pour toute question concernant ces CGU :
 
 **Email** : legal@ateliya.com
-**Téléphone** : [Numéro de téléphone]
-**Adresse** : [Adresse postale complète]
+**Téléphone** : +33 1 XX XX XX XX
+**Adresse** : Ateliya SAS, 123 Avenue de la Couture, 75001 Paris, France
 
-## 14. Dispositions spécifiques par région
+## 14. Protection des mineurs
 
-### 14.1 Union Européenne
+### 14.1 Restriction d'âge
 
-Pour les utilisateurs de l'UE, des droits supplémentaires peuvent s'appliquer conformément au droit européen.
+Les mineurs de moins de 16 ans ne peuvent pas créer de compte sans autorisation parentale explicite.
 
-### 14.2 Autres juridictions
+### 14.2 Contrôle parental
+
+Les parents peuvent demander la suppression du compte de leur enfant mineur à tout moment.
+
+## 15. Dispositions spécifiques par région
+
+### 14.1 Union Européenne (RGPD)
+
+Pour les utilisateurs de l'UE, des droits supplémentaires s'appliquent conformément au Règlement Général sur la Protection des Données (RGPD) :
+- Droit d'accès à vos données personnelles
+- Droit de rectification et de suppression
+- Droit à la portabilité des données
+- Droit d'opposition au traitement
+- Droit de limitation du traitement
+
+### 15.2 Autres juridictions
 
 Des conditions spécifiques peuvent s'appliquer selon votre localisation géographique.
 
