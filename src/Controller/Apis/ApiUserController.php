@@ -199,20 +199,6 @@ class ApiUserController extends ApiInterface
     }
 
     /**
-     * Gestion des requêtes OPTIONS pour CORS
-     */
-    #[Route('/create', methods: ['OPTIONS'])]
-    public function createOptions(): Response
-    {
-        return new Response('', 200, [
-            'Access-Control-Allow-Origin' => '*',
-            'Access-Control-Allow-Methods' => 'POST, OPTIONS',
-            'Access-Control-Allow-Headers' => 'Accept, Authorization, Cache-Control, Content-Type, DNT, If-Modified-Since, Keep-Alive, Origin, User-Agent, X-Requested-With',
-            'Access-Control-Max-Age' => '3600'
-        ]);
-    }
-
-    /**
      * Inscription complète : création entreprise + administrateur + abonnement gratuit
      */
     #[Route('/create', methods: ['POST'])]
