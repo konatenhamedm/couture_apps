@@ -1,0 +1,363 @@
+{
+  "mainNavigation": {
+    "dashboard": {
+      "label": "Dashboard",
+      "icon": "mdi-view-dashboard",
+      "route": "/dashboard",
+      "roles": ["admin", "couturier", "assistant"]
+    },
+    "clients": {
+      "label": "Clients",
+      "icon": "mdi-account-group",
+      "route": "/clients",
+      "roles": ["admin", "couturier", "assistant"],
+      "children": [
+        {
+          "label": "Liste des clients",
+          "route": "/clients",
+          "roles": ["admin", "couturier", "assistant"]
+        },
+        {
+          "label": "Nouveau client",
+          "route": "/clients/nouveau",
+          "roles": ["admin", "couturier"]
+        },
+        {
+          "label": "Import clients",
+          "route": "/clients/import",
+          "roles": ["admin"]
+        }
+      ]
+    },
+    "mesures": {
+      "label": "Mesures",
+      "icon": "mdi-ruler",
+      "route": "/mesures",
+      "roles": ["admin", "couturier", "assistant"],
+      "children": [
+        {
+          "label": "Catégories",
+          "route": "/mesures/categories",
+          "roles": ["admin", "couturier"]
+        },
+        {
+          "label": "Types de mesures",
+          "route": "/mesures/types",
+          "roles": ["admin", "couturier"]
+        },
+        {
+          "label": "Modèles vêtements",
+          "route": "/mesures/modeles",
+          "roles": ["admin", "couturier"]
+        },
+        {
+          "label": "Prendre mesures",
+          "route": "/mesures/prendre",
+          "roles": ["admin", "couturier", "assistant"]
+        }
+      ]
+    },
+    "reservations": {
+      "label": "Réservations",
+      "icon": "mdi-calendar-clock",
+      "route": "/reservations",
+      "roles": ["admin", "couturier", "assistant"],
+      "children": [
+        {
+          "label": "Liste réservations",
+          "route": "/reservations/liste",
+          "roles": ["admin", "couturier", "assistant"]
+        },
+        {
+          "label": "Nouvelle réservation",
+          "route": "/reservations/nouvelle",
+          "roles": ["admin", "couturier"]
+        },
+        {
+          "label": "Réservations du jour",
+          "route": "/reservations/aujourd-hui",
+          "roles": ["admin", "couturier", "assistant"]
+        },
+        {
+          "label": "Retraits programmés",
+          "route": "/reservations/retraits",
+          "roles": ["admin", "couturier", "assistant"]
+        },
+        {
+          "label": "Paiements acomptes",
+          "route": "/reservations/paiements",
+          "roles": ["admin", "couturier"]
+        }
+      ]
+    },
+    "finances": {
+      "label": "Finances",
+      "icon": "mdi-currency-eur",
+      "route": "/finances",
+      "roles": ["admin", "couturier"],
+      "children": [
+        {
+          "label": "Factures",
+          "route": "/finances/factures",
+          "roles": ["admin", "couturier"]
+        },
+        {
+          "label": "Paiements",
+          "route": "/finances/paiements",
+          "roles": ["admin", "couturier"],
+          "children": [
+            {
+              "label": "Paiements factures",
+              "route": "/finances/paiements/factures",
+              "roles": ["admin", "couturier"]
+            },
+            {
+              "label": "Paiements réservations",
+              "route": "/finances/paiements/reservations",
+              "roles": ["admin", "couturier"]
+            },
+            {
+              "label": "Ventes directes",
+              "route": "/finances/paiements/ventes",
+              "roles": ["admin", "couturier"]
+            }
+          ]
+        },
+        {
+          "label": "Ventes boutique",
+          "route": "/finances/ventes",
+          "roles": ["admin", "couturier"]
+        },
+        {
+          "label": "Abonnements",
+          "route": "/finances/abonnements",
+          "roles": ["admin"]
+        },
+        {
+          "label": "Rapports",
+          "route": "/finances/rapports",
+          "roles": ["admin", "couturier"]
+        }
+      ]
+    },
+    "stocks": {
+      "label": "Stocks",
+      "icon": "mdi-package-variant",
+      "route": "/stocks",
+      "roles": ["admin", "couturier"],
+      "children": [
+        {
+          "label": "Inventaire",
+          "route": "/stocks/inventaire",
+          "roles": ["admin", "couturier"]
+        },
+        {
+          "label": "Mouvements",
+          "route": "/stocks/mouvements",
+          "roles": ["admin", "couturier"]
+        },
+        {
+          "label": "Alertes stock",
+          "route": "/stocks/alertes",
+          "roles": ["admin", "couturier"]
+        },
+        {
+          "label": "Fournisseurs",
+          "route": "/stocks/fournisseurs",
+          "roles": ["admin"]
+        }
+      ]
+    },
+    "boutique": {
+      "label": "Boutique",
+      "icon": "mdi-store",
+      "route": "/boutique",
+      "roles": ["admin", "couturier"],
+      "children": [
+        {
+          "label": "Ma boutique",
+          "route": "/boutique/profil",
+          "roles": ["admin", "couturier"]
+        },
+        {
+          "label": "Catalogue vêtements",
+          "route": "/boutique/catalogue",
+          "roles": ["admin", "couturier"]
+        },
+        {
+          "label": "Modèles disponibles",
+          "route": "/boutique/modeles",
+          "roles": ["admin", "couturier"]
+        },
+        {
+          "label": "Caisses",
+          "route": "/boutique/caisses",
+          "roles": ["admin", "couturier"]
+        },
+        {
+          "label": "Succursales",
+          "route": "/boutique/succursales",
+          "roles": ["admin"]
+        },
+        {
+          "label": "Employés",
+          "route": "/boutique/employes",
+          "roles": ["admin"]
+        },
+        {
+          "label": "Paramètres",
+          "route": "/boutique/parametres",
+          "roles": ["admin"]
+        }
+      ]
+    },
+    "statistiques": {
+      "label": "Statistiques",
+      "icon": "mdi-chart-line",
+      "route": "/statistiques",
+      "roles": ["admin", "couturier"],
+      "children": [
+        {
+          "label": "Dashboard avancé",
+          "route": "/statistiques/dashboard",
+          "roles": ["admin", "couturier"]
+        },
+        {
+          "label": "Revenus",
+          "route": "/statistiques/revenus",
+          "roles": ["admin", "couturier"]
+        },
+        {
+          "label": "Clients",
+          "route": "/statistiques/clients",
+          "roles": ["admin", "couturier"]
+        },
+        {
+          "label": "Performance",
+          "route": "/statistiques/performance",
+          "roles": ["admin"]
+        },
+        {
+          "label": "Export données",
+          "route": "/statistiques/export",
+          "roles": ["admin"]
+        }
+      ]
+    },
+    "notifications": {
+      "label": "Notifications",
+      "icon": "mdi-bell",
+      "route": "/notifications",
+      "roles": ["admin", "couturier", "assistant"],
+      "children": [
+        {
+          "label": "Centre notifications",
+          "route": "/notifications",
+          "roles": ["admin", "couturier", "assistant"]
+        },
+        {
+          "label": "Paramètres push",
+          "route": "/notifications/push",
+          "roles": ["admin", "couturier"]
+        },
+        {
+          "label": "Templates email",
+          "route": "/notifications/templates",
+          "roles": ["admin"]
+        },
+        {
+          "label": "Historique",
+          "route": "/notifications/historique",
+          "roles": ["admin", "couturier"]
+        }
+      ]
+    },
+    "parametres": {
+      "label": "Paramètres",
+      "icon": "mdi-cog",
+      "route": "/parametres",
+      "roles": ["admin", "couturier"],
+      "children": [
+        {
+          "label": "Profil utilisateur",
+          "route": "/parametres/profil",
+          "roles": ["admin", "couturier", "assistant"]
+        },
+        {
+          "label": "Sécurité",
+          "route": "/parametres/securite",
+          "roles": ["admin", "couturier"]
+        },
+        {
+          "label": "Préférences",
+          "route": "/parametres/preferences",
+          "roles": ["admin", "couturier", "assistant"]
+        },
+        {
+          "label": "API & Intégrations",
+          "route": "/parametres/api",
+          "roles": ["admin"]
+        },
+        {
+          "label": "Sauvegarde",
+          "route": "/parametres/sauvegarde",
+          "roles": ["admin"]
+        }
+      ]
+    }
+  },
+  "quickActions": [
+    {
+      "label": "Nouveau client",
+      "icon": "mdi-account-plus",
+      "route": "/clients/nouveau",
+      "roles": ["admin", "couturier"]
+    },
+    {
+      "label": "Réserver vêtement",
+      "icon": "mdi-calendar-plus",
+      "route": "/reservations/nouvelle",
+      "roles": ["admin", "couturier", "assistant"]
+    },
+    {
+      "label": "Vente boutique",
+      "icon": "mdi-cash-register",
+      "route": "/finances/ventes/nouvelle",
+      "roles": ["admin", "couturier"]
+    },
+    {
+      "label": "Nouvelle facture",
+      "icon": "mdi-file-document-plus",
+      "route": "/finances/factures/nouvelle",
+      "roles": ["admin", "couturier"]
+    },
+    {
+      "label": "Prendre mesures",
+      "icon": "mdi-ruler-square",
+      "route": "/mesures/prendre",
+      "roles": ["admin", "couturier", "assistant"]
+    }
+  ],
+  "userMenu": [
+    {
+      "label": "Mon profil",
+      "icon": "mdi-account",
+      "route": "/parametres/profil"
+    },
+    {
+      "label": "Préférences",
+      "icon": "mdi-cog",
+      "route": "/parametres/preferences"
+    },
+    {
+      "label": "Aide",
+      "icon": "mdi-help-circle",
+      "route": "/aide"
+    },
+    {
+      "label": "Déconnexion",
+      "icon": "mdi-logout",
+      "action": "logout"
+    }
+  ]
+}

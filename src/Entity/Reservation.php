@@ -14,34 +14,34 @@ class Reservation
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-     #[Groups(["group1","group_details"])]
+     #[Groups(["group1","group_details","group_reservation"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-     #[Groups(["group1","group_details"])]
+     #[Groups(["group1","group_details","group_reservation"])]
     private ?string $montant = null;
 
     #[ORM\Column(nullable: true)]
-     #[Groups(["group1","group_details"])]
+     #[Groups(["group1","group_details","group_reservation"])]
     private ?\DateTime $dateRetrait = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-     #[Groups(["group1","group_details"])]
+     #[Groups(["group1","group_details","group_reservation"])]
     private ?string $avance = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-     #[Groups(["group1","group_details"])]
+     #[Groups(["group1","group_details","group_reservation"])]
     private ?string $reste = null;
 
     #[ORM\ManyToOne(inversedBy: 'reservations')]
-     #[Groups(["group1","group_details"])]
+     #[Groups(["group1","group_details","group_reservation"])]
     private ?Client $client = null;
 
     /**
      * @var Collection<int, LigneReservation>
      */
     #[ORM\OneToMany(targetEntity: LigneReservation::class, mappedBy: 'reservation')]
-     #[Groups(["group1"])]
+     #[Groups(["group1","group_reservation"])]
     private Collection $ligneReservations;
 
     /**

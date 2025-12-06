@@ -33,7 +33,7 @@ class AuthController extends ApiInterface
                     new OA\Property(
                         property: "login",
                         type: "string",
-                        default: "hamed@wiassur.com"
+                        default: "konatenhamed@gmail.com"
                     ),
                     new OA\Property(
                         property: "password",
@@ -60,22 +60,24 @@ class AuthController extends ApiInterface
         $data = json_decode($request->getContent(), true);
         $user = $userRepo->findOneBy(['login' => $data['login']]);
 
-        if (!$user || !$hasher->isPasswordValid($user, $data['password'])) {
-            return $this->json(['error' => 'Invalid credentials'], Response::HTTP_UNAUTHORIZED);
-        } elseif (!$user->isActive()) {
-
-            return $this->errorResponse($user, 'User is not active');
+        if(!$user){
+            return $this->json(['error' => 'Ce utilisateur n\'existe pas'], Response::HTTP_UNAUTHORIZED);
+        }else{
+            if(!$hasher->isPasswordValid($user, $data['password'])){
+                return $this->json(['error' => 'Invalid credentials'], Response::HTTP_UNAUTHORIZED);
+            }elseif(!$user->isActive()){
+                return $this->json(['error' => 'Ce compte est désactivé'], Response::HTTP_UNAUTHORIZED);
+            }
         }
 
+       
         $token = $jwtService->generateToken([
             'id' => $user->getId(),
             'login' => $user->getLogin(),
             'roles' => $user->getRoles()
         ]);
 
-        //$inactiveSubscriptions = $subscriptionChecker->checkInactiveSubscription($user->getEntreprise());
         $activeSubscriptions = $subscriptionChecker->getActiveSubscription($user->getEntreprise());
-        /* dd($this->json([$activeSubscriptions])); */
 
         return $this->responseData([
             'token' => $token,

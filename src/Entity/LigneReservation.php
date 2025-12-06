@@ -14,17 +14,17 @@ class LigneReservation
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-     #[Groups(["group1","group_details"])]
+     #[Groups(["group1","group_details","group_reservation"])]
     private ?int $id = null;
 
 
 
     #[ORM\Column]
-     #[Groups(["group1","group_details"])]
+     #[Groups(["group1","group_details","group_reservation"])]
     private ?int $quantite = null;
 
     #[ORM\ManyToOne(inversedBy: 'ligneReservations')]
-    #[Groups(["group1","group_details"])]
+    #[Groups(["group_details"])]
     private ?Reservation $reservation = null;
 
     #[ORM\ManyToOne(inversedBy: 'ligneReservations')]

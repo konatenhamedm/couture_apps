@@ -1,0 +1,357 @@
+{
+  "mainNavigation": {
+    "dashboard": {
+      "label": "Dashboard",
+      "icon": "mdi-view-dashboard",
+      "route": "/dashboard",
+      "roles": ["SADM", "ADB", "ADS", "ADSB"]
+    },
+    "clients": {
+      "label": "Clients",
+      "icon": "mdi-account-group",
+      "route": "/clients",
+      "roles": ["SADM", "ADB", "ADS", "ADSB"]
+    },
+    "mesures": {
+      "label": "Mesures",
+      "icon": "mdi-ruler",
+      "route": "/mesures",
+      "roles": ["SADM", "ADB", "ADS", "ADSB"],
+      "children": [
+        {
+          "label": "Catégories",
+          "route": "/mesures/categories",
+          "roles": ["SADM", "ADB", "ADSB"]
+        },
+        {
+          "label": "Types de mesures",
+          "route": "/mesures/types",
+          "roles": ["SADM", "ADB", "ADSB"]
+        },
+        {
+          "label": "Modèles vêtements",
+          "route": "/mesures/modeles",
+          "roles": ["SADM", "ADB", "ADSB"]
+        },
+        {
+          "label": "Prendre mesures",
+          "route": "/mesures/prendre",
+          "roles": ["SADM", "ADB", "ADS", "ADSB"]
+        }
+      ]
+    },
+    "reservations": {
+      "label": "Réservations",
+      "icon": "mdi-calendar-clock",
+      "route": "/reservations",
+      "roles": ["SADM", "ADB", "ADS", "ADSB"],
+      "children": [
+        {
+          "label": "Réservations du jour",
+          "route": "/reservations/aujourd-hui",
+          "roles": ["SADM", "ADB", "ADS", "ADSB"]
+        },
+        {
+          "label": "Retraits programmés",
+          "route": "/reservations/retraits",
+          "roles": ["SADM", "ADB", "ADS", "ADSB"]
+        }
+      ]
+    },
+    "finances": {
+      "label": "Finances",
+      "icon": "mdi-currency-eur",
+      "route": "/finances",
+      "roles": ["SADM", "ADB", "ADS", "ADSB"],
+      "children": [
+        {
+          "label": "Factures",
+          "route": "/finances/factures",
+          "roles": ["SADM", "ADS", "ADSB"]
+        },
+        {
+          "label": "Paiements",
+          "route": "/finances/paiements",
+          "roles": ["SADM", "ADB", "ADS", "ADSB"],
+          "children": [
+            {
+              "label": "Paiements factures",
+              "route": "/finances/paiements/factures",
+              "roles": ["SADM", "ADS", "ADSB"]
+            },
+            {
+              "label": "Paiements réservations",
+              "route": "/finances/paiements/reservations",
+              "roles": ["SADM", "ADB", "ADS", "ADSB"]
+            },
+            {
+              "label": "Ventes directes",
+              "route": "/finances/paiements/ventes",
+              "roles": ["SADM", "ADB", "ADSB"]
+            }
+          ]
+        },
+        {
+          "label": "Ventes boutique",
+          "route": "/finances/ventes",
+          "roles": ["SADM", "ADB", "ADSB"]
+        },
+        {
+          "label": "Abonnements",
+          "route": "/finances/abonnements",
+          "roles": ["SADM"]
+        },
+        {
+          "label": "Rapports",
+          "route": "/finances/rapports",
+          "roles": ["SADM", "ADB", "ADS", "ADSB"]
+        }
+      ]
+    },
+    "stocks": {
+      "label": "Stocks",
+      "icon": "mdi-package-variant",
+      "route": "/stocks",
+      "roles": ["SADM", "ADB", "ADSB"],
+      "children": [
+        {
+          "label": "Inventaire",
+          "route": "/stocks/inventaire",
+          "roles": ["SADM", "ADB", "ADSB"]
+        },
+        {
+          "label": "Mouvements",
+          "route": "/stocks/mouvements",
+          "roles": ["SADM", "ADB", "ADSB"]
+        },
+        {
+          "label": "Alertes stock",
+          "route": "/stocks/alertes",
+          "roles": ["SADM", "ADB", "ADSB"]
+        },
+        {
+          "label": "Fournisseurs",
+          "route": "/stocks/fournisseurs",
+          "roles": ["SADM"]
+        }
+      ]
+    },
+    "boutique": {
+      "label": "Boutique",
+      "icon": "mdi-store",
+      "route": "/boutique",
+      "roles": ["SADM", "ADB", "ADSB"],
+      "children": [
+        {
+          "label": "Ma boutique",
+          "route": "/boutique/profil",
+          "roles": ["SADM", "ADB", "ADSB"]
+        },
+        {
+          "label": "Catalogue vêtements",
+          "route": "/boutique/catalogue",
+          "roles": ["SADM", "ADB", "ADSB"]
+        },
+        {
+          "label": "Modèles disponibles",
+          "route": "/boutique/modeles",
+          "roles": ["SADM", "ADB", "ADSB"]
+        },
+        {
+          "label": "Caisses",
+          "route": "/boutique/caisses",
+          "roles": ["SADM", "ADB", "ADSB"]
+        },
+        {
+          "label": "Succursales",
+          "route": "/boutique/succursales",
+          "roles": ["SADM"]
+        },
+        {
+          "label": "Employés",
+          "route": "/boutique/employes",
+          "roles": ["SADM", "ADB", "ADSB"]
+        },
+        {
+          "label": "Paramètres",
+          "route": "/boutique/parametres",
+          "roles": ["SADM"]
+        }
+      ]
+    },
+    "statistiques": {
+      "label": "Statistiques",
+      "icon": "mdi-chart-line",
+      "route": "/statistiques",
+      "roles": ["SADM", "ADB", "ADS", "ADSB"],
+      "children": [
+        {
+          "label": "Dashboard avancé",
+          "route": "/statistiques/dashboard",
+          "roles": ["SADM", "ADB", "ADS", "ADSB"]
+        },
+        {
+          "label": "Revenus",
+          "route": "/statistiques/revenus",
+          "roles": ["SADM", "ADB", "ADS", "ADSB"]
+        },
+        {
+          "label": "Clients",
+          "route": "/statistiques/clients",
+          "roles": ["SADM", "ADB", "ADS", "ADSB"]
+        },
+        {
+          "label": "Performance",
+          "route": "/statistiques/performance",
+          "roles": ["SADM"]
+        },
+        {
+          "label": "Export données",
+          "route": "/statistiques/export",
+          "roles": ["SADM"]
+        }
+      ]
+    },
+    "notifications": {
+      "label": "Notifications",
+      "icon": "mdi-bell",
+      "route": "/notifications",
+      "roles": ["SADM", "ADB", "ADS", "ADSB"],
+      "children": [
+        {
+          "label": "Centre notifications",
+          "route": "/notifications",
+          "roles": ["SADM", "ADB", "ADS", "ADSB"]
+        },
+        {
+          "label": "Paramètres push",
+          "route": "/notifications/push",
+          "roles": ["SADM", "ADB", "ADSB"]
+        },
+        {
+          "label": "Templates email",
+          "route": "/notifications/templates",
+          "roles": ["SADM"]
+        },
+        {
+          "label": "Historique",
+          "route": "/notifications/historique",
+          "roles": ["SADM", "ADB", "ADS", "ADSB"]
+        }
+      ]
+    },
+    "parametres": {
+      "label": "Paramètres",
+      "icon": "mdi-cog",
+      "route": "/parametres",
+      "roles": ["SADM", "ADB", "ADS", "ADSB"],
+      "children": [
+        {
+          "label": "Profil utilisateur",
+          "route": "/parametres/profil",
+          "roles": ["SADM", "ADB", "ADS", "ADSB"]
+        },
+        {
+          "label": "Sécurité",
+          "route": "/parametres/securite",
+          "roles": ["SADM", "ADB", "ADS", "ADSB"]
+        },
+        {
+          "label": "Préférences",
+          "route": "/parametres/preferences",
+          "roles": ["SADM", "ADB", "ADS", "ADSB"]
+        },
+        {
+          "label": "API & Intégrations",
+          "route": "/parametres/api",
+          "roles": ["SADM"]
+        },
+        {
+          "label": "Sauvegarde",
+          "route": "/parametres/sauvegarde",
+          "roles": ["SADM"]
+        }
+      ]
+    }
+  },
+  "quickActions": [
+    {
+      "label": "Dashboard",
+      "icon": "mdi-view-dashboard",
+      "route": "/dashboard",
+      "roles": ["SADM", "ADB", "ADS", "ADSB"]
+    },
+    {
+      "label": "Clients",
+      "icon": "mdi-account-group",
+      "route": "/clients",
+      "roles": ["SADM", "ADB", "ADS", "ADSB"]
+    },
+    {
+      "label": "Réservations",
+      "icon": "mdi-calendar-clock",
+      "route": "/reservations",
+      "roles": ["SADM", "ADB", "ADS", "ADSB"]
+    },
+    {
+      "label": "Prendre mesures",
+      "icon": "mdi-ruler-square",
+      "route": "/finances/factures/nouvelle",
+      "roles": ["SADM", "ADS", "ADSB"]
+    },
+    {
+      "label": "Prendre mesures",
+      "icon": "mdi-ruler-square",
+      "route": "/mesures/prendre",
+      "roles": ["SADM", "ADB", "ADS", "ADSB"]
+    }
+  ],
+  "userMenu": [
+    {
+      "label": "Mon profil",
+      "icon": "mdi-account",
+      "route": "/parametres/profil"
+    },
+    {
+      "label": "Préférences",
+      "icon": "mdi-cog",
+      "route": "/parametres/preferences"
+    },
+    {
+      "label": "Aide",
+      "icon": "mdi-help-circle",
+      "route": "/aide"
+    },
+    {
+      "label": "Déconnexion",
+      "icon": "mdi-logout",
+      "action": "logout"
+    }
+  ],
+  "rolePermissions": {
+    "SADM": {
+      "label": "Super Administrateur",
+      "description": "Accès complet à toutes les fonctionnalités",
+      "scope": "enterprise",
+      "permissions": ["all"]
+    },
+    "ADB": {
+      "label": "Gérant boutique", 
+      "description": "Gestion boutique, réservations, ventes, clients",
+      "scope": "boutique",
+      "permissions": ["boutique", "reservations", "ventes", "clients", "mesures", "stocks"]
+    },
+    "ADS": {
+      "label": "Gérant succursale",
+      "description": "Gestion succursale, factures, clients, mesures",
+      "scope": "succursale", 
+      "permissions": ["factures", "clients", "mesures", "reservations"]
+    },
+    "ADSB": {
+      "label": "Gérant succursale et boutique",
+      "description": "Gestion complète succursale + boutique",
+      "scope": "succursale_boutique",
+      "permissions": ["boutique", "succursale", "factures", "reservations", "ventes", "clients", "mesures", "stocks"]
+    }
+  }
+}
