@@ -616,7 +616,7 @@ class ApiModeleBoutiqueController extends ApiInterface
             $modeleRepository->add($modele, true);
         }
 
-        return $this->responseData($modeleBoutique, 'group1', ['Content-Type' => 'application/json']);
+        return $this->responseData($modeleBoutique, 'group_modeleBoutique', ['Content-Type' => 'application/json']);
     }
 
     /**
