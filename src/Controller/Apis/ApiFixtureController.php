@@ -7,11 +7,15 @@ use App\Entity\ModeleBoutique;
 use App\Entity\Reservation;
 use App\Entity\LigneReservation;
 use App\Entity\PaiementReservation;
+use App\Entity\EntreStock;
+use App\Entity\LigneEntre;
 use App\Repository\ModeleRepository;
 use App\Repository\BoutiqueRepository;
 use App\Repository\ModeleBoutiqueRepository;
 use App\Repository\ClientRepository;
 use App\Repository\CaisseBoutiqueRepository;
+use App\Repository\EntreStockRepository;
+use App\Repository\LigneEntreRepository;
 use App\Service\Utils;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Response;
@@ -254,6 +258,118 @@ class ApiFixtureController extends ApiInterface
                 'message' => "$createdCount réservations créées avec succès",
                 'count' => $createdCount,
                 'reservations' => $createdReservations
+            ], 'group1', ['Content-Type' => 'application/json']);
+
+        } catch (\Exception $e) {
+            return $this->errorResponse(null, "Erreur lors de la création des fixtures: " . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Génère des entrées de stock de test
+     */
+    #[Route('/entrees-stock', methods: ['POST'])]
+    #[OA\Post(
+        path: "/api/fixture/entrees-stock",
+        summary: "Générer des entrées de stock de test",
+        description: "Crée automatiquement des entrées de stock avec leurs lignes pour le développement. Génère des mouvements d'entrée réalistes avec quantités aléatoires.",
+        tags: ['fixture']
+    )]
+    #[OA\Response(
+        response: 201,
+        description: "Fixtures créées avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "message", type: "string", example: "8 entrées de stock créées avec succès"),
+                new OA\Property(property: "count", type: "integer", example: 8),
+                new OA\Property(property: "entrees_stock", type: "array", items: new OA\Items(type: "object"))
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 500, description: "Erreur lors de la création")]
+    public function createEntreeStockFixtures(
+        BoutiqueRepository $boutiqueRepository,
+        ModeleBoutiqueRepository $modeleBoutiqueRepository,
+        ModeleRepository $modeleRepository,
+        EntreStockRepository $entreStockRepository,
+        LigneEntreRepository $ligneEntreRepository,
+        EntityManagerInterface $entityManager
+    ): Response {
+        try {
+            $boutiques = $boutiqueRepository->findAll();
+            $createdCount = 0;
+            $createdEntrees = [];
+
+            if (empty($boutiques)) {
+                return $this->errorResponse(null, "Aucune boutique trouvée pour créer les fixtures", 400);
+            }
+
+            // Créer 8 entrées de stock de test
+            for ($i = 0; $i < 8; $i++) {
+                $boutique = $boutiques[array_rand($boutiques)];
+                
+                // Récupérer des modèles disponibles pour cette boutique
+                $modeleBoutiques = $modeleBoutiqueRepository->findBy(['boutique' => $boutique]);
+                if (empty($modeleBoutiques)) continue;
+
+                $entityManager->beginTransaction();
+
+                try {
+                    // Créer l'entrée de stock
+                    $entreStock = new EntreStock();
+                    $entreStock->setBoutique($boutique);
+                    $entreStock->setType('Entree');
+                    $entreStock->setEntreprise($this->getUser()->getEntreprise());
+                    $entreStock->setCreatedBy($this->getUser());
+                    $entreStock->setUpdatedBy($this->getUser());
+                    $entreStock->setCreatedAtValue(new \DateTime());
+                    $entreStock->setUpdatedAt(new \DateTime());
+
+                    $entityManager->persist($entreStock);
+
+                    // Ajouter 2-5 lignes d'entrée
+                    $nbLignes = rand(2, 5);
+                    $totalQuantite = 0;
+                    
+                    for ($j = 0; $j < $nbLignes; $j++) {
+                        $modeleBoutique = $modeleBoutiques[array_rand($modeleBoutiques)];
+                        $quantite = rand(20, 100);
+                        $totalQuantite += $quantite;
+
+                        $ligneEntre = new LigneEntre();
+                        $ligneEntre->setQuantite($quantite);
+                        $ligneEntre->setModele($modeleBoutique);
+                        $ligneEntre->setEntreStock($entreStock);
+
+                        $entityManager->persist($ligneEntre);
+                        $entreStock->addLigneEntre($ligneEntre);
+
+                        // Mettre à jour les stocks
+                        $modeleBoutique->setQuantite($modeleBoutique->getQuantite() + $quantite);
+                        $modele = $modeleBoutique->getModele();
+                        $modele->setQuantiteGlobale($modele->getQuantiteGlobale() + $quantite);
+                    }
+
+                    $entreStock->setQuantite($totalQuantite);
+
+                    $entityManager->flush();
+                    $entityManager->commit();
+
+                    $createdEntrees[] = $entreStock;
+                    $createdCount++;
+
+                } catch (\Exception $e) {
+                    $entityManager->rollback();
+                    continue;
+                }
+            }
+
+            return $this->responseData([
+                'message' => "$createdCount entrées de stock créées avec succès",
+                'count' => $createdCount,
+                'entrees_stock' => $createdEntrees
             ], 'group1', ['Content-Type' => 'application/json']);
 
         } catch (\Exception $e) {
