@@ -16,19 +16,19 @@ class Client
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-     #[Groups(["group1", "group_type","group_details","group_reservation"])]
+     #[Groups(["group1", "group_type","group_details","group_reservation","group_modeleBoutique"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255, nullable: true,unique:true)]
-     #[Groups(["group1", "group_type","group_details","group_reservation"])]
+     #[Groups(["group1", "group_type","group_details","group_reservation","group_modeleBoutique"])]
     private ?string $numero = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-     #[Groups(["group1", "group_type","group_details","group_reservation"])]
+     #[Groups(["group1", "group_type","group_details","group_reservation","group_modeleBoutique"])]
     private ?string $nom = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-     #[Groups(["group1", "group_type","group_details","group_reservation"])]
+     #[Groups(["group1", "group_type","group_details","group_reservation","group_modeleBoutique"])]
     private ?string $prenom = null;
 
 

@@ -24,7 +24,7 @@ class LigneReservation
     private ?int $quantite = null;
 
     #[ORM\ManyToOne(inversedBy: 'ligneReservations')]
-    #[Groups(["group_details"])]
+    #[Groups(["group_details","group_modeleBoutique"])]
     private ?Reservation $reservation = null;
 
     #[ORM\ManyToOne(inversedBy: 'ligneReservations')]
