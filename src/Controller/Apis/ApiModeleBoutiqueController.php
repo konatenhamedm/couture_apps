@@ -300,7 +300,7 @@ class ApiModeleBoutiqueController extends ApiInterface
                 ['entreprise' => $this->getUser()->getEntreprise()],
                 ['id' => 'DESC']
             ));
-            $response = $this->responseData($modeleBoutiques, 'group1', ['Content-Type' => 'application/json']);
+            $response = $this->responseData($modeleBoutiques, "group_modeleBoutique", ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des modèles de boutique");
@@ -359,7 +359,7 @@ class ApiModeleBoutiqueController extends ApiInterface
                 ['id' => 'DESC']
             ));
 
-            $response = $this->responseData($modeles, 'group1', ['Content-Type' => 'application/json']);
+            $response = $this->responseData($modeles, "group_modeleBoutique", ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des modèles de la boutique");
@@ -424,7 +424,7 @@ class ApiModeleBoutiqueController extends ApiInterface
                 ));
             }
 
-            $response = $this->responseData($modeleBoutiques, 'group1', ['Content-Type' => 'application/json']);
+            $response = $this->responseData($modeleBoutiques, "group_modeleBoutique", ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des modèles de boutique");
@@ -736,7 +736,7 @@ class ApiModeleBoutiqueController extends ApiInterface
                     $modeleBoutiqueRepository->add($modeleBoutique, true);
                 }
 
-                $response = $this->responseData($modeleBoutique, 'group1', ['Content-Type' => 'application/json']);
+                $response = $this->responseData($modeleBoutique, "group_modeleBoutique", ['Content-Type' => 'application/json']);
             } else {
                 $this->setMessage("Cette ressource est inexistante");
                 $this->setStatusCode(404);
