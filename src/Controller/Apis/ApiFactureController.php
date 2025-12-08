@@ -326,6 +326,11 @@ class ApiFactureController extends ApiInterface
                         description: "Photo du tissu/pagne pour la mesure 0 (optionnel)"
                     ),
                     new OA\Property(
+                        property: "nom",
+                        type: "string",
+                        description: "nom du tenant de la mesure"
+                    ),
+                    new OA\Property(
                         property: "mesures[0][photoModele]",
                         type: "string",
                         format: "binary",
@@ -425,6 +430,7 @@ class ApiFactureController extends ApiInterface
                 $mesure->setTypeMesure($typeMesureRepository->find($ligne['typeMesureId']));
                 $mesure->setMontant($ligne['montant']);
                 $mesure->setRemise($ligne['remise'] ?? 0);
+                $mesure->setNom($ligne['nom'] ?? "");
 
                 // Upload des photos (pagne et modèle)
                 if (isset($uploadedFiles[$index])) {
