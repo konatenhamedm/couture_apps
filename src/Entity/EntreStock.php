@@ -43,7 +43,7 @@ class EntreStock
     #[ORM\Column(length: 255)]
     private ?string $type = null;
 
-    #[ORM\Column(length: 50, options: ["default" => "EN_ATTENTE"])]
+    #[ORM\Column(length: 50, options: ["default" => "EN_ATTENTE"],nullable: true)]
     #[Groups(["group1", "group_type", "group_ligne", "group_details","group_modeleBoutique"])]
     private ?string $statut = 'EN_ATTENTE';
 
