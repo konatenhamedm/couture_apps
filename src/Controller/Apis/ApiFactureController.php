@@ -17,6 +17,7 @@ use App\Repository\CategorieFactureRepository;
 use App\Repository\ClientRepository;
 use App\Repository\EntrepriseRepository;
 use App\Repository\FactureRepository;
+use App\Repository\SurccursaleRepository;
 use App\Repository\TypeMesureRepository;
 use App\Repository\TypeUserRepository;
 use App\Repository\UserRepository;
@@ -378,7 +379,8 @@ class ApiFactureController extends ApiInterface
         CategorieMesureRepository $categorieMesureRepository,
         FactureRepository $factureRepository,
         EntrepriseRepository $entrepriseRepository,
-        EntityManagerInterface $entityManager
+        EntityManagerInterface $entityManager,
+        SurccursaleRepository $surccursaleRepository
     ): Response {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
@@ -394,6 +396,7 @@ class ApiFactureController extends ApiInterface
         $facture->setClient($clientRepository->find($request->get('clientId')));
         $facture->setDateDepot(new \DateTime());
         $facture->setAvance($request->get('avance'));
+        $facture->setSuccursale($surccursaleRepository->find($request->get('succursaleId')));
 
         // Gestion de la signature
         $uploadedFichierSignature = $request->files->get('signature');

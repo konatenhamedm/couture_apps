@@ -71,6 +71,10 @@ class Facture
     #[ORM\ManyToOne(inversedBy: 'factures')]
     private ?Entreprise $entreprise = null;
 
+    #[ORM\ManyToOne(inversedBy: 'factures')]
+    #[Groups(["group1", "group_type"])]
+    private ?Surccursale $succursale = null;
+
 
 
     public function __construct()
@@ -248,6 +252,18 @@ class Facture
     public function setEntreprise(?Entreprise $entreprise): static
     {
         $this->entreprise = $entreprise;
+
+        return $this;
+    }
+
+    public function getSuccursale(): ?Surccursale
+    {
+        return $this->succursale;
+    }
+
+    public function setSuccursale(?Surccursale $succursale): static
+    {
+        $this->succursale = $succursale;
 
         return $this;
     }

@@ -47,11 +47,18 @@ class Surccursale
     #[ORM\OneToMany(targetEntity: CaisseSuccursale::class, mappedBy: 'succursale')]
     private Collection $caisseSuccursales;
 
+    /**
+     * @var Collection<int, Facture>
+     */
+    #[ORM\OneToMany(targetEntity: Facture::class, mappedBy: 'succursale')]
+    private Collection $factures;
+
     public function __construct()
     {
         $this->users = new ArrayCollection();
         $this->clients = new ArrayCollection();
         $this->caisseSuccursales = new ArrayCollection();
+        $this->factures = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -181,6 +188,36 @@ class Surccursale
             // set the owning side to null (unless already changed)
             if ($caisseSuccursale->getSuccursale() === $this) {
                 $caisseSuccursale->setSuccursale(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Facture>
+     */
+    public function getFactures(): Collection
+    {
+        return $this->factures;
+    }
+
+    public function addFacture(Facture $facture): static
+    {
+        if (!$this->factures->contains($facture)) {
+            $this->factures->add($facture);
+            $facture->setSuccursale($this);
+        }
+
+        return $this;
+    }
+
+    public function removeFacture(Facture $facture): static
+    {
+        if ($this->factures->removeElement($facture)) {
+            // set the owning side to null (unless already changed)
+            if ($facture->getSuccursale() === $this) {
+                $facture->setSuccursale(null);
             }
         }
 
