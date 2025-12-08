@@ -22,7 +22,7 @@ class LigneEntre
     private ?int $quantite = null;
 
     #[ORM\ManyToOne(inversedBy: 'ligneEntres')]
-     #[Groups(["group1", "group_type","group_ligne","group_modeleBoutique"])]
+     #[Groups(["group1", "group_type","group_ligne"])]
     private ?ModeleBoutique $modele = null;
 
     #[ORM\ManyToOne(inversedBy: 'ligneEntres',cascade: ['persist'])]
