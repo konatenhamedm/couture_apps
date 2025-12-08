@@ -347,14 +347,14 @@ class ApiModeleBoutiqueController extends ApiInterface
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 404, description: "Boutique non trouvée")]
-    public function indexByBoutique(ModeleRepository $modeleRepository, Boutique $boutique, BoutiqueRepository $boutiqueRepository): Response
+    public function indexByBoutique(ModeleBoutiqueRepository $modeleBoutiqueRepository, Boutique $boutique, BoutiqueRepository $boutiqueRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         try {
-            $modeles = $this->paginationService->paginate($modeleRepository->findBy(
+            $modeles = $this->paginationService->paginate($modeleBoutiqueRepository->findBy(
                 ['boutique' => $boutique->getId()],
                 ['id' => 'DESC']
             ));
