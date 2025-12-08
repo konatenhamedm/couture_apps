@@ -14,15 +14,15 @@ class EntreStock
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-     #[Groups(["group1", "group_type","group_ligne","group_details"])]
+     #[Groups(["group1", "group_type","group_ligne","group_details","group_modeleBoutique"])]
     private ?int $id = null;
 
     #[ORM\Column(nullable: true)]
-     #[Groups(["group1", "group_type","group_ligne","group_details"])]
+     #[Groups(["group1", "group_type","group_ligne","group_details","group_modeleBoutique"])]
     private ?\DateTime $date = null;
 
     #[ORM\Column]
-     #[Groups(["group1", "group_type","group_ligne","group_details"])]
+     #[Groups(["group1", "group_type","group_ligne","group_details","group_modeleBoutique"])]
     private ?int $quantite = null;
 
     #[ORM\ManyToOne(inversedBy: 'entreStocks')]
@@ -42,6 +42,14 @@ class EntreStock
 
     #[ORM\Column(length: 255)]
     private ?string $type = null;
+
+    #[ORM\Column(length: 50, options: ["default" => "EN_ATTENTE"])]
+    #[Groups(["group1", "group_type", "group_ligne", "group_details","group_modeleBoutique"])]
+    private ?string $statut = 'EN_ATTENTE';
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(["group1", "group_type","group_modeleBoutique"])]
+    private ?string $commentaire = null;
 
     public function __construct()
     {
@@ -140,6 +148,30 @@ class EntreStock
     public function setType(string $type): static
     {
         $this->type = $type;
+
+        return $this;
+    }
+
+    public function getStatut(): ?string
+    {
+        return $this->statut;
+    }
+
+    public function setStatut(string $statut): static
+    {
+        $this->statut = $statut;
+
+        return $this;
+    }
+
+    public function getCommentaire(): ?string
+    {
+        return $this->commentaire;
+    }
+
+    public function setCommentaire(?string $commentaire): static
+    {
+        $this->commentaire = $commentaire;
 
         return $this;
     }

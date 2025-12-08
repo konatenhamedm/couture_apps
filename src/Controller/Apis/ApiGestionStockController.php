@@ -526,6 +526,7 @@ class ApiGestionStockController extends ApiInterface
         $entreStock = new EntreStock();
         $entreStock->setBoutique($boutique);
         $entreStock->setType('Entree');
+        $entreStock->setStatut('EN_ATTENTE'); // Statut initial
         $entreStock->setEntreprise($this->getUser()->getEntreprise());
         $entreStock->setCreatedBy($this->getUser());
         $entreStock->setUpdatedBy($this->getUser());
@@ -560,9 +561,8 @@ class ApiGestionStockController extends ApiInterface
                 $entityManager->persist($ligneEntre);
                 $entreStock->addLigneEntre($ligneEntre);
 
-                // Mise à jour des quantités (pas de flush)
-                $modeleBoutique->setQuantite($modeleBoutique->getQuantite() + $quantite);
-                $modele->setQuantiteGlobale($modele->getQuantiteGlobale() + $quantite);
+                // Ne pas impacter le stock lors de la création (statut EN_ATTENTE)
+                // Les quantités seront mises à jour lors de la confirmation
             }
 
             $entreStock->setQuantite($totalQuantite);
@@ -922,6 +922,7 @@ class ApiGestionStockController extends ApiInterface
         $entreStock = new EntreStock();
         $entreStock->setBoutique($boutique);
         $entreStock->setType('Sortie');
+        $entreStock->setStatut('EN_ATTENTE'); // Statut initial
         $entreStock->setEntreprise($this->getUser()->getEntreprise());
         $entreStock->setCreatedBy($this->getUser());
         $entreStock->setUpdatedBy($this->getUser());
@@ -945,9 +946,8 @@ class ApiGestionStockController extends ApiInterface
                 $modele = $modeleBoutique->getModele();
                 $quantite = (int)$ligne['quantite'];
 
-                // Mise à jour des quantités (déjà validées)
-                $modeleBoutique->setQuantite($modeleBoutique->getQuantite() - $quantite);
-                $modele->setQuantiteGlobale($modele->getQuantiteGlobale() - $quantite);
+                // Ne pas impacter le stock lors de la création (statut EN_ATTENTE)
+                // Les quantités seront mises à jour lors de la confirmation
                 $totalQuantite += $quantite;
 
                 // Création de la ligne de sortie
@@ -974,6 +974,188 @@ class ApiGestionStockController extends ApiInterface
                 'status' => 'ERROR',
                 'message' => 'Erreur lors de la création de la sortie: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Confirmer une entrée de stock (impact sur les quantités)
+     */
+    #[Route('/confirmer/{id}', methods: ['PUT'])]
+    #[OA\Put(
+        path: "/api/stock/confirmer/{id}",
+        summary: "Confirmer une entrée/sortie de stock",
+        description: "Permet au gérant de boutique de confirmer une entrée ou sortie de stock créée par le super admin. Cette confirmation impacte réellement les quantités en stock.",
+        tags: ['stock']
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: "ID de l'entrée/sortie de stock à confirmer",
+        schema: new OA\Schema(type: 'integer', example: 1)
+    )]
+    #[OA\RequestBody(
+        required: false,
+        description: "Commentaire optionnel",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "commentaire", type: "string", example: "Colis reçu en bon état")
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Mouvement de stock confirmé avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "id", type: "integer", example: 1),
+                new OA\Property(property: "statut", type: "string", example: "CONFIRME"),
+                new OA\Property(property: "message", type: "string", example: "Mouvement de stock confirmé avec succès")
+            ]
+        )
+    )]
+    public function confirmer(
+        int $id,
+        Request $request,
+        EntreStockRepository $entreStockRepository,
+        EntityManagerInterface $entityManager
+    ): Response {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+            return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $entreStock = $entreStockRepository->find($id);
+
+        if (!$entreStock) {
+            return $this->json(['status' => 'ERROR', 'message' => 'Mouvement de stock introuvable'], 404);
+        }
+
+        if ($entreStock->getStatut() !== 'EN_ATTENTE') {
+            return $this->json(['status' => 'ERROR', 'message' => 'Ce mouvement a déjà été traité'], 400);
+        }
+
+        $entityManager->beginTransaction();
+
+        try {
+            // Impacter les stocks selon le type
+            foreach ($entreStock->getLigneEntres() as $ligne) {
+                $modeleBoutique = $ligne->getModele();
+                $modele = $modeleBoutique->getModele();
+                $quantite = $ligne->getQuantite();
+
+                if ($entreStock->getType() === 'Entree') {
+                    $modeleBoutique->setQuantite($modeleBoutique->getQuantite() + $quantite);
+                    $modele->setQuantiteGlobale($modele->getQuantiteGlobale() + $quantite);
+                } else { // Sortie
+                    $modeleBoutique->setQuantite($modeleBoutique->getQuantite() - $quantite);
+                    $modele->setQuantiteGlobale($modele->getQuantiteGlobale() - $quantite);
+                }
+            }
+
+            $entreStock->setStatut('CONFIRME');
+            $entreStock->setCommentaire($data['commentaire'] ?? null);
+            $entreStock->setUpdatedBy($this->getUser());
+            $entreStock->setUpdatedAt(new \DateTime());
+
+            $entityManager->flush();
+            $entityManager->commit();
+
+            return $this->json([
+                'status' => 'SUCCESS',
+                'message' => 'Mouvement de stock confirmé avec succès',
+                'data' => ['id' => $entreStock->getId(), 'statut' => $entreStock->getStatut()]
+            ]);
+
+        } catch (\Exception $e) {
+            $entityManager->rollback();
+            return $this->json(['status' => 'ERROR', 'message' => 'Erreur lors de la confirmation: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Rejeter une entrée/sortie de stock
+     */
+    #[Route('/rejeter/{id}', methods: ['PUT'])]
+    #[OA\Put(
+        path: "/api/stock/rejeter/{id}",
+        summary: "Rejeter une entrée/sortie de stock",
+        description: "Permet au gérant de boutique de rejeter une entrée ou sortie de stock créée par le super admin. Aucun impact sur les stocks.",
+        tags: ['stock']
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: "ID de l'entrée/sortie de stock à rejeter",
+        schema: new OA\Schema(type: 'integer', example: 1)
+    )]
+    #[OA\RequestBody(
+        required: true,
+        description: "Raison du rejet",
+        content: new OA\JsonContent(
+            type: "object",
+            required: ["commentaire"],
+            properties: [
+                new OA\Property(property: "commentaire", type: "string", example: "Colis endommagé lors du transport")
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Mouvement de stock rejeté avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "id", type: "integer", example: 1),
+                new OA\Property(property: "statut", type: "string", example: "REJETE"),
+                new OA\Property(property: "message", type: "string", example: "Mouvement de stock rejeté")
+            ]
+        )
+    )]
+    public function rejeter(
+        int $id,
+        Request $request,
+        EntreStockRepository $entreStockRepository,
+        EntityManagerInterface $entityManager
+    ): Response {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+            return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $entreStock = $entreStockRepository->find($id);
+
+        if (!$entreStock) {
+            return $this->json(['status' => 'ERROR', 'message' => 'Mouvement de stock introuvable'], 404);
+        }
+
+        if ($entreStock->getStatut() !== 'EN_ATTENTE') {
+            return $this->json(['status' => 'ERROR', 'message' => 'Ce mouvement a déjà été traité'], 400);
+        }
+
+        if (empty($data['commentaire'])) {
+            return $this->json(['status' => 'ERROR', 'message' => 'Un commentaire est requis pour le rejet'], 400);
+        }
+
+        try {
+            $entreStock->setStatut('REJETE');
+            $entreStock->setCommentaire($data['commentaire']);
+            $entreStock->setUpdatedBy($this->getUser());
+            $entreStock->setUpdatedAt(new \DateTime());
+
+            $entityManager->flush();
+
+            return $this->json([
+                'status' => 'SUCCESS',
+                'message' => 'Mouvement de stock rejeté',
+                'data' => ['id' => $entreStock->getId(), 'statut' => $entreStock->getStatut()]
+            ]);
+
+        } catch (\Exception $e) {
+            return $this->json(['status' => 'ERROR', 'message' => 'Erreur lors du rejet: ' . $e->getMessage()], 500);
         }
     }
 }
