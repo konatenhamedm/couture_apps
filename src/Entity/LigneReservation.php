@@ -20,7 +20,7 @@ class LigneReservation
 
 
     #[ORM\Column]
-     #[Groups(["group1","group_details","group_reservation"])]
+     #[Groups(["group1","group_details","group_reservation","group_modeleBoutique"])]
     private ?int $quantite = null;
 
     #[ORM\ManyToOne(inversedBy: 'ligneReservations')]
@@ -31,7 +31,7 @@ class LigneReservation
     private ?ModeleBoutique $modele = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(["group1","group_details"])]
+    #[Groups(["group1","group_details","group_modeleBoutique"])]
     private ?string $avanceModele = null;
 
     public function getId(): ?int

@@ -18,19 +18,19 @@ class ModeleBoutique
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-     #[Groups(["group1","group_ligne","group_details"])]
+     #[Groups(["group1","group_ligne","group_details","group_modeleBoutique"])]
     private ?int $id = null;
 
     #[ORM\Column]
-     #[Groups(["group1","group_ligne","group_details"])]
+     #[Groups(["group1","group_ligne","group_details","group_modeleBoutique"])]
     private ?int $quantite = null;
 
     #[ORM\Column(length: 255)]
-     #[Groups(["group1","group_ligne","group_details"])]
+     #[Groups(["group1","group_ligne","group_details","group_modeleBoutique"])]
     private ?string $prix = null;
 
     #[ORM\ManyToOne(inversedBy: 'modeleBoutiques')]
-     #[Groups(["group1","group_details"])]
+     #[Groups(["group1","group_details","group_modeleBoutique"])]
     private ?Modele $modele = null;
 
     #[ORM\ManyToOne(inversedBy: 'modeleBoutiques')]
@@ -40,25 +40,25 @@ class ModeleBoutique
      * @var Collection<int, LigneEntre>
      */
     #[ORM\OneToMany(targetEntity: LigneEntre::class, mappedBy: 'modele')]
-    #[Groups(["group_details","group1"])]
+    #[Groups(["group_details","group_modeleBoutique"])]
     private Collection $ligneEntres;
 
     /**
      * @var Collection<int, LigneReservation>
      */
     #[ORM\OneToMany(targetEntity: LigneReservation::class, mappedBy: 'modele')]
-    #[Groups(["group_details","group1"])]
+    #[Groups(["group_details","group_modeleBoutique"])]
     private Collection $ligneReservations;
 
     /**
      * @var Collection<int, PaiementBoutiqueLigne>
      */
     #[ORM\OneToMany(targetEntity: PaiementBoutiqueLigne::class, mappedBy: 'modeleBoutique')]
-    #[Groups(["group_details","group1"]) ]
+    #[Groups(["group_details","group_modeleBoutique"]) ]
     private Collection $paiementBoutiqueLignes;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["group1","group_details"]) ]
+    #[Groups(["group1","group_details","group_modeleBoutique"]) ]
     private ?string $taille = null;
 
 
