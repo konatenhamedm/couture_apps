@@ -108,10 +108,10 @@ class ApiCategorieMesureController extends ApiInterface
     #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
     public function indexAll(CategorieMesureRepository $moduleRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        /* if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
-
+ */
         try {
             $typeMesures = $this->paginationService->paginate(
                 $moduleRepository->findBy(
@@ -170,9 +170,9 @@ class ApiCategorieMesureController extends ApiInterface
     #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
     public function getOne(?CategorieMesure $categorieMesure): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        /* if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
-        }
+        } */
 
         try {
             if ($categorieMesure) {
@@ -243,9 +243,9 @@ class ApiCategorieMesureController extends ApiInterface
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     public function create(Request $request, CategorieMesureRepository $moduleRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+       /*  if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
-        }
+        } */
 
         $data = json_decode($request->getContent(), true);
         $categorieMesure = new CategorieMesure();

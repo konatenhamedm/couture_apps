@@ -67,6 +67,7 @@ class Mesure
     private ?Fichier $photoPagne = null;
 
     #[ORM\ManyToOne(inversedBy: 'mesures')]
+    #[Group(["group1"])]
     private ?TypeMesure $typeMesure = null;
 
 
