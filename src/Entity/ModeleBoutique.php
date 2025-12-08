@@ -40,21 +40,21 @@ class ModeleBoutique
      * @var Collection<int, LigneEntre>
      */
     #[ORM\OneToMany(targetEntity: LigneEntre::class, mappedBy: 'modele')]
-    #[Groups(["group_details"])]
+    #[Groups(["group_details","group1"])]
     private Collection $ligneEntres;
 
     /**
      * @var Collection<int, LigneReservation>
      */
     #[ORM\OneToMany(targetEntity: LigneReservation::class, mappedBy: 'modele')]
-    #[Groups(["group_details"])]
+    #[Groups(["group_details","group1"])]
     private Collection $ligneReservations;
 
     /**
      * @var Collection<int, PaiementBoutiqueLigne>
      */
     #[ORM\OneToMany(targetEntity: PaiementBoutiqueLigne::class, mappedBy: 'modeleBoutique')]
-    #[Groups(["group_details"]) ]
+    #[Groups(["group_details","group1"]) ]
     private Collection $paiementBoutiqueLignes;
 
     #[ORM\Column(length: 255)]
