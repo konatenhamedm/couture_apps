@@ -72,7 +72,7 @@ class ApiVenteController extends AbstractController
                     'ligneVentes' => $paiement->getPaiementBoutiqueLignes()->map(function($ligne) {
                         return [
                             'id' => $ligne->getId(),
-                            'produit' => $ligne->getModeleBoutique()?->getLibelle() ?? 'Produit',
+                            'produit' => 'Produit ' . $ligne->getId(),
                             'quantite' => $ligne->getQuantite() ?? 1,
                             'prixUnitaire' => floatval($ligne->getMontant() ?? 0),
                             'total' => floatval($ligne->getMontant() ?? 0)
@@ -183,7 +183,7 @@ class ApiVenteController extends AbstractController
                 'ligneVentes' => $paiement->getPaiementBoutiqueLignes()->map(function($ligne) {
                     return [
                         'id' => $ligne->getId(),
-                        'produit' => $ligne->getModeleBoutique()?->getLibelle() ?? 'Produit',
+                        'produit' => 'Produit ' . $ligne->getId(),
                         'quantite' => $ligne->getQuantite() ?? 1,
                         'prixUnitaire' => floatval($ligne->getMontant() ?? 0),
                         'total' => floatval($ligne->getMontant() ?? 0)
