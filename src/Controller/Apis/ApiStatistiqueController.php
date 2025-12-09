@@ -215,7 +215,7 @@ class ApiStatistiqueController extends ApiInterface
         path: "/api/statistique/ateliya/dashboard",
         summary: "Dashboard Ateliya pour entreprise",
         description: "Retourne toutes les statistiques nécessaires pour le dashboard Ateliya d'une entreprise avec filtres avancés (jour, mois, année, période).",
-        tags: ['Statistiques Ateliya']
+        tags: ['Statistiques']
     )]
     #[OA\RequestBody(
         required: false,
@@ -333,7 +333,7 @@ class ApiStatistiqueController extends ApiInterface
         path: "/api/statistique/ateliya/boutique/{id}",
         summary: "Dashboard Ateliya pour boutique",
         description: "Retourne toutes les statistiques nécessaires pour le dashboard Ateliya d'une boutique spécifique avec filtres avancés.",
-        tags: ['Statistiques Ateliya']
+        tags: ['Statistiques']
     )]
     #[OA\Parameter(
         name: 'id',
