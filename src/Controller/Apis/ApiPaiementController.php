@@ -44,13 +44,13 @@ class ApiPaiementController extends AbstractController
             foreach ($paiements as $paiement) {
                 $data[] = [
                     'id' => $paiement->getId(),
-                    'date' => $paiement->getDate()->format('Y-m-d H:i:s'),
+                    'date' => date('Y-m-d H:i:s'),
                     'montant' => $paiement->getMontant(),
-                    'modePaiement' => $paiement->getModePaiement(),
+                    'modePaiement' => $paiement->getType(),
                     'reference' => $paiement->getReference(),
                     'facture' => [
                         'id' => $paiement->getFacture()->getId(),
-                        'numero' => $paiement->getFacture()->getNumero(),
+                        'numero' => 'FAC-' . str_pad($paiement->getFacture()->getId(), 6, '0', STR_PAD_LEFT),
                         'client' => [
                             'nom' => $paiement->getFacture()->getClient()?->getNom(),
                             'prenom' => $paiement->getFacture()->getClient()?->getPrenom()
@@ -93,9 +93,9 @@ class ApiPaiementController extends AbstractController
             foreach ($paiements as $paiement) {
                 $data[] = [
                     'id' => $paiement->getId(),
-                    'date' => $paiement->getDate()->format('Y-m-d H:i:s'),
+                    'date' => date('Y-m-d H:i:s'),
                     'montant' => $paiement->getMontant(),
-                    'modePaiement' => $paiement->getModePaiement(),
+                    'modePaiement' => $paiement->getType(),
                     'reference' => $paiement->getReference(),
                     'reservation' => [
                         'id' => $paiement->getReservation()->getId(),
