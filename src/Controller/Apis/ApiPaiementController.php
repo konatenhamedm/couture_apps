@@ -140,6 +140,34 @@ class ApiPaiementController extends AbstractController
 
     private function generatePaiementsFactureData(): array
     {
+        // Pour intégrer avec vos vraies données, remplacez par :
+        /*
+        $paiements = $this->entityManager
+            ->getRepository(PaiementFacture::class)
+            ->findBy([], ['date' => 'DESC'], 20);
+        
+        $data = [];
+        foreach ($paiements as $paiement) {
+            $data[] = [
+                'id' => $paiement->getId(),
+                'date' => $paiement->getDate()?->format('Y-m-d H:i:s'),
+                'montant' => $paiement->getMontant(),
+                'modePaiement' => $paiement->getModePaiement(),
+                'reference' => $paiement->getReference(),
+                'facture' => [
+                    'id' => $paiement->getFacture()->getId(),
+                    'numero' => 'FAC-' . str_pad($paiement->getFacture()->getId(), 6, '0', STR_PAD_LEFT),
+                    'client' => [
+                        'nom' => $paiement->getFacture()->getClient()?->getNom(),
+                        'prenom' => $paiement->getFacture()->getClient()?->getPrenom()
+                    ]
+                ]
+            ];
+        }
+        return $data;
+        */
+        
+        // Données simulées temporaires
         $data = [];
         $clients = ['Aminata Diallo', 'Mamadou Sow', 'Fatou Ndiaye', 'Ousmane Ba'];
         $modes = ['Espèces', 'Mobile Money', 'Carte bancaire', 'Virement'];
