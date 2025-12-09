@@ -680,7 +680,7 @@ class ApiUserController extends ApiInterface
         return $response;
     }
 
-    #[Route('/update/membre/{id}', methods: ['PUT'])]
+    #[Route('/update/membre/{id}', methods: ['PUT','POST'])]
     #[OA\Put(
         path: "/api/user/update/membre/{id}",
         summary: "Mettre à jour un membre de l'entreprise",
