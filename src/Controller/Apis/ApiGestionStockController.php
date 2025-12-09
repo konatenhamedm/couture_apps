@@ -61,7 +61,7 @@ class ApiGestionStockController extends ApiInterface
                     new OA\Property(property: "statut", type: "string", example: "EN_ATTENTE"),
                     new OA\Property(property: "commentaire", type: "string", nullable: true),
                     new OA\Property(property: "boutique", type: "object", description: "Boutique"),
-                    new OA\Property(property: "ligneEntres", type: "array", description: "Lignes détaillées")
+                    new OA\Property(property: "ligneEntres", type: "array", description: "Lignes détaillées", items: new OA\Items(type: "object"))
                 ]
             )
         )
