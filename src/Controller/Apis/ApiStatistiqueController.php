@@ -308,6 +308,7 @@ class ApiStatistiqueController extends ApiInterface
             ]
         )
     )]
+    #[OA\Tag(name: 'Statistiques')]
     public function ateliyaDashboard(Request $request): Response
     {
         try {
@@ -354,6 +355,7 @@ class ApiStatistiqueController extends ApiInterface
             ]
         )
     )]
+    #[OA\Tag(name: 'Statistiques')]
     public function ateliyaBoutiqueDashboard(int $id, Request $request): Response
     {
         try {
