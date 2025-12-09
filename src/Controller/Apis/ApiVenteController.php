@@ -2,11 +2,13 @@
 
 namespace App\Controller\Apis;
 
-use App\Entity\Vente;
-use App\Entity\LigneVente;
-use App\Repository\VenteRepository;
+use App\Entity\PaiementBoutique;
+use App\Entity\PaiementFacture;
+use App\Entity\PaiementReservation;
+use App\Repository\PaiementBoutiqueRepository;
+use App\Repository\PaiementFactureRepository;
+use App\Repository\PaiementReservationRepository;
 use App\Repository\BoutiqueRepository;
-use App\Repository\ClientRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -36,7 +38,9 @@ class ApiVenteController extends AbstractController
     )]
     public function getVentesByBoutique(
         int $id,
-        VenteRepository $venteRepository,
+        PaiementBoutiqueRepository $paiementBoutiqueRepository,
+        PaiementFactureRepository $paiementFactureRepository,
+        PaiementReservationRepository $paiementReservationRepository,
         BoutiqueRepository $boutiqueRepository
     ): Response {
         try {
@@ -45,28 +49,33 @@ class ApiVenteController extends AbstractController
                 return $this->json(['success' => false, 'message' => 'Boutique non trouvée'], 404);
             }
 
-            $ventes = $venteRepository->findBy(['boutique' => $boutique], ['date' => 'DESC']);
+            // Récupération de tous les paiements (ventes)
+            $paiementsBoutique = $paiementBoutiqueRepository->findBy(['boutique' => $boutique], ['dateCreation' => 'DESC'], 20);
+            $paiementsFacture = $paiementFactureRepository->findBy([], ['dateCreation' => 'DESC'], 10);
+            $paiementsReservation = $paiementReservationRepository->findBy([], ['dateCreation' => 'DESC'], 10);
             
             $data = [];
-            foreach ($ventes as $vente) {
+            
+            // Paiements boutique (ventes directes)
+            foreach ($paiementsBoutique as $paiement) {
                 $data[] = [
-                    'id' => $vente->getId(),
-                    'numero' => $vente->getNumero(),
-                    'date' => $vente->getDate()->format('Y-m-d H:i:s'),
-                    'montant' => $vente->getMontant(),
-                    'modePaiement' => $vente->getModePaiement(),
-                    'client' => $vente->getClient() ? [
-                        'id' => $vente->getClient()->getId(),
-                        'nom' => $vente->getClient()->getNom(),
-                        'prenom' => $vente->getClient()->getPrenom()
+                    'id' => $paiement->getId(),
+                    'numero' => 'VTE-' . str_pad($paiement->getId(), 6, '0', STR_PAD_LEFT),
+                    'date' => $paiement->getDateCreation()?->format('Y-m-d H:i:s') ?? date('Y-m-d H:i:s'),
+                    'montant' => floatval($paiement->getMontant()),
+                    'modePaiement' => $paiement->getType() ?? 'Espèces',
+                    'client' => $paiement->getClient() ? [
+                        'id' => $paiement->getClient()->getId(),
+                        'nom' => $paiement->getClient()->getNom(),
+                        'prenom' => $paiement->getClient()->getPrenom()
                     ] : null,
-                    'ligneVentes' => $vente->getLigneVentes()->map(function($ligne) {
+                    'ligneVentes' => $paiement->getPaiementBoutiqueLignes()->map(function($ligne) {
                         return [
                             'id' => $ligne->getId(),
-                            'produit' => $ligne->getProduit(),
-                            'quantite' => $ligne->getQuantite(),
-                            'prixUnitaire' => $ligne->getPrixUnitaire(),
-                            'total' => $ligne->getTotal()
+                            'produit' => $ligne->getModele()?->getLibelle() ?? 'Produit',
+                            'quantite' => $ligne->getQuantite() ?? 1,
+                            'prixUnitaire' => floatval($ligne->getMontant() ?? 0),
+                            'total' => floatval($ligne->getMontant() ?? 0)
                         ];
                     })->toArray()
                 ];
@@ -114,49 +123,25 @@ class ApiVenteController extends AbstractController
     public function createVente(
         Request $request,
         EntityManagerInterface $em,
-        BoutiqueRepository $boutiqueRepository,
-        ClientRepository $clientRepository
+        BoutiqueRepository $boutiqueRepository
     ): Response {
         try {
             $data = json_decode($request->getContent(), true);
             
-            $vente = new Vente();
-            $vente->setNumero('VTE-' . date('Y') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT));
-            $vente->setDate(new \DateTime());
-            $vente->setModePaiement($data['modePaiement'] ?? 'Espèces');
+            $paiement = new PaiementBoutique();
+            $paiement->setMontant($data['montant'] ?? 0);
+            $paiement->setReference('VTE-' . date('Y') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT));
+            $paiement->setType($data['modePaiement'] ?? 'Espèces');
             
             if (isset($data['boutiqueId'])) {
                 $boutique = $boutiqueRepository->find($data['boutiqueId']);
-                $vente->setBoutique($boutique);
+                $paiement->setBoutique($boutique);
             }
 
-            if (isset($data['clientId'])) {
-                $client = $clientRepository->find($data['clientId']);
-                $vente->setClient($client);
-            }
-
-            $montantTotal = 0;
-            
-            // Ajouter les lignes de vente
-            if (isset($data['lignes'])) {
-                foreach ($data['lignes'] as $ligneData) {
-                    $ligne = new LigneVente();
-                    $ligne->setProduit($ligneData['produit']);
-                    $ligne->setQuantite($ligneData['quantite']);
-                    $ligne->setPrixUnitaire($ligneData['prixUnitaire']);
-                    $ligne->setTotal($ligneData['quantite'] * $ligneData['prixUnitaire']);
-                    $ligne->setVente($vente);
-                    
-                    $montantTotal += $ligne->getTotal();
-                    $em->persist($ligne);
-                }
-            }
-
-            $vente->setMontant($montantTotal);
-            $em->persist($vente);
+            $em->persist($paiement);
             $em->flush();
 
-            return $this->json(['success' => true, 'data' => ['id' => $vente->getId()]]);
+            return $this->json(['success' => true, 'data' => ['id' => $paiement->getId()]]);
         } catch (\Exception $e) {
             return $this->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
@@ -172,36 +157,36 @@ class ApiVenteController extends AbstractController
         description: "Retourne les détails d'une vente avec ses lignes",
         tags: ['Ventes']
     )]
-    public function getVente(int $id, VenteRepository $venteRepository): Response
+    public function getVente(int $id, PaiementBoutiqueRepository $paiementBoutiqueRepository): Response
     {
         try {
-            $vente = $venteRepository->find($id);
-            if (!$vente) {
+            $paiement = $paiementBoutiqueRepository->find($id);
+            if (!$paiement) {
                 return $this->json(['success' => false, 'message' => 'Vente non trouvée'], 404);
             }
 
             $data = [
-                'id' => $vente->getId(),
-                'numero' => $vente->getNumero(),
-                'date' => $vente->getDate()->format('Y-m-d H:i:s'),
-                'montant' => $vente->getMontant(),
-                'modePaiement' => $vente->getModePaiement(),
-                'client' => $vente->getClient() ? [
-                    'id' => $vente->getClient()->getId(),
-                    'nom' => $vente->getClient()->getNom(),
-                    'prenom' => $vente->getClient()->getPrenom()
+                'id' => $paiement->getId(),
+                'numero' => 'VTE-' . str_pad($paiement->getId(), 6, '0', STR_PAD_LEFT),
+                'date' => $paiement->getDateCreation()?->format('Y-m-d H:i:s') ?? date('Y-m-d H:i:s'),
+                'montant' => floatval($paiement->getMontant()),
+                'modePaiement' => $paiement->getType() ?? 'Espèces',
+                'client' => $paiement->getClient() ? [
+                    'id' => $paiement->getClient()->getId(),
+                    'nom' => $paiement->getClient()->getNom(),
+                    'prenom' => $paiement->getClient()->getPrenom()
                 ] : null,
                 'boutique' => [
-                    'id' => $vente->getBoutique()->getId(),
-                    'libelle' => $vente->getBoutique()->getLibelle()
+                    'id' => $paiement->getBoutique()?->getId(),
+                    'libelle' => $paiement->getBoutique()?->getLibelle()
                 ],
-                'ligneVentes' => $vente->getLigneVentes()->map(function($ligne) {
+                'ligneVentes' => $paiement->getPaiementBoutiqueLignes()->map(function($ligne) {
                     return [
                         'id' => $ligne->getId(),
-                        'produit' => $ligne->getProduit(),
-                        'quantite' => $ligne->getQuantite(),
-                        'prixUnitaire' => $ligne->getPrixUnitaire(),
-                        'total' => $ligne->getTotal()
+                        'produit' => $ligne->getModele()?->getLibelle() ?? 'Produit',
+                        'quantite' => $ligne->getQuantite() ?? 1,
+                        'prixUnitaire' => floatval($ligne->getMontant() ?? 0),
+                        'total' => floatval($ligne->getMontant() ?? 0)
                     ];
                 })->toArray()
             ];
@@ -224,7 +209,7 @@ class ApiVenteController extends AbstractController
     )]
     public function getVentesStats(
         int $id,
-        VenteRepository $venteRepository,
+        PaiementBoutiqueRepository $paiementBoutiqueRepository,
         BoutiqueRepository $boutiqueRepository
     ): Response {
         try {
@@ -236,19 +221,21 @@ class ApiVenteController extends AbstractController
             $today = new \DateTime();
             $thisMonth = new \DateTime('first day of this month');
             
-            $ventesToday = $venteRepository->createQueryBuilder('v')
-                ->select('COUNT(v.id) as nombre, SUM(v.montant) as total')
-                ->where('v.boutique = :boutique')
-                ->andWhere('DATE(v.date) = :today')
+            // Statistiques aujourd'hui
+            $ventesToday = $paiementBoutiqueRepository->createQueryBuilder('p')
+                ->select('COUNT(p.id) as nombre, SUM(p.montant) as total')
+                ->where('p.boutique = :boutique')
+                ->andWhere('DATE(p.dateCreation) = :today')
                 ->setParameter('boutique', $boutique)
                 ->setParameter('today', $today->format('Y-m-d'))
                 ->getQuery()
                 ->getSingleResult();
 
-            $ventesMonth = $venteRepository->createQueryBuilder('v')
-                ->select('COUNT(v.id) as nombre, SUM(v.montant) as total')
-                ->where('v.boutique = :boutique')
-                ->andWhere('v.date >= :thisMonth')
+            // Statistiques ce mois
+            $ventesMonth = $paiementBoutiqueRepository->createQueryBuilder('p')
+                ->select('COUNT(p.id) as nombre, SUM(p.montant) as total')
+                ->where('p.boutique = :boutique')
+                ->andWhere('p.dateCreation >= :thisMonth')
                 ->setParameter('boutique', $boutique)
                 ->setParameter('thisMonth', $thisMonth)
                 ->getQuery()
@@ -257,11 +244,11 @@ class ApiVenteController extends AbstractController
             $stats = [
                 'aujourd_hui' => [
                     'nombre' => $ventesToday['nombre'] ?? 0,
-                    'montant' => $ventesToday['total'] ?? 0
+                    'montant' => floatval($ventesToday['total'] ?? 0)
                 ],
                 'ce_mois' => [
                     'nombre' => $ventesMonth['nombre'] ?? 0,
-                    'montant' => $ventesMonth['total'] ?? 0
+                    'montant' => floatval($ventesMonth['total'] ?? 0)
                 ]
             ];
 
@@ -269,5 +256,38 @@ class ApiVenteController extends AbstractController
         } catch (\Exception $e) {
             return $this->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
+    }
+
+    private function generateVentesData(): array
+    {
+        $ventes = [];
+        $produits = ['Tissu Wax', 'Tissu Bazin', 'Fil à coudre', 'Boutons', 'Fermeture éclair'];
+        $clients = ['Aminata Diallo', 'Mamadou Sow', 'Fatou Ndiaye', 'Ousmane Ba'];
+        
+        for ($i = 1; $i <= 15; $i++) {
+            $ventes[] = [
+                'id' => $i,
+                'numero' => 'VTE-2025-' . str_pad($i, 4, '0', STR_PAD_LEFT),
+                'date' => date('Y-m-d H:i:s', strtotime('-' . rand(0, 30) . ' days')),
+                'montant' => rand(15000, 85000),
+                'modePaiement' => ['Espèces', 'Mobile Money', 'Carte bancaire'][rand(0, 2)],
+                'client' => rand(0, 1) ? [
+                    'id' => rand(1, 4),
+                    'nom' => explode(' ', $clients[rand(0, 3)])[1],
+                    'prenom' => explode(' ', $clients[rand(0, 3)])[0]
+                ] : null,
+                'ligneVentes' => [
+                    [
+                        'id' => $i,
+                        'produit' => $produits[rand(0, 4)],
+                        'quantite' => rand(1, 5),
+                        'prixUnitaire' => rand(5000, 25000),
+                        'total' => rand(15000, 85000)
+                    ]
+                ]
+            ];
+        }
+        
+        return $ventes;
     }
 }
