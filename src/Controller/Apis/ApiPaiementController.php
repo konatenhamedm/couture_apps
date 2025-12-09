@@ -35,7 +35,7 @@ class ApiPaiementController extends AbstractController
             // Récupération générale des paiements (adaptation temporaire)
             $paiements = $paiementRepository->createQueryBuilder('p')
                 ->join('p.facture', 'f')
-                ->orderBy('p.date', 'DESC')
+                ->orderBy('p.createdAt', 'DESC')
                 ->setMaxResults(50)
                 ->getQuery()
                 ->getResult();
@@ -44,7 +44,7 @@ class ApiPaiementController extends AbstractController
             foreach ($paiements as $paiement) {
                 $data[] = [
                     'id' => $paiement->getId(),
-                    'date' => date('Y-m-d H:i:s'),
+                    'date' => $paiement->getCreatedAt()?->format('Y-m-d H:i:s') ?? date('Y-m-d H:i:s'),
                     'montant' => $paiement->getMontant(),
                     'modePaiement' => $paiement->getType(),
                     'reference' => $paiement->getReference(),
@@ -84,7 +84,7 @@ class ApiPaiementController extends AbstractController
             // Récupération générale des paiements de réservations
             $paiements = $paiementRepository->createQueryBuilder('p')
                 ->join('p.reservation', 'r')
-                ->orderBy('p.date', 'DESC')
+                ->orderBy('p.createdAt', 'DESC')
                 ->setMaxResults(50)
                 ->getQuery()
                 ->getResult();
@@ -93,7 +93,7 @@ class ApiPaiementController extends AbstractController
             foreach ($paiements as $paiement) {
                 $data[] = [
                     'id' => $paiement->getId(),
-                    'date' => date('Y-m-d H:i:s'),
+                    'date' => $paiement->getCreatedAt()?->format('Y-m-d H:i:s') ?? date('Y-m-d H:i:s'),
                     'montant' => $paiement->getMontant(),
                     'modePaiement' => $paiement->getType(),
                     'reference' => $paiement->getReference(),

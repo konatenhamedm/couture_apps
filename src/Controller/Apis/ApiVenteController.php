@@ -50,9 +50,9 @@ class ApiVenteController extends AbstractController
             }
 
             // Récupération de tous les paiements (ventes)
-            $paiementsBoutique = $paiementBoutiqueRepository->findBy(['boutique' => $boutique], ['id' => 'DESC'], 20);
-            $paiementsFacture = $paiementFactureRepository->findBy([], ['id' => 'DESC'], 10);
-            $paiementsReservation = $paiementReservationRepository->findBy([], ['id' => 'DESC'], 10);
+            $paiementsBoutique = $paiementBoutiqueRepository->findBy(['boutique' => $boutique], ['createdAt' => 'DESC'], 20);
+            $paiementsFacture = $paiementFactureRepository->findBy([], ['createdAt' => 'DESC'], 10);
+            $paiementsReservation = $paiementReservationRepository->findBy([], ['createdAt' => 'DESC'], 10);
             
             $data = [];
             
@@ -61,7 +61,7 @@ class ApiVenteController extends AbstractController
                 $data[] = [
                     'id' => $paiement->getId(),
                     'numero' => 'VTE-' . str_pad($paiement->getId(), 6, '0', STR_PAD_LEFT),
-                    'date' => date('Y-m-d H:i:s'),
+                    'date' => $paiement->getCreatedAt()?->format('Y-m-d H:i:s') ?? date('Y-m-d H:i:s'),
                     'montant' => floatval($paiement->getMontant()),
                     'modePaiement' => $paiement->getType() ?? 'Espèces',
                     'client' => $paiement->getClient() ? [
@@ -168,7 +168,7 @@ class ApiVenteController extends AbstractController
             $data = [
                 'id' => $paiement->getId(),
                 'numero' => 'VTE-' . str_pad($paiement->getId(), 6, '0', STR_PAD_LEFT),
-                'date' => date('Y-m-d H:i:s'),
+                'date' => $paiement->getCreatedAt()?->format('Y-m-d H:i:s') ?? date('Y-m-d H:i:s'),
                 'montant' => floatval($paiement->getMontant()),
                 'modePaiement' => $paiement->getType() ?? 'Espèces',
                 'client' => $paiement->getClient() ? [
@@ -225,7 +225,7 @@ class ApiVenteController extends AbstractController
             $ventesToday = $paiementBoutiqueRepository->createQueryBuilder('p')
                 ->select('COUNT(p.id) as nombre, SUM(p.montant) as total')
                 ->where('p.boutique = :boutique')
-                ->andWhere('p.id > 0')
+                ->andWhere('DATE(p.createdAt) = :today')
                 ->setParameter('boutique', $boutique)
                 ->setParameter('today', $today->format('Y-m-d'))
                 ->getQuery()
@@ -235,7 +235,7 @@ class ApiVenteController extends AbstractController
             $ventesMonth = $paiementBoutiqueRepository->createQueryBuilder('p')
                 ->select('COUNT(p.id) as nombre, SUM(p.montant) as total')
                 ->where('p.boutique = :boutique')
-                ->andWhere('p.id > 0')
+                ->andWhere('p.createdAt >= :thisMonth')
                 ->setParameter('boutique', $boutique)
                 ->setParameter('thisMonth', $thisMonth)
                 ->getQuery()
