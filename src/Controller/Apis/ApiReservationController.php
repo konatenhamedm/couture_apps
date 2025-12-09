@@ -166,6 +166,56 @@ class ApiReservationController extends ApiInterface
 
         return $response;
     }
+    /**
+     * Liste les réservations selon les droits de l'utilisateur (entreprise ou boutique)
+     */
+    #[Route('/entreprise/by/boutique/{id}', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/reservation/entreprise/by/boutique/{id}",
+        summary: "Lister les réservations selon les droits utilisateur",
+        description: "Retourne la liste des réservations filtrée selon le type d'utilisateur : Super-admin voit toutes les réservations de l'entreprise, autres utilisateurs voient uniquement les réservations de leur boutique.",
+        tags: ['reservation']
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Liste des réservations récupérée avec succès",
+        content: new OA\JsonContent(
+            type: 'array',
+            items: new OA\Items(
+                type: "object",
+                properties: [
+                    new OA\Property(property: "id", type: "integer", example: 1),
+                    new OA\Property(property: "montant", type: "number", example: 50000),
+                    new OA\Property(property: "avance", type: "number", example: 20000),
+                    new OA\Property(property: "reste", type: "number", example: 30000),
+                    new OA\Property(property: "dateRetrait", type: "string", format: "date-time"),
+                    new OA\Property(property: "client", type: "object"),
+                    new OA\Property(property: "boutique", type: "object"),
+                    new OA\Property(property: "entreprise", type: "object")
+                ]
+            )
+        )
+    )]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
+    public function indexAllByBoutique(ReservationRepository $reservationRepository,$id, TypeUserRepository $typeUserRepository): Response
+    {
+        try {
+            
+                $reservations = $this->paginationService->paginate($reservationRepository->findBy(
+                    ['boutique'=> $id],
+                    ['id' => 'DESC']
+                ));
+            
+            $response = $this->responseData($reservations, 'group_reservation', ['Content-Type' => 'application/json']);
+        } catch (\Exception $exception) {
+            $this->setStatusCode(500);
+            $this->setMessage("Erreur lors de la récupération des réservations");
+            $response = $this->response([]);
+        }
+
+        return $response;
+    }
 
     /**
      * Récupère les détails d'une réservation spécifique
