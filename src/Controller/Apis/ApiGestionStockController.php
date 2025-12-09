@@ -81,7 +81,7 @@ class ApiGestionStockController extends ApiInterface
                 ['id' => 'DESC']
             ));
 
-            $response = $this->responseData($entreStocks, "group_modeleBoutique", ['Content-Type' => 'application/json']);
+            $response = $this->responseData($entreStocks, "group1", ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des mouvements de stock");
