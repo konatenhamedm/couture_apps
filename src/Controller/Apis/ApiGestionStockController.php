@@ -28,6 +28,69 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 #[Route('/api/stock')]
 class ApiGestionStockController extends ApiInterface
 {
+
+
+    /**
+     * Liste tous les mouvements de stock d'une boutique spécifique
+     */
+    #[Route('/boutique/{id}', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/stock/boutique/{id}",
+        summary: "Lister les mouvements de stock d'une boutique",
+        description: "Retourne la liste paginée de tous les mouvements de stock (entrées et sorties) d'une boutique spécifique avec leurs statuts et détails. Nécessite un abonnement actif.",
+        tags: ['stock']
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: "Identifiant unique de la boutique",
+        schema: new OA\Schema(type: 'integer', example: 1)
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Liste des mouvements de stock récupérée avec succès",
+        content: new OA\JsonContent(
+            type: 'array',
+            items: new OA\Items(
+                type: "object",
+                properties: [
+                    new OA\Property(property: "id", type: "integer", example: 1),
+                    new OA\Property(property: "type", type: "string", example: "Entree"),
+                    new OA\Property(property: "quantite", type: "integer", example: 100),
+                    new OA\Property(property: "statut", type: "string", example: "EN_ATTENTE"),
+                    new OA\Property(property: "commentaire", type: "string", nullable: true),
+                    new OA\Property(property: "boutique", type: "object", description: "Boutique"),
+                    new OA\Property(property: "ligneEntres", type: "array", description: "Lignes détaillées")
+                ]
+            )
+        )
+    )]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 404, description: "Boutique non trouvée")]
+    public function indexByBoutique(EntreStockRepository $entreStockRepository, Boutique $boutique): Response
+    {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+            return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
+        }
+
+        try {
+            $entreStocks = $this->paginationService->paginate($entreStockRepository->findBy(
+                ['boutique' => $boutique->getId()],
+                ['id' => 'DESC']
+            ));
+
+            $response = $this->responseData($entreStocks, "group_modeleBoutique", ['Content-Type' => 'application/json']);
+        } catch (\Exception $exception) {
+            $this->setStatusCode(500);
+            $this->setMessage("Erreur lors de la récupération des mouvements de stock");
+            $response = $this->response([]);
+        }
+
+        return $response;
+    }
+
     /**
      * Liste tous les mouvements de stock (entrées et sorties) d'une boutique
      */
