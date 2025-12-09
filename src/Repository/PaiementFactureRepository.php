@@ -16,28 +16,57 @@ class PaiementFactureRepository extends ServiceEntityRepository
         parent::__construct($registry, PaiementFacture::class);
     }
 
-    //    /**
-    //     * @return PaiementFacture[] Returns an array of PaiementFacture objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('p.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    /**
+     * Trouve les paiements par boutique
+     */
+    public function findByBoutique(int $boutiqueId): array
+    {
+        return $this->createQueryBuilder('p')
+            ->leftJoin('p.facture', 'f')
+            ->leftJoin('f.client', 'c')
+            ->where('f.boutique = :boutiqueId')
+            ->setParameter('boutiqueId', $boutiqueId)
+            ->orderBy('p.date', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
 
-    //    public function findOneBySomeField($value): ?PaiementFacture
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+    /**
+     * Statistiques des paiements par période
+     */
+    public function getStatsByPeriod(\DateTime $dateDebut, \DateTime $dateFin, int $boutiqueId = null): array
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->select('COUNT(p.id) as nombre, SUM(p.montant) as total')
+            ->leftJoin('p.facture', 'f')
+            ->where('p.date BETWEEN :dateDebut AND :dateFin')
+            ->setParameter('dateDebut', $dateDebut)
+            ->setParameter('dateFin', $dateFin);
+
+        if ($boutiqueId) {
+            $qb->andWhere('f.boutique = :boutiqueId')
+               ->setParameter('boutiqueId', $boutiqueId);
+        }
+
+        return $qb->getQuery()->getSingleResult();
+    }
+
+    /**
+     * Répartition par mode de paiement
+     */
+    public function getRepartitionModesPaiement(int $boutiqueId = null): array
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->select('p.modePaiement, COUNT(p.id) as nombre, SUM(p.montant) as total')
+            ->leftJoin('p.facture', 'f')
+            ->groupBy('p.modePaiement')
+            ->orderBy('total', 'DESC');
+
+        if ($boutiqueId) {
+            $qb->where('f.boutique = :boutiqueId')
+               ->setParameter('boutiqueId', $boutiqueId);
+        }
+
+        return $qb->getQuery()->getResult();
+    }
 }
