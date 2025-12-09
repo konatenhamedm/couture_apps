@@ -225,9 +225,11 @@ class ApiVenteController extends AbstractController
             $ventesToday = $paiementBoutiqueRepository->createQueryBuilder('p')
                 ->select('COUNT(p.id) as nombre, SUM(p.montant) as total')
                 ->where('p.boutique = :boutique')
-                ->andWhere('DATE(p.createdAt) = :today')
+                ->andWhere('p.createdAt >= :todayStart')
+                ->andWhere('p.createdAt < :todayEnd')
                 ->setParameter('boutique', $boutique)
-                ->setParameter('today', $today->format('Y-m-d'))
+                ->setParameter('todayStart', $today->format('Y-m-d 00:00:00'))
+                ->setParameter('todayEnd', $today->format('Y-m-d 23:59:59'))
                 ->getQuery()
                 ->getSingleResult();
 
