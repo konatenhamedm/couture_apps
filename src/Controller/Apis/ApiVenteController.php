@@ -20,6 +20,45 @@ use OpenApi\Attributes as OA;
 class ApiVenteController extends AbstractController
 {
     /**
+     * Debug: Voir tous les paiements d'une boutique avec leurs dates
+     */
+    #[Route('/vente/boutique/{id}/debug', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/vente/boutique/{id}/debug",
+        summary: "Debug - Voir tous les paiements avec dates",
+        description: "Affiche tous les paiements d'une boutique avec leurs dates createdAt pour debug",
+        tags: ['Ventes']
+    )]
+    public function debugPaiementsBoutique(
+        int $id,
+        PaiementBoutiqueRepository $paiementBoutiqueRepository,
+        BoutiqueRepository $boutiqueRepository
+    ): Response {
+        try {
+            $boutique = $boutiqueRepository->find($id);
+            if (!$boutique) {
+                return $this->json(['success' => false, 'message' => 'Boutique non trouvée'], 404);
+            }
+
+            // Récupérer tous les paiements avec leurs dates
+            $paiementsDebug = $paiementBoutiqueRepository->findAllByBoutiqueWithDates($boutique);
+            
+            // Récupérer aussi les objets complets
+            $paiementsComplets = $paiementBoutiqueRepository->findAllByBoutique($boutique);
+
+            return $this->json([
+                'success' => true,
+                'boutique_id' => $id,
+                'total_paiements' => count($paiementsDebug),
+                'paiements_avec_dates' => $paiementsDebug,
+                'note' => 'Vérifiez si createdAt est NULL ou dans quelle période sont les dates'
+            ]);
+        } catch (\Exception $e) {
+            return $this->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
      * Liste des paiements boutique avec filtre de période
      */
     #[Route('/vente/boutique/{id}', methods: ['POST'])]

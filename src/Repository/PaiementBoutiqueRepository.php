@@ -46,4 +46,31 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
             ->getQuery()
             ->getSingleScalarResult();
     }
+
+    /**
+     * Récupère tous les paiements d'une boutique avec leurs dates (pour debug)
+     */
+    public function findAllByBoutiqueWithDates(Boutique $boutique): array
+    {
+        return $this->createQueryBuilder('p')
+            ->select('p.id', 'p.montant', 'p.reference', 'p.createdAt', 'p.isActive')
+            ->where('p.boutique = :boutique')
+            ->setParameter('boutique', $boutique)
+            ->orderBy('p.id', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Trouve tous les paiements d'une boutique sans filtre de date
+     */
+    public function findAllByBoutique(Boutique $boutique): array
+    {
+        return $this->createQueryBuilder('p')
+            ->where('p.boutique = :boutique')
+            ->setParameter('boutique', $boutique)
+            ->orderBy('p.id', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
 }
