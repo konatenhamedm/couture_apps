@@ -458,7 +458,7 @@ class ApiVenteController extends ApiInterface
                     'debut' => $startDate->format('Y-m-d H:i:s'),
                     'fin' => $endDate->format('Y-m-d H:i:s')
                 ]
-            ], 'paiement_boutique', ['Content-Type' => 'application/json']);
+            ], 'paiement_boutique_reservation', ['Content-Type' => 'application/json']);
         } catch (\Exception $e) {
             return $this->json(['success' => false, 'message' => $e->getMessage()], 400);
         }

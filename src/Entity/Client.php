@@ -16,19 +16,19 @@ class Client
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-     #[Groups(["group1", "group_type","group_details","group_reservation","group_modeleBoutique","paiement_boutique"])]
+     #[Groups(["group1", "group_type","group_details","group_reservation","group_modeleBoutique","paiement_boutique","paiement_boutique_reservation"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255, nullable: true,unique:true)]
-     #[Groups(["group1", "group_type","group_details","group_reservation","group_modeleBoutique","paiement_boutique"])]
+     #[Groups(["group1", "group_type","group_details","group_reservation","group_modeleBoutique","paiement_boutique","paiement_boutique_reservation"])]
     private ?string $numero = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-     #[Groups(["group1", "group_type","group_details","group_reservation","group_modeleBoutique","paiement_boutique"])]
+     #[Groups(["group1", "group_type","group_details","group_reservation","group_modeleBoutique","paiement_boutique","paiement_boutique_reservation"])]
     private ?string $nom = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-     #[Groups(["group1", "group_type","group_details","group_reservation","group_modeleBoutique","paiement_boutique"])]
+     #[Groups(["group1", "group_type","group_details","group_reservation","group_modeleBoutique","paiement_boutique","paiement_boutique_reservation"])]
     private ?string $prenom = null;
 
 
@@ -47,7 +47,7 @@ class Client
 
      #[ORM\ManyToOne(cascade: ["persist"], fetch: "EAGER")]
     #[ORM\JoinColumn(nullable: true)]
-    #[Groups(["fichier", "group1","paiement_boutique"])]
+    #[Groups(["fichier", "group1","paiement_boutique","paiement_boutique_reservation"])]
     private ?Fichier $photo = null;
 
      /**

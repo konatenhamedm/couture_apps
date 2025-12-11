@@ -18,18 +18,18 @@ class Fichier
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["fichier", "groupe_batis", "group1","group_modeleBoutique","paiement_boutique"])]
+    #[Groups(["fichier", "groupe_batis", "group1","group_modeleBoutique","paiement_boutique","paiement_boutique_reservation"])]
     private ?int $id = null;
 
     #[ORM\Column(nullable: true)]
     private ?int $size = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(["fichier", "groupe_batis", 'group_user', 'group_pro', "group1","group_modeleBoutique","paiement_boutique"])]
+    #[Groups(["fichier", "groupe_batis", 'group_user', 'group_pro', "group1","group_modeleBoutique","paiement_boutique","paiement_boutique_reservation"])]
     private ?string $path = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(["fichier", "groupe_batis", 'group_user', 'group_pro', "group1","group_modeleBoutique","paiement_boutique"])]
+    #[Groups(["fichier", "groupe_batis", 'group_user', 'group_pro', "group1","group_modeleBoutique","paiement_boutique","paiement_boutique_reservation"])]
     private ?string $alt = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]

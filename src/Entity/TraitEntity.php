@@ -11,7 +11,7 @@ trait TraitEntity
 {
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
-    #[Group(["group_user", "group1", "group_type", "group_user_trx", "group_pro","group_modeleBoutique","paiement_boutique"])]
+    #[Group(["group_user", "group1", "group_type", "group_user_trx", "group_pro","group_modeleBoutique","paiement_boutique","paiement_boutique_reservation"])]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
@@ -28,7 +28,7 @@ trait TraitEntity
     private ?User $updatedBy = null;
 
     #[ORM\Column]
-    #[Group(["group1", "group_type","group_modeleBoutique"])]
+    #[Group(["group1", "group_type","group_modeleBoutique","paiement_boutique_reservation"])]
     private ?bool $isActive = true; // ✅ Valeur par défaut ajoutée
 
     /* 

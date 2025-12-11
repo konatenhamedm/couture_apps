@@ -10,7 +10,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
 class PaiementReservation extends Paiement
 {
     #[ORM\ManyToOne(inversedBy: 'paiementReservations')]
-     #[Groups(["paiement_boutique"])]
+     #[Groups(["paiement_boutique","paiement_boutique_reservation"])]
     private ?Reservation $reservation = null;
 
     public function getReservation(): ?Reservation
