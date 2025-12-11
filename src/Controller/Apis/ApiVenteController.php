@@ -444,7 +444,7 @@ class ApiVenteController extends ApiInterface
             // Utiliser la méthode du repository
             $paiements = $paiementReservationRepository->findByBoutiqueAndPeriod($boutique, $startDate, $endDate);
 
-            dd($paiements);
+            dd($paiements, $startDate, $endDate);
 
             // Compter tous les paiements réservation de la boutique pour debug
             $totalPaiements = $paiementReservationRepository->countByBoutique($boutique);
