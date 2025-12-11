@@ -26,19 +26,19 @@ class Paiement
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-     #[Groups(["group1", "group_type","group_details","paiement_boutique","paiement_boutique_reservation"])]
+     #[Groups(["group1", "group_type","group_details","paiement_boutique"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-     #[Groups(["group1", "group_type","group_details","paiement_boutique","paiement_boutique_reservation"])]
+     #[Groups(["group1", "group_type","group_details","paiement_boutique"])]
     private ?string $montant = null;
 
     #[ORM\Column(length: 255)]
-     #[Groups(["group1", "group_type","group_details","paiement_boutique","paiement_boutique_reservation"])]
+     #[Groups(["group1", "group_type","group_details","paiement_boutique"])]
     private ?string $reference = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-     #[Groups(["group1", "group_type","group_details","paiement_boutique","paiement_boutique_reservation"])]
+     #[Groups(["group1", "group_type","group_details","paiement_boutique"])]
     private ?string $type = null;
 
 

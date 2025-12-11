@@ -53,7 +53,7 @@ class PaiementReservationRepository extends ServiceEntityRepository
     /**
      * Trouve les paiements réservation par boutique et période
      */
-    public function findByBoutiqueAndPeriod(Boutique $boutique, \DateTime $dateDebut, \DateTime $dateFin): array
+    public function findByBoutiqueAndPeriod($boutique, \DateTime $dateDebut, \DateTime $dateFin): array
     {
         return $this->createQueryBuilder('p')
             ->leftJoin('p.reservation', 'r')
