@@ -85,7 +85,7 @@ class ApiVenteController extends ApiInterface
         required: true,
         schema: new OA\Schema(type: "integer")
     )]
-    #[OA\RequestBody(
+            #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
             type: "object",
@@ -93,9 +93,9 @@ class ApiVenteController extends ApiInterface
                 new OA\Property(
                     property: "periode",
                     type: "string",
-                    enum: ["aujourd_hui", "7_derniers_jours", "personnalisee"],
+                    enum: ["aujourd_hui", "7_derniers_jours", "personnalisee", "tous"],
                     example: "aujourd_hui",
-                    description: "Période de filtrage: 'aujourd_hui', '7_derniers_jours' ou 'personnalisee'"
+                    description: "Période de filtrage: 'aujourd_hui', '7_derniers_jours', 'personnalisee' ou 'tous'"
                 ),
                 new OA\Property(
                     property: "date_debut",
@@ -144,6 +144,20 @@ class ApiVenteController extends ApiInterface
             $data = json_decode($request->getContent(), true);
             $periode = $data['periode'] ?? 'aujourd_hui';
 
+            // Si période = "tous", récupérer tous les paiements sans filtre
+            if ($periode === 'tous') {
+                $paiements = $paiementBoutiqueRepository->findAllByBoutique($boutique);
+                $totalPaiements = $paiementBoutiqueRepository->countByBoutique($boutique);
+
+                return $this->responseData([
+                    'success' => true,
+                    'data' => $paiements,
+                    'count' => count($paiements),
+                    'total_paiements_boutique' => $totalPaiements,
+                    'periode' => 'tous'
+                ], 'paiement_boutique', ['Content-Type' => 'application/json']);
+            }
+
             // Définir les dates selon la période
             $now = new \DateTime();
             $startDate = null;
@@ -168,7 +182,7 @@ class ApiVenteController extends ApiInterface
                     return $this->json(['success' => false, 'message' => 'Format de date invalide. Utilisez le format YYYY-MM-DD'], 400);
                 }
             } else {
-                return $this->json(['success' => false, 'message' => 'Période invalide. Utilisez "aujourd_hui", "7_derniers_jours" ou "personnalisee"'], 400);
+                return $this->json(['success' => false, 'message' => 'Période invalide. Utilisez "aujourd_hui", "7_derniers_jours", "personnalisee" ou "tous"'], 400);
             }
 
             // Utiliser la méthode du repository
@@ -209,9 +223,9 @@ class ApiVenteController extends ApiInterface
                 new OA\Property(
                     property: "periode",
                     type: "string",
-                    enum: ["aujourd_hui", "7_derniers_jours", "personnalisee"],
+                    enum: ["aujourd_hui", "7_derniers_jours", "personnalisee", "tous"],
                     example: "aujourd_hui",
-                    description: "Période de filtrage: 'aujourd_hui', '7_derniers_jours' ou 'personnalisee'"
+                    description: "Période de filtrage: 'aujourd_hui', '7_derniers_jours', 'personnalisee' ou 'tous'"
                 ),
                 new OA\Property(
                     property: "date_debut",
@@ -253,6 +267,20 @@ class ApiVenteController extends ApiInterface
         try {
             $data = json_decode($request->getContent(), true);
             $periode = $data['periode'] ?? 'aujourd_hui';
+
+            // Si période = "tous", récupérer tous les paiements sans filtre
+            if ($periode === 'tous') {
+                $paiements = $paiementFactureRepository->findAll();
+                $totalPaiements = $paiementFactureRepository->countAll();
+
+                return $this->json([
+                    'success' => true,
+                    'data' => $paiements,
+                    'count' => count($paiements),
+                    'total_paiements' => $totalPaiements,
+                    'periode' => 'tous'
+                ]);
+            }
 
             // Définir les dates selon la période
             $now = new \DateTime();
@@ -365,7 +393,7 @@ class ApiVenteController extends ApiInterface
                     type: "string",
                     enum: ["aujourd_hui", "7_derniers_jours", "personnalisee"],
                     example: "aujourd_hui",
-                    description: "Période de filtrage: 'aujourd_hui', '7_derniers_jours' ou 'personnalisee'"
+                    description: "Période de filtrage: 'aujourd_hui', '7_derniers_jours', 'personnalisee' ou 'tous'"
                 ),
                 new OA\Property(
                     property: "date_debut",
@@ -414,6 +442,20 @@ class ApiVenteController extends ApiInterface
             $data = json_decode($request->getContent(), true);
             $periode = $data['periode'] ?? 'aujourd_hui';
 
+            // Si période = "tous", récupérer tous les paiements sans filtre
+            if ($periode === 'tous') {
+                $paiements = $paiementReservationRepository->findAllByBoutique($boutique);
+                $totalPaiements = $paiementReservationRepository->countByBoutique($boutique);
+
+                return $this->responseData([
+                    'success' => true,
+                    'data' => $paiements,
+                    'count' => count($paiements),
+                    'total_paiements_reservation_boutique' => $totalPaiements,
+                    'periode' => 'tous'
+                ], 'paiement_boutique', ['Content-Type' => 'application/json']);
+            }
+
             // Définir les dates selon la période
             $now = new \DateTime();
             $startDate = null;
@@ -438,7 +480,7 @@ class ApiVenteController extends ApiInterface
                     return $this->json(['success' => false, 'message' => 'Format de date invalide. Utilisez le format YYYY-MM-DD'], 400);
                 }
             } else {
-                return $this->json(['success' => false, 'message' => 'Période invalide. Utilisez "aujourd_hui", "7_derniers_jours" ou "personnalisee"'], 400);
+                return $this->json(['success' => false, 'message' => 'Période invalide. Utilisez "aujourd_hui", "7_derniers_jours", "personnalisee" ou "tous"'], 400);
             }
 
             // Utiliser la méthode du repository

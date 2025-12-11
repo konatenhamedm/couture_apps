@@ -57,12 +57,12 @@ class PaiementReservationRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('p')
             ->leftJoin('p.reservation', 'r')
-            ->where('r.boutique = :boutique')
-            /* ->andWhere('p.createdAt >= :dateDebut')
-            ->andWhere('p.createdAt <= :dateFin') */
-            ->setParameter('boutique', $boutique)/* 
+            ->andWhere('r.boutique = :boutique')
+            ->andWhere('p.createdAt >= :dateDebut')
+            ->andWhere('p.createdAt <= :dateFin')
+            ->setParameter('boutique', $boutique)
             ->setParameter('dateDebut', $dateDebut)
-            ->setParameter('dateFin', $dateFin) */
+            ->setParameter('dateFin', $dateFin)
             ->orderBy('p.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
