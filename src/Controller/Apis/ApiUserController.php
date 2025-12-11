@@ -16,6 +16,7 @@ use App\Repository\AdministrateurRepository;
 use App\Repository\BoutiqueRepository;
 use App\Repository\EntrepriseRepository;
 use App\Repository\ModuleAbonnementRepository;
+use App\Repository\NotificationRepository;
 use App\Repository\PaysRepository;
 use App\Repository\ResetPasswordTokenRepository;
 use App\Repository\SettingRepository;
@@ -34,6 +35,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use OpenApi\Attributes as OA;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use Nelmio\ApiDocBundle\Attribute\Security;
+use PhpParser\Node\Stmt\TryCatch;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
@@ -46,6 +48,7 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 #[OA\Tag(name: 'user', description: 'Gestion des utilisateurs : inscription entreprises avec abonnement gratuit, création membres, profils')]
 class ApiUserController extends ApiInterface
 {
+
     /**
      * Liste tous les utilisateurs du système
      */
@@ -140,6 +143,55 @@ class ApiUserController extends ApiInterface
         try {
             $users = $this->paginationService->paginate($userRepository->findBy(
                 ['entreprise' => $this->getUser()->getEntreprise(), 'setsetIsActive' => true],
+                ['nom' => 'ASC']
+            ));
+
+            $context = [AbstractNormalizer::GROUPS => 'group1'];
+            $json = $this->serializer->serialize($users, 'json', $context);
+
+            return new JsonResponse(['code' => 200, 'data' => json_decode($json)]);
+        } catch (\Exception $exception) {
+            $this->setStatusCode(500);
+            $this->setStatusCode(500);
+            $this->setMessage("Erreur lors de la récupération des utilisateurs actifs");
+            $response = $this->response([]);
+        }
+
+        return $response;
+    }
+
+    /**
+     * Liste les utilisateurs actifs de l'entreprise de l'utilisateur connecté
+     */
+    #[Route('/actif/entreprise/by/boutique/{id}', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/user/actif/entreprise/by/boutique/{id}",
+        summary: "Lister les utilisateurs actifs de l'entreprise",
+        description: "Retourne la liste paginée uniquement des utilisateurs actifs de l'entreprise de l'utilisateur connecté. Utile pour les formulaires d'assignation.",
+        tags: ['user']
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Liste des utilisateurs actifs récupérée avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "code", type: "integer", example: 200),
+                new OA\Property(
+                    property: "data",
+                    type: "array",
+                    items: new OA\Items(type: "object")
+                )
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
+    public function indexUserByBoutique(UserRepository $userRepository,$id): Response
+    {
+        try {
+            $users = $this->paginationService->paginate($userRepository->findBy(
+                ['boutique' => $id, 'isActive' => true],
                 ['nom' => 'ASC']
             ));
 

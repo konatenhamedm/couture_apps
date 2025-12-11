@@ -3,6 +3,7 @@
 namespace App\Controller\Apis;
 
 use App\Controller\Apis\Config\ApiInterface;
+use App\Repository\NotificationRepository;
 use App\Service\SendMailService;
 use App\Repository\UserRepository;
 use Symfony\Component\HttpFoundation\Response;
@@ -14,6 +15,38 @@ use Symfony\Component\HttpFoundation\Request;
 #[OA\Tag(name: 'notification', description: 'Gestion des notifications push Firebase')]
 class ApiNotificationController extends ApiInterface
 {
+
+
+    /**
+     * Liste toutes les catégories de mesure du système
+     */
+    #[Route('/', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/notification",
+        summary: "Lister toutes les notifications d'un user",
+        description: "Lister toutes les notifications d'un user",
+        tags: ['notification']
+    )]
+    #[OA\Response(response: 500, description: "Erreur serveur lors de la récupération")]
+    public function getUserNotifications(NotificationRepository $notificationRepository)
+    {
+
+        try {
+            $notifications = $this->paginationService->paginate($notificationRepository->findBy(
+                ['user' => $this->getUser()],
+                ['id' => 'DESC']
+            ));
+
+            $response = $this->responseData($notifications, 'group1', ['Content-Type' => 'application/json'], true);
+        } catch (\Throwable $th) {
+            $this->setStatusCode(500);
+            $this->setMessage("Erreur lors de la récupération des catégories de mesure");
+            $response = $this->response([]);
+        }
+
+        return $response;
+    }
+
     /**
      * Met à jour le token FCM d'un utilisateur
      */
