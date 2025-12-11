@@ -2,6 +2,7 @@
 
 namespace App\Controller\Apis;
 
+use App\Controller\Apis\Config\ApiInterface;
 use App\Entity\PaiementBoutique;
 use App\Entity\PaiementFacture;
 use App\Entity\PaiementReservation;
@@ -17,7 +18,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use OpenApi\Attributes as OA;
 
 #[Route('/api')]
-class ApiVenteController extends AbstractController
+class ApiVenteController extends ApiInterface
 {
     /**
      * Debug: Voir tous les paiements d'une boutique avec leurs dates
@@ -45,14 +46,21 @@ class ApiVenteController extends AbstractController
             
             // Récupérer aussi les objets complets
             $paiementsComplets = $paiementBoutiqueRepository->findAllByBoutique($boutique);
-
-            return $this->json([
+            return    $this->responseData([
                 'success' => true,
                 'boutique_id' => $id,
                 'total_paiements' => count($paiementsDebug),
                 'paiements_avec_dates' => $paiementsDebug,
                 'note' => 'Vérifiez si createdAt est NULL ou dans quelle période sont les dates'
-            ]);
+            ], 'paiement_boutique', ['Content-Type' => 'application/json']);
+
+          /*   return $this->json([
+                'success' => true,
+                'boutique_id' => $id,
+                'total_paiements' => count($paiementsDebug),
+                'paiements_avec_dates' => $paiementsDebug,
+                'note' => 'Vérifiez si createdAt est NULL ou dans quelle période sont les dates'
+            ]); */
         } catch (\Exception $e) {
             return $this->json(['success' => false, 'message' => $e->getMessage()], 400);
         }

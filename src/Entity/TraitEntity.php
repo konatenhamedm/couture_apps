@@ -11,7 +11,7 @@ trait TraitEntity
 {
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
-    #[Group(["group_user", "group1", "group_type", "group_user_trx", "group_pro","group_modeleBoutique"])]
+    #[Group(["group_user", "group1", "group_type", "group_user_trx", "group_pro","group_modeleBoutique","paiement_boutique"])]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
