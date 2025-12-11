@@ -56,13 +56,13 @@ class PaiementReservationRepository extends ServiceEntityRepository
     public function findByBoutiqueAndPeriod(Boutique $boutique, \DateTime $dateDebut, \DateTime $dateFin): array
     {
         return $this->createQueryBuilder('p')
-            ->innerJoin('p.reservation', 'r')
+            ->leftJoin('p.reservation', 'r')
             ->where('r.boutique = :boutique')
-            ->andWhere('p.createdAt >= :dateDebut')
-            ->andWhere('p.createdAt <= :dateFin')
-            ->setParameter('boutique', $boutique)
+            /* ->andWhere('p.createdAt >= :dateDebut')
+            ->andWhere('p.createdAt <= :dateFin') */
+            ->setParameter('boutique', $boutique)/* 
             ->setParameter('dateDebut', $dateDebut)
-            ->setParameter('dateFin', $dateFin)
+            ->setParameter('dateFin', $dateFin) */
             ->orderBy('p.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
