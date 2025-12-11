@@ -12,18 +12,19 @@ class PaiementBoutiqueLigne
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["group_details","group_modeleBoutique"])]
+    #[Groups(["group_details","group_modeleBoutique","paiement_boutique"])]
     private ?int $id = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(["group_details","group_modeleBoutique"])]
+    #[Groups(["group_details","group_modeleBoutique","paiement_boutique"])]
     private ?int $quantite = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(["group_details","group_modeleBoutique"])]
+    #[Groups(["group_details","group_modeleBoutique","paiement_boutique"])]
     private ?string $montant = null;
-
+    
     #[ORM\ManyToOne(inversedBy: 'paiementBoutiqueLignes')]
+    #[Groups(["paiement_boutique"])]
     private ?ModeleBoutique $modeleBoutique = null;
 
     #[ORM\ManyToOne(inversedBy: 'paiementBoutiqueLignes')]

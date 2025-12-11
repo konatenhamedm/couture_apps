@@ -16,22 +16,22 @@ class Modele
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["group1","group_details","group_modeleBoutique"])]
+    #[Groups(["group1","group_details","group_modeleBoutique","paiement_boutique"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["group1","group_details","group_modeleBoutique"])]
+    #[Groups(["group1","group_details","group_modeleBoutique","paiement_boutique"])]
     private ?string $libelle = null;
 
 
     #[ORM\ManyToOne(cascade: ["persist"], fetch: "EAGER")]
     #[ORM\JoinColumn(nullable: true)]
-    #[Groups(["fichier", "group1","group_modeleBoutique"])]
+    #[Groups(["fichier", "group1","group_modeleBoutique","paiement_boutique"])]
     private ?Fichier $photo = null;
 
 
     #[ORM\Column]
-    #[Groups(["group1","group_details","group_modeleBoutique"])]
+    #[Groups(["group1","group_details","group_modeleBoutique","paiement_boutique"])]
     private ?int $quantiteGlobale = null;
 
     /**

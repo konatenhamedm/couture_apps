@@ -24,11 +24,12 @@ class PaiementBoutique extends Paiement
     #[ORM\ManyToOne(inversedBy: 'paiementBoutiques')]
     #[Groups(["group_details","group_modeleBoutique","paiement_boutique"])]
     private ?Client $client = null;
-
+    
     /**
      * @var Collection<int, PaiementBoutiqueLigne>
-     */
+    */
     #[ORM\OneToMany(targetEntity: PaiementBoutiqueLigne::class, mappedBy: 'paiementBoutique')]
+    #[Groups(["paiement_boutique"])]
     private Collection $paiementBoutiqueLignes;
 
     public function __construct()

@@ -15,42 +15,42 @@ class Facture
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["group1", "group_type"])]
+    #[Groups(["group1", "group_type","paiement_boutique"])]
 
     private ?int $id = null;
 
     #[ORM\Column]
-    #[Groups(["group1", "group_type"])]
+    #[Groups(["group1", "group_type","paiement_boutique"])]
     private ?\DateTime $dateRetrait = null;
 
     #[ORM\Column]
-    #[Groups(["group1", "group_type"])]
+    #[Groups(["group1", "group_type","paiement_boutique"])]
     private ?\DateTime $dateDepot = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(["group1", "group_type"])]
+    #[Groups(["group1", "group_type","paiement_boutique"])]
     private ?string $avance = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(["group1", "group_type"])]
+    #[Groups(["group1", "group_type","paiement_boutique"])]
     private ?string $MontantTotal = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(["group1", "group_type"])]
+    #[Groups(["group1", "group_type","paiement_boutique"])]
     private ?string $remise = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(["group1", "group_type"])]
+    #[Groups(["group1", "group_type","paiement_boutique"])]
     private ?string $ResteArgent = null;
 
     #[ORM\ManyToOne(inversedBy: 'factures')]
-    #[Groups(["group1", "group_type"])]
+    #[Groups(["group1", "group_type","paiement_boutique"])]
     private ?Client $client = null;
 
 
     #[ORM\ManyToOne(cascade: ["persist"], fetch: "EAGER")]
     #[ORM\JoinColumn(nullable: true)]
-    #[Groups(["fichier", "group1"])]
+    #[Groups(["fichier", "group1","paiement_boutique"])]
     private ?Fichier $signature = null;
 
     /**
