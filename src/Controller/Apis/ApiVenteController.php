@@ -20,13 +20,13 @@ use OpenApi\Attributes as OA;
 class ApiVenteController extends AbstractController
 {
     /**
-     * Liste des ventes par boutique
+     * Liste des paiements boutique avec filtre de période
      */
-    #[Route('/vente/boutique/{id}', methods: ['GET'])]
-    #[OA\Get(
+    #[Route('/vente/boutique/{id}', methods: ['POST'])]
+    #[OA\Post(
         path: "/api/vente/boutique/{id}",
-        summary: "Liste des ventes par boutique",
-        description: "Retourne la liste des ventes d'une boutique avec pagination",
+        summary: "Liste des paiements boutique avec filtre de période",
+        description: "Retourne la liste des paiements d'une boutique filtrés par période (aujourd'hui ou 7 derniers jours)",
         tags: ['Ventes']
     )]
     #[OA\Parameter(
@@ -36,11 +36,40 @@ class ApiVenteController extends AbstractController
         required: true,
         schema: new OA\Schema(type: "integer")
     )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(
+                    property: "periode",
+                    type: "string",
+                    enum: ["aujourd_hui", "7_derniers_jours"],
+                    example: "aujourd_hui",
+                    description: "Période de filtrage: 'aujourd_hui' ou '7_derniers_jours'"
+                )
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Liste des paiements boutique",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "success", type: "boolean", example: true),
+                new OA\Property(
+                    property: "data",
+                    type: "array",
+                    items: new OA\Items(type: "object")
+                )
+            ]
+        )
+    )]
     public function getVentesByBoutique(
         int $id,
+        Request $request,
         PaiementBoutiqueRepository $paiementBoutiqueRepository,
-        PaiementFactureRepository $paiementFactureRepository,
-        PaiementReservationRepository $paiementReservationRepository,
         BoutiqueRepository $boutiqueRepository
     ): Response {
         try {
@@ -49,10 +78,186 @@ class ApiVenteController extends AbstractController
                 return $this->json(['success' => false, 'message' => 'Boutique non trouvée'], 404);
             }
 
-            // Données simulées pour éviter les conflits de structure
-            $data = $this->generateVentesData();
+            $data = json_decode($request->getContent(), true);
+            $periode = $data['periode'] ?? 'aujourd_hui';
 
-            return $this->json(['success' => true, 'data' => $data]);
+            // Définir les dates selon la période
+            $now = new \DateTime();
+            $startDate = null;
+
+            if ($periode === 'aujourd_hui') {
+                $startDate = (new \DateTime())->setTime(0, 0, 0);
+            } elseif ($periode === '7_derniers_jours') {
+                $startDate = (new \DateTime())->modify('-7 days')->setTime(0, 0, 0);
+            } else {
+                return $this->json(['success' => false, 'message' => 'Période invalide. Utilisez "aujourd_hui" ou "7_derniers_jours"'], 400);
+            }
+
+            // Requête avec filtre de date
+            $qb = $paiementBoutiqueRepository->createQueryBuilder('p')
+                ->where('p.boutique = :boutique')
+                ->andWhere('p.createdAt >= :startDate')
+                ->andWhere('p.createdAt <= :endDate')
+                ->setParameter('boutique', $boutique)
+                ->setParameter('startDate', $startDate)
+                ->setParameter('endDate', $now)
+                ->orderBy('p.createdAt', 'DESC');
+
+            $paiements = $qb->getQuery()->getResult();
+
+            return $this->json(['success' => true, 'data' => $paiements, 'count' => count($paiements)]);
+        } catch (\Exception $e) {
+            return $this->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Liste des paiements facture avec filtre de période
+     */
+    #[Route('/vente/facture', methods: ['POST'])]
+    #[OA\Post(
+        path: "/api/vente/facture",
+        summary: "Liste des paiements facture avec filtre de période",
+        description: "Retourne la liste des paiements facture filtrés par période (aujourd'hui ou 7 derniers jours)",
+        tags: ['Ventes']
+    )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(
+                    property: "periode",
+                    type: "string",
+                    enum: ["aujourd_hui", "7_derniers_jours"],
+                    example: "aujourd_hui",
+                    description: "Période de filtrage: 'aujourd_hui' ou '7_derniers_jours'"
+                )
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Liste des paiements facture",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "success", type: "boolean", example: true),
+                new OA\Property(
+                    property: "data",
+                    type: "array",
+                    items: new OA\Items(type: "object")
+                )
+            ]
+        )
+    )]
+    public function getPaiementsFacture(
+        Request $request,
+        PaiementFactureRepository $paiementFactureRepository
+    ): Response {
+        try {
+            $data = json_decode($request->getContent(), true);
+            $periode = $data['periode'] ?? 'aujourd_hui';
+
+            // Définir les dates selon la période
+            $now = new \DateTime();
+            $startDate = null;
+
+            if ($periode === 'aujourd_hui') {
+                $startDate = (new \DateTime())->setTime(0, 0, 0);
+            } elseif ($periode === '7_derniers_jours') {
+                $startDate = (new \DateTime())->modify('-7 days')->setTime(0, 0, 0);
+            } else {
+                return $this->json(['success' => false, 'message' => 'Période invalide. Utilisez "aujourd_hui" ou "7_derniers_jours"'], 400);
+            }
+
+            // Requête avec filtre de date
+            $qb = $paiementFactureRepository->createQueryBuilder('p')
+                ->where('p.createdAt >= :startDate')
+                ->andWhere('p.createdAt <= :endDate')
+                ->setParameter('startDate', $startDate)
+                ->setParameter('endDate', $now)
+                ->orderBy('p.createdAt', 'DESC');
+
+            $paiements = $qb->getQuery()->getResult();
+
+            return $this->json(['success' => true, 'data' => $paiements, 'count' => count($paiements)]);
+        } catch (\Exception $e) {
+            return $this->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Liste des paiements réservation avec filtre de période
+     */
+    #[Route('/vente/reservation', methods: ['POST'])]
+    #[OA\Post(
+        path: "/api/vente/reservation",
+        summary: "Liste des paiements réservation avec filtre de période",
+        description: "Retourne la liste des paiements réservation filtrés par période (aujourd'hui ou 7 derniers jours)",
+        tags: ['Ventes']
+    )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(
+                    property: "periode",
+                    type: "string",
+                    enum: ["aujourd_hui", "7_derniers_jours"],
+                    example: "aujourd_hui",
+                    description: "Période de filtrage: 'aujourd_hui' ou '7_derniers_jours'"
+                )
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Liste des paiements réservation",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "success", type: "boolean", example: true),
+                new OA\Property(
+                    property: "data",
+                    type: "array",
+                    items: new OA\Items(type: "object")
+                )
+            ]
+        )
+    )]
+    public function getPaiementsReservation(
+        Request $request,
+        PaiementReservationRepository $paiementReservationRepository
+    ): Response {
+        try {
+            $data = json_decode($request->getContent(), true);
+            $periode = $data['periode'] ?? 'aujourd_hui';
+
+            // Définir les dates selon la période
+            $now = new \DateTime();
+            $startDate = null;
+
+            if ($periode === 'aujourd_hui') {
+                $startDate = (new \DateTime())->setTime(0, 0, 0);
+            } elseif ($periode === '7_derniers_jours') {
+                $startDate = (new \DateTime())->modify('-7 days')->setTime(0, 0, 0);
+            } else {
+                return $this->json(['success' => false, 'message' => 'Période invalide. Utilisez "aujourd_hui" ou "7_derniers_jours"'], 400);
+            }
+
+            // Requête avec filtre de date
+            $qb = $paiementReservationRepository->createQueryBuilder('p')
+                ->where('p.createdAt >= :startDate')
+                ->andWhere('p.createdAt <= :endDate')
+                ->setParameter('startDate', $startDate)
+                ->setParameter('endDate', $now)
+                ->orderBy('p.createdAt', 'DESC');
+
+            $paiements = $qb->getQuery()->getResult();
+
+            return $this->json(['success' => true, 'data' => $paiements, 'count' => count($paiements)]);
         } catch (\Exception $e) {
             return $this->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
@@ -206,36 +411,5 @@ class ApiVenteController extends AbstractController
         }
     }
 
-    private function generateVentesData(): array
-    {
-        $ventes = [];
-        $produits = ['Tissu Wax', 'Tissu Bazin', 'Fil à coudre', 'Boutons', 'Fermeture éclair'];
-        $clients = ['Aminata Diallo', 'Mamadou Sow', 'Fatou Ndiaye', 'Ousmane Ba'];
-        
-        for ($i = 1; $i <= 15; $i++) {
-            $ventes[] = [
-                'id' => $i,
-                'numero' => 'VTE-2025-' . str_pad($i, 4, '0', STR_PAD_LEFT),
-                'date' => date('Y-m-d H:i:s', strtotime('-' . rand(0, 30) . ' days')),
-                'montant' => rand(15000, 85000),
-                'modePaiement' => ['Espèces', 'Mobile Money', 'Carte bancaire'][rand(0, 2)],
-                'client' => rand(0, 1) ? [
-                    'id' => rand(1, 4),
-                    'nom' => explode(' ', $clients[rand(0, 3)])[1],
-                    'prenom' => explode(' ', $clients[rand(0, 3)])[0]
-                ] : null,
-                'ligneVentes' => [
-                    [
-                        'id' => $i,
-                        'produit' => $produits[rand(0, 4)],
-                        'quantite' => rand(1, 5),
-                        'prixUnitaire' => rand(5000, 25000),
-                        'total' => rand(15000, 85000)
-                    ]
-                ]
-            ];
-        }
-        
-        return $ventes;
-    }
+  
 }
