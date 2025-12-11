@@ -51,6 +51,7 @@ class ApiVenteController extends ApiInterface
                 'boutique_id' => $id,
                 'total_paiements' => count($paiementsDebug),
                 'paiements_avec_dates' => $paiementsDebug,
+                'paiements_complets' => $paiementsComplets,
                 'note' => 'Vérifiez si createdAt est NULL ou dans quelle période sont les dates'
             ], 'paiement_boutique', ['Content-Type' => 'application/json']);
 
@@ -174,8 +175,7 @@ class ApiVenteController extends ApiInterface
             
             // Compter tous les paiements de la boutique pour debug
             $totalPaiements = $paiementBoutiqueRepository->countByBoutique($boutique);
-
-            return $this->json([
+                return    $this->responseData([
                 'success' => true, 
                 'data' => $paiements, 
                 'count' => count($paiements),
@@ -184,7 +184,10 @@ class ApiVenteController extends ApiInterface
                     'debut' => $startDate->format('Y-m-d H:i:s'),
                     'fin' => $endDate->format('Y-m-d H:i:s')
                 ]
-            ]);
+            ], 'paiement_boutique', ['Content-Type' => 'application/json']);
+
+
+          
         } catch (\Exception $e) {
             return $this->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
@@ -285,7 +288,7 @@ class ApiVenteController extends ApiInterface
             // Compter tous les paiements pour debug
             $totalPaiements = $paiementFactureRepository->countAll();
 
-            return $this->json([
+                      return  $this->responseData([
                 'success' => true, 
                 'data' => $paiements, 
                 'count' => count($paiements),
@@ -294,7 +297,10 @@ class ApiVenteController extends ApiInterface
                     'debut' => $startDate->format('Y-m-d H:i:s'),
                     'fin' => $endDate->format('Y-m-d H:i:s')
                 ]
-            ]);
+            ], 'paiement_boutique', ['Content-Type' => 'application/json']);
+
+
+           
         } catch (\Exception $e) {
             return $this->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
@@ -395,7 +401,7 @@ class ApiVenteController extends ApiInterface
             // Compter tous les paiements pour debug
             $totalPaiements = $paiementReservationRepository->countAll();
 
-            return $this->json([
+            return $this->responseData([
                 'success' => true, 
                 'data' => $paiements, 
                 'count' => count($paiements),
@@ -404,7 +410,7 @@ class ApiVenteController extends ApiInterface
                     'debut' => $startDate->format('Y-m-d H:i:s'),
                     'fin' => $endDate->format('Y-m-d H:i:s')
                 ]
-            ]);
+                ], 'paiement_boutique', ['Content-Type' => 'application/json']);
         } catch (\Exception $e) {
             return $this->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
