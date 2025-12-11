@@ -41,7 +41,7 @@ class ApiVenteController extends AbstractController
             }
 
             // Récupérer tous les paiements avec leurs dates
-            $paiementsDebug = $paiementBoutiqueRepository->findAllByBoutiqueWithDates($boutique);
+            $paiementsDebug = $paiementBoutiqueRepository->findAllByBoutique($boutique);
             
             // Récupérer aussi les objets complets
             $paiementsComplets = $paiementBoutiqueRepository->findAllByBoutique($boutique);
