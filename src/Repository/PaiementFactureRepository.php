@@ -69,4 +69,30 @@ class PaiementFactureRepository extends ServiceEntityRepository
 
         return $qb->getQuery()->getResult();
     }
+
+    /**
+     * Trouve les paiements facture par période
+     */
+    public function findByPeriod(\DateTime $dateDebut, \DateTime $dateFin): array
+    {
+        return $this->createQueryBuilder('p')
+            ->where('p.createdAt >= :dateDebut')
+            ->andWhere('p.createdAt <= :dateFin')
+            ->setParameter('dateDebut', $dateDebut)
+            ->setParameter('dateFin', $dateFin)
+            ->orderBy('p.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Compte tous les paiements facture
+     */
+    public function countAll(): int
+    {
+        return $this->createQueryBuilder('p')
+            ->select('COUNT(p.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 }

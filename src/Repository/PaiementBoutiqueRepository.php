@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\PaiementBoutique;
+use App\Entity\Boutique;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -16,28 +17,33 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
         parent::__construct($registry, PaiementBoutique::class);
     }
 
-    //    /**
-    //     * @return PaiementBoutique[] Returns an array of PaiementBoutique objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('p.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    /**
+     * Trouve les paiements boutique par boutique et période
+     */
+    public function findByBoutiqueAndPeriod(Boutique $boutique, \DateTime $dateDebut, \DateTime $dateFin): array
+    {
+        return $this->createQueryBuilder('p')
+            ->where('p.boutique = :boutique')
+            ->andWhere('p.createdAt >= :dateDebut')
+            ->andWhere('p.createdAt <= :dateFin')
+            ->setParameter('boutique', $boutique)
+            ->setParameter('dateDebut', $dateDebut)
+            ->setParameter('dateFin', $dateFin)
+            ->orderBy('p.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
 
-    //    public function findOneBySomeField($value): ?PaiementBoutique
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+    /**
+     * Compte tous les paiements boutique pour une boutique
+     */
+    public function countByBoutique(Boutique $boutique): int
+    {
+        return $this->createQueryBuilder('p')
+            ->select('COUNT(p.id)')
+            ->where('p.boutique = :boutique')
+            ->setParameter('boutique', $boutique)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 }

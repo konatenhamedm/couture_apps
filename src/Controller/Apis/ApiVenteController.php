@@ -122,19 +122,22 @@ class ApiVenteController extends AbstractController
                 return $this->json(['success' => false, 'message' => 'Période invalide. Utilisez "aujourd_hui", "7_derniers_jours" ou "personnalisee"'], 400);
             }
 
-            // Requête avec filtre de date
-            $qb = $paiementBoutiqueRepository->createQueryBuilder('p')
-                ->where('p.boutique = :boutique')
-                ->andWhere('p.createdAt >= :startDate')
-                ->andWhere('p.createdAt <= :endDate')
-                ->setParameter('boutique', $boutique)
-                ->setParameter('startDate', $startDate)
-                ->setParameter('endDate', $endDate)
-                ->orderBy('p.createdAt', 'DESC');
+            // Utiliser la méthode du repository
+            $paiements = $paiementBoutiqueRepository->findByBoutiqueAndPeriod($boutique, $startDate, $endDate);
+            
+            // Compter tous les paiements de la boutique pour debug
+            $totalPaiements = $paiementBoutiqueRepository->countByBoutique($boutique);
 
-            $paiements = $qb->getQuery()->getResult();
-
-            return $this->json(['success' => true, 'data' => $paiements, 'count' => count($paiements)]);
+            return $this->json([
+                'success' => true, 
+                'data' => $paiements, 
+                'count' => count($paiements),
+                'total_paiements_boutique' => $totalPaiements,
+                'periode' => [
+                    'debut' => $startDate->format('Y-m-d H:i:s'),
+                    'fin' => $endDate->format('Y-m-d H:i:s')
+                ]
+            ]);
         } catch (\Exception $e) {
             return $this->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
@@ -229,17 +232,22 @@ class ApiVenteController extends AbstractController
                 return $this->json(['success' => false, 'message' => 'Période invalide. Utilisez "aujourd_hui", "7_derniers_jours" ou "personnalisee"'], 400);
             }
 
-            // Requête avec filtre de date
-            $qb = $paiementFactureRepository->createQueryBuilder('p')
-                ->where('p.createdAt >= :startDate')
-                ->andWhere('p.createdAt <= :endDate')
-                ->setParameter('startDate', $startDate)
-                ->setParameter('endDate', $endDate)
-                ->orderBy('p.createdAt', 'DESC');
+            // Utiliser la méthode du repository
+            $paiements = $paiementFactureRepository->findByPeriod($startDate, $endDate);
+            
+            // Compter tous les paiements pour debug
+            $totalPaiements = $paiementFactureRepository->countAll();
 
-            $paiements = $qb->getQuery()->getResult();
-
-            return $this->json(['success' => true, 'data' => $paiements, 'count' => count($paiements)]);
+            return $this->json([
+                'success' => true, 
+                'data' => $paiements, 
+                'count' => count($paiements),
+                'total_paiements' => $totalPaiements,
+                'periode' => [
+                    'debut' => $startDate->format('Y-m-d H:i:s'),
+                    'fin' => $endDate->format('Y-m-d H:i:s')
+                ]
+            ]);
         } catch (\Exception $e) {
             return $this->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
@@ -334,17 +342,22 @@ class ApiVenteController extends AbstractController
                 return $this->json(['success' => false, 'message' => 'Période invalide. Utilisez "aujourd_hui", "7_derniers_jours" ou "personnalisee"'], 400);
             }
 
-            // Requête avec filtre de date
-            $qb = $paiementReservationRepository->createQueryBuilder('p')
-                ->where('p.createdAt >= :startDate')
-                ->andWhere('p.createdAt <= :endDate')
-                ->setParameter('startDate', $startDate)
-                ->setParameter('endDate', $endDate)
-                ->orderBy('p.createdAt', 'DESC');
+            // Utiliser la méthode du repository
+            $paiements = $paiementReservationRepository->findByPeriod($startDate, $endDate);
+            
+            // Compter tous les paiements pour debug
+            $totalPaiements = $paiementReservationRepository->countAll();
 
-            $paiements = $qb->getQuery()->getResult();
-
-            return $this->json(['success' => true, 'data' => $paiements, 'count' => count($paiements)]);
+            return $this->json([
+                'success' => true, 
+                'data' => $paiements, 
+                'count' => count($paiements),
+                'total_paiements' => $totalPaiements,
+                'periode' => [
+                    'debut' => $startDate->format('Y-m-d H:i:s'),
+                    'fin' => $endDate->format('Y-m-d H:i:s')
+                ]
+            ]);
         } catch (\Exception $e) {
             return $this->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
