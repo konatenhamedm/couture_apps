@@ -24,11 +24,11 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('p')
             ->where('p.boutique = :boutique')
-            ->andWhere('p.createdAt >= :dateDebut')
-            ->andWhere('p.createdAt <= :dateFin')
+            /* ->andWhere('p.createdAt >= :dateDebut')
+            ->andWhere('p.createdAt <= :dateFin') */
             ->setParameter('boutique', $boutique)
-            ->setParameter('dateDebut', $dateDebut)
-            ->setParameter('dateFin', $dateFin)
+            /* ->setParameter('dateDebut', $dateDebut)
+            ->setParameter('dateFin', $dateFin) */
             ->orderBy('p.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
