@@ -44,7 +44,7 @@ class ApiVenteController extends ApiInterface
 
             // Récupérer tous les paiements avec leurs dates
             $paiementsDebug = $paiementBoutiqueRepository->findAllByBoutique($boutique);
-            
+
             // Récupérer aussi les objets complets
             $paiementsComplets = $paiementBoutiqueRepository->findAllByBoutique($boutique);
             return    $this->responseData([
@@ -56,7 +56,7 @@ class ApiVenteController extends ApiInterface
                 'note' => 'Vérifiez si createdAt est NULL ou dans quelle période sont les dates'
             ], 'paiement_boutique', ['Content-Type' => 'application/json']);
 
-          /*   return $this->json([
+            /*   return $this->json([
                 'success' => true,
                 'boutique_id' => $id,
                 'total_paiements' => count($paiementsDebug),
@@ -173,12 +173,12 @@ class ApiVenteController extends ApiInterface
 
             // Utiliser la méthode du repository
             $paiements = $paiementBoutiqueRepository->findByBoutiqueAndPeriod($boutique, $startDate, $endDate);
-            
+
             // Compter tous les paiements de la boutique pour debug
             $totalPaiements = $paiementBoutiqueRepository->countByBoutique($boutique);
-                return    $this->responseData([
-                'success' => true, 
-                'data' => $paiements, 
+            return    $this->responseData([
+                'success' => true,
+                'data' => $paiements,
                 'count' => count($paiements),
                 'total_paiements_boutique' => $totalPaiements,
                 'periode' => [
@@ -186,9 +186,6 @@ class ApiVenteController extends ApiInterface
                     'fin' => $endDate->format('Y-m-d H:i:s')
                 ]
             ], 'paiement_boutique', ['Content-Type' => 'application/json']);
-
-
-          
         } catch (\Exception $e) {
             return $this->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
@@ -285,14 +282,14 @@ class ApiVenteController extends ApiInterface
             }
 
             // Utiliser la méthode du repository
-            $paiements = $paiementFactureRepository->findByPeriod($startDate, $endDate,$succursaleId);
-            
+            $paiements = $paiementFactureRepository->findByPeriod($startDate, $endDate, $succursaleId);
+
             // Compter tous les paiements pour debug
             $totalPaiements = $paiementFactureRepository->countAll();
 
-                      return  $this->responseData([
-                'success' => true, 
-                'data' => $paiements, 
+            return  $this->responseData([
+                'success' => true,
+                'data' => $paiements,
                 'count' => count($paiements),
                 'total_paiements' => $totalPaiements,
                 'periode' => [
@@ -300,9 +297,6 @@ class ApiVenteController extends ApiInterface
                     'fin' => $endDate->format('Y-m-d H:i:s')
                 ]
             ], 'paiement_boutique', ['Content-Type' => 'application/json']);
-
-
-           
         } catch (\Exception $e) {
             return $this->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
@@ -449,20 +443,20 @@ class ApiVenteController extends ApiInterface
 
             // Utiliser la méthode du repository
             $paiements = $paiementReservationRepository->findByBoutiqueAndPeriod($boutique, $startDate, $endDate);
-            
+
             // Compter tous les paiements réservation de la boutique pour debug
             $totalPaiements = $paiementReservationRepository->countByBoutique($boutique);
 
-            return $this->json([
-                'success' => true, 
-                'data' => $paiements, 
+            return $this->responseData([
+                'success' => true,
+                'data' => $paiements,
                 'count' => count($paiements),
                 'total_paiements_reservation_boutique' => $totalPaiements,
                 'periode' => [
                     'debut' => $startDate->format('Y-m-d H:i:s'),
                     'fin' => $endDate->format('Y-m-d H:i:s')
                 ]
-            ]);
+            ], 'paiement_boutique', ['Content-Type' => 'application/json']);
         } catch (\Exception $e) {
             return $this->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
@@ -559,20 +553,20 @@ class ApiVenteController extends ApiInterface
 
             // Utiliser la méthode du repository
             $paiements = $paiementReservationRepository->findByPeriod($startDate, $endDate);
-            
+
             // Compter tous les paiements pour debug
             $totalPaiements = $paiementReservationRepository->countAll();
 
             return $this->responseData([
-                'success' => true, 
-                'data' => $paiements, 
+                'success' => true,
+                'data' => $paiements,
                 'count' => count($paiements),
                 'total_paiements' => $totalPaiements,
                 'periode' => [
                     'debut' => $startDate->format('Y-m-d H:i:s'),
                     'fin' => $endDate->format('Y-m-d H:i:s')
                 ]
-                ], 'paiement_boutique', ['Content-Type' => 'application/json']);
+            ], 'paiement_boutique', ['Content-Type' => 'application/json']);
         } catch (\Exception $e) {
             return $this->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
@@ -618,12 +612,12 @@ class ApiVenteController extends ApiInterface
     ): Response {
         try {
             $data = json_decode($request->getContent(), true);
-            
+
             $paiement = new PaiementBoutique();
             $paiement->setMontant($data['montant'] ?? 0);
             $paiement->setReference('VTE-' . date('Y') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT));
             $paiement->setType($data['modePaiement'] ?? 'Espèces');
-            
+
             if (isset($data['boutiqueId'])) {
                 $boutique = $boutiqueRepository->find($data['boutiqueId']);
                 $paiement->setBoutique($boutique);
@@ -707,7 +701,7 @@ class ApiVenteController extends ApiInterface
 
             $today = new \DateTime();
             $thisMonth = new \DateTime('first day of this month');
-            
+
             // Statistiques simulées
             $stats = [
                 'aujourd_hui' => [
@@ -725,6 +719,4 @@ class ApiVenteController extends ApiInterface
             return $this->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
     }
-
-  
 }
