@@ -44,9 +44,23 @@ class ApiVenteController extends AbstractController
                 new OA\Property(
                     property: "periode",
                     type: "string",
-                    enum: ["aujourd_hui", "7_derniers_jours"],
+                    enum: ["aujourd_hui", "7_derniers_jours", "personnalisee"],
                     example: "aujourd_hui",
-                    description: "Période de filtrage: 'aujourd_hui' ou '7_derniers_jours'"
+                    description: "Période de filtrage: 'aujourd_hui', '7_derniers_jours' ou 'personnalisee'"
+                ),
+                new OA\Property(
+                    property: "date_debut",
+                    type: "string",
+                    format: "date",
+                    example: "2025-01-01",
+                    description: "Date de début (format: YYYY-MM-DD). Requis si periode='personnalisee'"
+                ),
+                new OA\Property(
+                    property: "date_fin",
+                    type: "string",
+                    format: "date",
+                    example: "2025-01-31",
+                    description: "Date de fin (format: YYYY-MM-DD). Requis si periode='personnalisee'"
                 )
             ]
         )
@@ -84,13 +98,28 @@ class ApiVenteController extends AbstractController
             // Définir les dates selon la période
             $now = new \DateTime();
             $startDate = null;
+            $endDate = $now;
 
             if ($periode === 'aujourd_hui') {
                 $startDate = (new \DateTime())->setTime(0, 0, 0);
             } elseif ($periode === '7_derniers_jours') {
                 $startDate = (new \DateTime())->modify('-7 days')->setTime(0, 0, 0);
+            } elseif ($periode === 'personnalisee') {
+                // Vérifier que les dates sont fournies
+                if (empty($data['date_debut']) || empty($data['date_fin'])) {
+                    return $this->json(['success' => false, 'message' => 'Les champs date_debut et date_fin sont requis pour une période personnalisée'], 400);
+                }
+
+                try {
+                    $startDate = new \DateTime($data['date_debut']);
+                    $startDate->setTime(0, 0, 0);
+                    $endDate = new \DateTime($data['date_fin']);
+                    $endDate->setTime(23, 59, 59);
+                } catch (\Exception $e) {
+                    return $this->json(['success' => false, 'message' => 'Format de date invalide. Utilisez le format YYYY-MM-DD'], 400);
+                }
             } else {
-                return $this->json(['success' => false, 'message' => 'Période invalide. Utilisez "aujourd_hui" ou "7_derniers_jours"'], 400);
+                return $this->json(['success' => false, 'message' => 'Période invalide. Utilisez "aujourd_hui", "7_derniers_jours" ou "personnalisee"'], 400);
             }
 
             // Requête avec filtre de date
@@ -100,7 +129,7 @@ class ApiVenteController extends AbstractController
                 ->andWhere('p.createdAt <= :endDate')
                 ->setParameter('boutique', $boutique)
                 ->setParameter('startDate', $startDate)
-                ->setParameter('endDate', $now)
+                ->setParameter('endDate', $endDate)
                 ->orderBy('p.createdAt', 'DESC');
 
             $paiements = $qb->getQuery()->getResult();
@@ -129,9 +158,23 @@ class ApiVenteController extends AbstractController
                 new OA\Property(
                     property: "periode",
                     type: "string",
-                    enum: ["aujourd_hui", "7_derniers_jours"],
+                    enum: ["aujourd_hui", "7_derniers_jours", "personnalisee"],
                     example: "aujourd_hui",
-                    description: "Période de filtrage: 'aujourd_hui' ou '7_derniers_jours'"
+                    description: "Période de filtrage: 'aujourd_hui', '7_derniers_jours' ou 'personnalisee'"
+                ),
+                new OA\Property(
+                    property: "date_debut",
+                    type: "string",
+                    format: "date",
+                    example: "2025-01-01",
+                    description: "Date de début (format: YYYY-MM-DD). Requis si periode='personnalisee'"
+                ),
+                new OA\Property(
+                    property: "date_fin",
+                    type: "string",
+                    format: "date",
+                    example: "2025-01-31",
+                    description: "Date de fin (format: YYYY-MM-DD). Requis si periode='personnalisee'"
                 )
             ]
         )
@@ -162,13 +205,28 @@ class ApiVenteController extends AbstractController
             // Définir les dates selon la période
             $now = new \DateTime();
             $startDate = null;
+            $endDate = $now;
 
             if ($periode === 'aujourd_hui') {
                 $startDate = (new \DateTime())->setTime(0, 0, 0);
             } elseif ($periode === '7_derniers_jours') {
                 $startDate = (new \DateTime())->modify('-7 days')->setTime(0, 0, 0);
+            } elseif ($periode === 'personnalisee') {
+                // Vérifier que les dates sont fournies
+                if (empty($data['date_debut']) || empty($data['date_fin'])) {
+                    return $this->json(['success' => false, 'message' => 'Les champs date_debut et date_fin sont requis pour une période personnalisée'], 400);
+                }
+
+                try {
+                    $startDate = new \DateTime($data['date_debut']);
+                    $startDate->setTime(0, 0, 0);
+                    $endDate = new \DateTime($data['date_fin']);
+                    $endDate->setTime(23, 59, 59);
+                } catch (\Exception $e) {
+                    return $this->json(['success' => false, 'message' => 'Format de date invalide. Utilisez le format YYYY-MM-DD'], 400);
+                }
             } else {
-                return $this->json(['success' => false, 'message' => 'Période invalide. Utilisez "aujourd_hui" ou "7_derniers_jours"'], 400);
+                return $this->json(['success' => false, 'message' => 'Période invalide. Utilisez "aujourd_hui", "7_derniers_jours" ou "personnalisee"'], 400);
             }
 
             // Requête avec filtre de date
@@ -176,7 +234,7 @@ class ApiVenteController extends AbstractController
                 ->where('p.createdAt >= :startDate')
                 ->andWhere('p.createdAt <= :endDate')
                 ->setParameter('startDate', $startDate)
-                ->setParameter('endDate', $now)
+                ->setParameter('endDate', $endDate)
                 ->orderBy('p.createdAt', 'DESC');
 
             $paiements = $qb->getQuery()->getResult();
@@ -205,9 +263,23 @@ class ApiVenteController extends AbstractController
                 new OA\Property(
                     property: "periode",
                     type: "string",
-                    enum: ["aujourd_hui", "7_derniers_jours"],
+                    enum: ["aujourd_hui", "7_derniers_jours", "personnalisee"],
                     example: "aujourd_hui",
-                    description: "Période de filtrage: 'aujourd_hui' ou '7_derniers_jours'"
+                    description: "Période de filtrage: 'aujourd_hui', '7_derniers_jours' ou 'personnalisee'"
+                ),
+                new OA\Property(
+                    property: "date_debut",
+                    type: "string",
+                    format: "date",
+                    example: "2025-01-01",
+                    description: "Date de début (format: YYYY-MM-DD). Requis si periode='personnalisee'"
+                ),
+                new OA\Property(
+                    property: "date_fin",
+                    type: "string",
+                    format: "date",
+                    example: "2025-01-31",
+                    description: "Date de fin (format: YYYY-MM-DD). Requis si periode='personnalisee'"
                 )
             ]
         )
@@ -238,13 +310,28 @@ class ApiVenteController extends AbstractController
             // Définir les dates selon la période
             $now = new \DateTime();
             $startDate = null;
+            $endDate = $now;
 
             if ($periode === 'aujourd_hui') {
                 $startDate = (new \DateTime())->setTime(0, 0, 0);
             } elseif ($periode === '7_derniers_jours') {
                 $startDate = (new \DateTime())->modify('-7 days')->setTime(0, 0, 0);
+            } elseif ($periode === 'personnalisee') {
+                // Vérifier que les dates sont fournies
+                if (empty($data['date_debut']) || empty($data['date_fin'])) {
+                    return $this->json(['success' => false, 'message' => 'Les champs date_debut et date_fin sont requis pour une période personnalisée'], 400);
+                }
+
+                try {
+                    $startDate = new \DateTime($data['date_debut']);
+                    $startDate->setTime(0, 0, 0);
+                    $endDate = new \DateTime($data['date_fin']);
+                    $endDate->setTime(23, 59, 59);
+                } catch (\Exception $e) {
+                    return $this->json(['success' => false, 'message' => 'Format de date invalide. Utilisez le format YYYY-MM-DD'], 400);
+                }
             } else {
-                return $this->json(['success' => false, 'message' => 'Période invalide. Utilisez "aujourd_hui" ou "7_derniers_jours"'], 400);
+                return $this->json(['success' => false, 'message' => 'Période invalide. Utilisez "aujourd_hui", "7_derniers_jours" ou "personnalisee"'], 400);
             }
 
             // Requête avec filtre de date
@@ -252,7 +339,7 @@ class ApiVenteController extends AbstractController
                 ->where('p.createdAt >= :startDate')
                 ->andWhere('p.createdAt <= :endDate')
                 ->setParameter('startDate', $startDate)
-                ->setParameter('endDate', $now)
+                ->setParameter('endDate', $endDate)
                 ->orderBy('p.createdAt', 'DESC');
 
             $paiements = $qb->getQuery()->getResult();
