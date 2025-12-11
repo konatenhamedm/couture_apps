@@ -10,6 +10,7 @@ use App\Repository\PaiementBoutiqueRepository;
 use App\Repository\PaiementFactureRepository;
 use App\Repository\PaiementReservationRepository;
 use App\Repository\BoutiqueRepository;
+use App\Repository\SurccursaleRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -196,7 +197,7 @@ class ApiVenteController extends ApiInterface
     /**
      * Liste des paiements facture avec filtre de période
      */
-    #[Route('/vente/facture', methods: ['POST'])]
+    #[Route('/vente/facture/{succursaleId}', methods: ['POST'])]
     #[OA\Post(
         path: "/api/vente/facture",
         summary: "Liste des paiements facture avec filtre de période",
@@ -249,6 +250,7 @@ class ApiVenteController extends ApiInterface
     )]
     public function getPaiementsFacture(
         Request $request,
+        $succursaleId,
         PaiementFactureRepository $paiementFactureRepository
     ): Response {
         try {
@@ -283,7 +285,7 @@ class ApiVenteController extends ApiInterface
             }
 
             // Utiliser la méthode du repository
-            $paiements = $paiementFactureRepository->findByPeriod($startDate, $endDate);
+            $paiements = $paiementFactureRepository->findByPeriod($startDate, $endDate,$succursaleId);
             
             // Compter tous les paiements pour debug
             $totalPaiements = $paiementFactureRepository->countAll();
@@ -307,13 +309,173 @@ class ApiVenteController extends ApiInterface
     }
 
     /**
-     * Liste des paiements réservation avec filtre de période
+     * Debug: Voir tous les paiements réservation d'une boutique avec leurs dates
+     */
+    #[Route('/vente/reservation/boutique/{id}/debug', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/vente/reservation/boutique/{id}/debug",
+        summary: "Debug - Voir tous les paiements réservation avec dates",
+        description: "Affiche tous les paiements réservation d'une boutique avec leurs dates createdAt pour debug",
+        tags: ['Ventes']
+    )]
+    public function debugPaiementsReservationBoutique(
+        int $id,
+        PaiementReservationRepository $paiementReservationRepository,
+        BoutiqueRepository $boutiqueRepository
+    ): Response {
+        try {
+            $boutique = $boutiqueRepository->find($id);
+            if (!$boutique) {
+                return $this->json(['success' => false, 'message' => 'Boutique non trouvée'], 404);
+            }
+
+            // Récupérer tous les paiements réservation avec leurs dates
+            $paiementsDebug = $paiementReservationRepository->findAllByBoutiqueWithDates($boutique);
+
+            return $this->json([
+                'success' => true,
+                'boutique_id' => $id,
+                'total_paiements_reservation' => count($paiementsDebug),
+                'paiements_avec_dates' => $paiementsDebug,
+                'note' => 'Vérifiez si createdAt est NULL ou dans quelle période sont les dates'
+            ]);
+        } catch (\Exception $e) {
+            return $this->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Liste des paiements réservation d'une boutique avec filtre de période
+     */
+    #[Route('/vente/reservation/boutique/{id}', methods: ['POST'])]
+    #[OA\Post(
+        path: "/api/vente/reservation/boutique/{id}",
+        summary: "Liste des paiements réservation d'une boutique avec filtre de période",
+        description: "Retourne la liste des paiements réservation d'une boutique filtrés par période (aujourd'hui, 7 derniers jours ou personnalisée)",
+        tags: ['Ventes']
+    )]
+    #[OA\Parameter(
+        name: "id",
+        description: "ID de la boutique",
+        in: "path",
+        required: true,
+        schema: new OA\Schema(type: "integer")
+    )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(
+                    property: "periode",
+                    type: "string",
+                    enum: ["aujourd_hui", "7_derniers_jours", "personnalisee"],
+                    example: "aujourd_hui",
+                    description: "Période de filtrage: 'aujourd_hui', '7_derniers_jours' ou 'personnalisee'"
+                ),
+                new OA\Property(
+                    property: "date_debut",
+                    type: "string",
+                    format: "date",
+                    example: "2025-01-01",
+                    description: "Date de début (format: YYYY-MM-DD). Requis si periode='personnalisee'"
+                ),
+                new OA\Property(
+                    property: "date_fin",
+                    type: "string",
+                    format: "date",
+                    example: "2025-01-31",
+                    description: "Date de fin (format: YYYY-MM-DD). Requis si periode='personnalisee'"
+                )
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Liste des paiements réservation de la boutique",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "success", type: "boolean", example: true),
+                new OA\Property(
+                    property: "data",
+                    type: "array",
+                    items: new OA\Items(type: "object")
+                )
+            ]
+        )
+    )]
+    public function getPaiementsReservationByBoutique(
+        int $id,
+        Request $request,
+        PaiementReservationRepository $paiementReservationRepository,
+        BoutiqueRepository $boutiqueRepository
+    ): Response {
+        try {
+            $boutique = $boutiqueRepository->find($id);
+            if (!$boutique) {
+                return $this->json(['success' => false, 'message' => 'Boutique non trouvée'], 404);
+            }
+
+            $data = json_decode($request->getContent(), true);
+            $periode = $data['periode'] ?? 'aujourd_hui';
+
+            // Définir les dates selon la période
+            $now = new \DateTime();
+            $startDate = null;
+            $endDate = $now;
+
+            if ($periode === 'aujourd_hui') {
+                $startDate = (new \DateTime())->setTime(0, 0, 0);
+            } elseif ($periode === '7_derniers_jours') {
+                $startDate = (new \DateTime())->modify('-7 days')->setTime(0, 0, 0);
+            } elseif ($periode === 'personnalisee') {
+                // Vérifier que les dates sont fournies
+                if (empty($data['date_debut']) || empty($data['date_fin'])) {
+                    return $this->json(['success' => false, 'message' => 'Les champs date_debut et date_fin sont requis pour une période personnalisée'], 400);
+                }
+
+                try {
+                    $startDate = new \DateTime($data['date_debut']);
+                    $startDate->setTime(0, 0, 0);
+                    $endDate = new \DateTime($data['date_fin']);
+                    $endDate->setTime(23, 59, 59);
+                } catch (\Exception $e) {
+                    return $this->json(['success' => false, 'message' => 'Format de date invalide. Utilisez le format YYYY-MM-DD'], 400);
+                }
+            } else {
+                return $this->json(['success' => false, 'message' => 'Période invalide. Utilisez "aujourd_hui", "7_derniers_jours" ou "personnalisee"'], 400);
+            }
+
+            // Utiliser la méthode du repository
+            $paiements = $paiementReservationRepository->findByBoutiqueAndPeriod($boutique, $startDate, $endDate);
+            
+            // Compter tous les paiements réservation de la boutique pour debug
+            $totalPaiements = $paiementReservationRepository->countByBoutique($boutique);
+
+            return $this->json([
+                'success' => true, 
+                'data' => $paiements, 
+                'count' => count($paiements),
+                'total_paiements_reservation_boutique' => $totalPaiements,
+                'periode' => [
+                    'debut' => $startDate->format('Y-m-d H:i:s'),
+                    'fin' => $endDate->format('Y-m-d H:i:s')
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return $this->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Liste des paiements réservation avec filtre de période (tous)
      */
     #[Route('/vente/reservation', methods: ['POST'])]
     #[OA\Post(
         path: "/api/vente/reservation",
         summary: "Liste des paiements réservation avec filtre de période",
-        description: "Retourne la liste des paiements réservation filtrés par période (aujourd'hui ou 7 derniers jours)",
+        description: "Retourne la liste de tous les paiements réservation filtrés par période (aujourd'hui ou 7 derniers jours)",
         tags: ['Ventes']
     )]
     #[OA\RequestBody(

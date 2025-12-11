@@ -45,7 +45,7 @@ class PaiementFactureRepository extends ServiceEntityRepository
 
         if ($boutiqueId) {
             $qb->andWhere('f.boutique = :boutiqueId')
-               ->setParameter('boutiqueId', $boutiqueId);
+                ->setParameter('boutiqueId', $boutiqueId);
         }
 
         return $qb->getQuery()->getSingleResult();
@@ -54,7 +54,7 @@ class PaiementFactureRepository extends ServiceEntityRepository
     /**
      * Répartition par mode de paiement
      */
-    public function getRepartitionModesPaiement(int $boutiqueId = null): array
+    public function getRepartitionModesPaiement( $boutiqueId = null): array
     {
         $qb = $this->createQueryBuilder('p')
             ->select('p.modePaiement, COUNT(p.id) as nombre, SUM(p.montant) as total')
@@ -64,7 +64,7 @@ class PaiementFactureRepository extends ServiceEntityRepository
 
         if ($boutiqueId) {
             $qb->where('f.boutique = :boutiqueId')
-               ->setParameter('boutiqueId', $boutiqueId);
+                ->setParameter('boutiqueId', $boutiqueId);
         }
 
         return $qb->getQuery()->getResult();
@@ -73,13 +73,17 @@ class PaiementFactureRepository extends ServiceEntityRepository
     /**
      * Trouve les paiements facture par période
      */
-    public function findByPeriod(\DateTime $dateDebut, \DateTime $dateFin): array
+    public function findByPeriod(\DateTime $dateDebut, \DateTime $dateFin, $succursaleId): array
     {
         return $this->createQueryBuilder('p')
+            ->innerJoin('b.facture', 'f')
+            ->innerJoin('f.succursale', 's')
             ->where('p.createdAt >= :dateDebut')
             ->andWhere('p.createdAt <= :dateFin')
+            ->andWhere("s.id = :id")
             ->setParameter('dateDebut', $dateDebut)
             ->setParameter('dateFin', $dateFin)
+            ->setParameter('id', $succursaleId)
             ->orderBy('p.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
