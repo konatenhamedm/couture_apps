@@ -481,7 +481,7 @@ class ApiFactureController extends ApiInterface
         $paiement->setCreatedAtValue(new \DateTime());
         $paiement->setUpdatedAt(new \DateTime());
         $paiement->setFacture($facture);
-        
+
         $entityManager->persist($paiement);
         $facture->addPaiementFacture($paiement);
 
@@ -614,6 +614,9 @@ class ApiFactureController extends ApiInterface
         TypeMesureRepository $typeMesureRepository,
         ClientRepository $clientRepository,
         CategorieMesureRepository $categorieMesureRepository,
+        CaisseSuccursaleRepository $caisseSuccursaleRepository,
+        UserRepository $userRepository,
+        SurccursaleRepository $surccursaleRepository,
         Utils $utils,
         EntityManagerInterface $entityManager
     ): Response {
@@ -628,15 +631,16 @@ class ApiFactureController extends ApiInterface
             if ($mesuresJson) {
                 $data['mesures'] = json_decode($mesuresJson, true);
             }
-            
+
             // Récupération des autres champs
             if ($request->get('clientId')) $data['clientId'] = $request->get('clientId');
-            if ($request->get('avance')) $data['avance'] = $request->get('avance');
-            if ($request->get('remise')) $data['remise'] = $request->get('remise');
+            if ($request->get('succursaleId')) $data['succursaleId'] = $request->get('succursaleId');
+            if ($request->get('avance') !== null) $data['avance'] = $request->get('avance');
+            if ($request->get('remise') !== null) $data['remise'] = $request->get('remise');
             if ($request->get('montantTotal')) $data['montantTotal'] = $request->get('montantTotal');
-            if ($request->get('resteArgent')) $data['resteArgent'] = $request->get('resteArgent');
+            if ($request->get('resteArgent') !== null) $data['resteArgent'] = $request->get('resteArgent');
             if ($request->get('dateRetrait')) $data['dateRetrait'] = $request->get('dateRetrait');
-            
+
             $uploadedFiles = $request->files->get('mesures');
 
             if ($facture === null) {
@@ -645,9 +649,27 @@ class ApiFactureController extends ApiInterface
                 return $this->response('[]');
             }
 
+            // Sauvegarde de l'ancienne avance pour calculer la différence
+            $ancienneAvance = $facture->getAvance() ?? 0;
+
             // Mise à jour des informations de base
             if (isset($data['clientId'])) {
                 $facture->setClient($clientRepository->find($data['clientId']));
+            }
+
+            // Mise à jour de la succursale
+            if (isset($data['succursaleId'])) {
+                $facture->setSuccursale($surccursaleRepository->find($data['succursaleId']));
+            }
+
+            // Gestion de la signature
+            $uploadedFichierSignature = $request->files->get('signature');
+            if ($uploadedFichierSignature) {
+                $names = 'document_' . uniqid();
+                $filePrefix = str_slug($names);
+                $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
+                $fichierSignature = $utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFichierSignature, self::UPLOAD_PATH);
+                $facture->setSignature($fichierSignature);
             }
 
             $facture->setAvance($data['avance'] ?? $facture->getAvance());
@@ -681,8 +703,9 @@ class ApiFactureController extends ApiInterface
                     if ($mesure) {
                         $mesure->setTypeMesure($typeMesureRepository->find($mesureData['typeMesureId']));
                         $mesure->setMontant($mesureData['montant']);
+                        $mesure->setNom($mesureData['nom'] ?? ""); // ✅ Valeur par défaut ajoutée
                         $mesure->setRemise($mesureData['remise'] ?? 0);
-                        
+
                         if (!isset($mesureData['id'])) {
                             $entityManager->persist($mesure);
                         }
@@ -740,12 +763,80 @@ class ApiFactureController extends ApiInterface
                 return $errorResponse;
             }
 
+            // ✅ Gestion du paiement si l'avance a changé
+            $nouvelleAvance = $facture->getAvance() ?? 0;
+            $differenceAvance = $nouvelleAvance - $ancienneAvance;
+
+            if ($differenceAvance > 0) {
+                // Créer un nouveau paiement pour la différence
+                $paiement = new PaiementFacture();
+                $paiement->setMontant($differenceAvance);
+                $paiement->setType('paiementFacture');
+                $paiement->setReference($utils->generateReference('PMT'));
+                $paiement->setCreatedBy($this->getUser());
+                $paiement->setUpdatedBy($this->getUser());
+                $paiement->setCreatedAtValue(new \DateTime());
+                $paiement->setUpdatedAt(new \DateTime());
+                $paiement->setFacture($facture);
+
+                $entityManager->persist($paiement);
+                $facture->addPaiementFacture($paiement);
+
+                // Mise à jour de la caisse
+                $succursaleId = $facture->getSuccursale() ? $facture->getSuccursale()->getId() : null;
+                if ($succursaleId) {
+                    $caisse = $caisseSuccursaleRepository->findOneBy(['succursale' => $succursaleId]);
+                    if ($caisse) {
+                        $caisse->setMontant((int)$caisse->getMontant() + (int)$differenceAvance);
+                        $caisse->setType('caisse_succursale');
+                        $caisseSuccursaleRepository->add($caisse, true);
+                    }
+
+                    // Envoi de notifications
+                    $admin = $userRepository->getUserByCodeType($this->getUser()->getEntreprise());
+                    if ($admin) {
+                        $this->sendMailService->sendNotification([
+                            'entreprise' => $this->getUser()->getEntreprise(),
+                            "user" => $admin,
+                            "libelle" => sprintf(
+                                "Bonjour %s,\n\n" .
+                                    "Nous vous informons qu'un paiement supplémentaire vient d'être enregistré pour la facture %s dans la succursale **%s**.\n\n" .
+                                    "- Montant : %s FCFA\n" .
+                                    "- Effectué par : %s\n" .
+                                    "- Date : %s\n\n" .
+                                    "Cordialement,\nVotre application de gestion.",
+                                $admin->getLogin(),
+                                $facture->getReference() ?? 'N/A',
+                                $this->getUser()->getSurccursale() ? $this->getUser()->getSurccursale()->getLibelle() : "N/A",
+                                number_format($differenceAvance, 0, ',', ' '),
+                                $this->getUser()->getNom() && $this->getUser()->getPrenoms()
+                                    ? $this->getUser()->getNom() . " " . $this->getUser()->getPrenoms()
+                                    : $this->getUser()->getLogin(),
+                                (new \DateTime())->format('d/m/Y H:i')
+                            ),
+                            "titre" => "Paiement supplémentaire facture - " . ($this->getUser()->getSurccursale() ? $this->getUser()->getSurccursale()->getLibelle() : ""),
+                        ]);
+                    }
+
+                    $this->sendMailService->send(
+                        $this->sendMail,
+                        $this->superAdmin,
+                        "Paiement supplémentaire facture - " . $this->getUser()->getEntreprise()->getLibelle(),
+                        "paiement_email",
+                        [
+                            "boutique_libelle" => $this->getUser()->getEntreprise()->getLibelle(),
+                            "montant" => number_format($differenceAvance, 0, ',', ' ') . " FCFA",
+                            "date" => (new \DateTime())->format('d/m/Y H:i'),
+                        ]
+                    );
+                }
+            }
+
             $factureRepository->add($facture, true);
             return $this->responseData($facture, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la mise à jour de la facture: " . $exception->getMessage());
-            $this->setStatusCode(500);
             return $this->response('[]');
         }
     }
