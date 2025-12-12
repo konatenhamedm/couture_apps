@@ -317,7 +317,7 @@ class ApiPaiementController extends ApiInterface
         $facture->setResteArgent((int)$facture->getResteArgent() - (int)$data['montant']);
 
         // Mise à jour de la caisse succursale
-        $caisse = $caisseSuccursaleRepository->findOneBy(['surccursale' => $facture->getSuccursale()->getId()]);
+        $caisse = $caisseSuccursaleRepository->findOneBy(['succursale' => $facture->getSuccursale()->getId()]);
 
         $caisse->setMontant((int)$caisse->getMontant() + (int)$data['montant']);
         $caisse->setType('caisse_succursale');
