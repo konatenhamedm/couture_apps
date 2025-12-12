@@ -317,9 +317,7 @@ class ApiPaiementController extends ApiInterface
         $facture->setResteArgent((int)$facture->getResteArgent() - (int)$data['montant']);
 
         // Mise à jour de la caisse succursale
-        $caisse = $data['succursaleId'] != null
-            ? $caisseSuccursaleRepository->findOneBy(['surccursale' => $data['succursaleId']])
-            : $caisseSuccursaleRepository->findOneBy(['surccursale' => $this->getUser()->getSurccursale()]);
+        $caisse = $caisseSuccursaleRepository->findOneBy(['surccursale' => $facture->getSuccursale()->getId()]);
 
         $caisse->setMontant((int)$caisse->getMontant() + (int)$data['montant']);
         $caisse->setType('caisse_succursale');
@@ -345,14 +343,14 @@ class ApiPaiementController extends ApiInterface
                             "- Date : %s\n\n" .
                             "Cordialement,\nVotre application de gestion.",
                         $admin->getLogin(),
-                        $this->getUser()->getSurccursale() ? $this->getUser()->getSurccursale()->getLibelle() : "N/A",
+                        $this->getUser()->getSurccursale() ? $this->getUser()->getSurccursale()->getLibelle() : $facture->getSuccursale()->getLibelle(),
                         number_format($data['montant'], 0, ',', ' '),
                         $this->getUser()->getNom() && $this->getUser()->getPrenoms()
                             ? $this->getUser()->getNom() . " " . $this->getUser()->getPrenoms()
                             : $this->getUser()->getLogin(),
                         (new \DateTime())->format('d/m/Y H:i')
                     ),
-                    "titre" => "Paiement facture - " . ($this->getUser()->getSurccursale() ? $this->getUser()->getSurccursale()->getLibelle() : ""),
+                    "titre" => "Paiement facture - " . ($this->getUser()->getSurccursale() ? $this->getUser()->getSurccursale()->getLibelle() : $facture->getSuccursale()->getLibelle()),
                 ]);
 
                 $this->sendMailService->send(
