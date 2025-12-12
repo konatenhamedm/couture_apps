@@ -17,6 +17,24 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
         parent::__construct($registry, PaiementBoutique::class);
     }
 
+     public function add(PaiementBoutique $entity, bool $flush = false): void
+    {
+        $this->getEntityManager()->persist($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+
+    public function remove(PaiementBoutique $entity, bool $flush = false): void
+    {
+        $this->getEntityManager()->remove($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+
     /**
      * Trouve les paiements boutique par boutique et période
      */
