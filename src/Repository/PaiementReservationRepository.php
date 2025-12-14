@@ -121,4 +121,42 @@ class PaiementReservationRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * Calcule le total des paiements pour une entreprise dans une période
+     */
+    public function sumByEntrepriseAndPeriod($entreprise, \DateTime $dateDebut, \DateTime $dateFin): float
+    {
+        $result = $this->createQueryBuilder('pr')
+            ->select('SUM(pr.montant)')
+            ->leftJoin('pr.reservation', 'r')
+            ->where('r.entreprise = :entreprise')
+            ->andWhere('pr.createdAt BETWEEN :dateDebut AND :dateFin')
+            ->setParameter('entreprise', $entreprise)
+            ->setParameter('dateDebut', $dateDebut)
+            ->setParameter('dateFin', $dateFin)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return $result ?? 0;
+    }
+
+    /**
+     * Calcule le total des paiements pour une boutique dans une période
+     */
+    public function sumByBoutiqueAndPeriod($boutique, \DateTime $dateDebut, \DateTime $dateFin): float
+    {
+        $result = $this->createQueryBuilder('pr')
+            ->select('SUM(pr.montant)')
+            ->leftJoin('pr.reservation', 'r')
+            ->where('r.boutique = :boutique')
+            ->andWhere('pr.createdAt BETWEEN :dateDebut AND :dateFin')
+            ->setParameter('boutique', $boutique)
+            ->setParameter('dateDebut', $dateDebut)
+            ->setParameter('dateFin', $dateFin)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return $result ?? 0;
+    }
 }

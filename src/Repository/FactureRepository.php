@@ -62,6 +62,57 @@ class FactureRepository extends ServiceEntityRepository
             ->getQuery()
             ->getSingleScalarResult();
     }
+
+    /**
+     * Compte les factures par entreprise et période
+     */
+    public function countByEntrepriseAndPeriod($entreprise, \DateTime $dateDebut, \DateTime $dateFin): int
+    {
+        return $this->createQueryBuilder('f')
+            ->select('COUNT(f.id)')
+            ->where('f.entreprise = :entreprise')
+            ->andWhere('f.createdAt BETWEEN :dateDebut AND :dateFin')
+            ->setParameter('entreprise', $entreprise)
+            ->setParameter('dateDebut', $dateDebut)
+            ->setParameter('dateFin', $dateFin)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * Compte les factures par jour pour une entreprise
+     */
+    public function countByEntrepriseAndDay($entreprise, \DateTime $date): int
+    {
+        $nextDay = clone $date;
+        $nextDay->add(new \DateInterval('P1D'));
+
+        return $this->createQueryBuilder('f')
+            ->select('COUNT(f.id)')
+            ->where('f.entreprise = :entreprise')
+            ->andWhere('f.createdAt >= :date')
+            ->andWhere('f.createdAt < :nextDay')
+            ->setParameter('entreprise', $entreprise)
+            ->setParameter('date', $date)
+            ->setParameter('nextDay', $nextDay)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * Récupère les dernières factures pour une entreprise
+     */
+    public function findLatestByEntreprise($entreprise, int $limit = 5): array
+    {
+        return $this->createQueryBuilder('f')
+            ->where('f.entreprise = :entreprise')
+            ->orderBy('f.createdAt', 'DESC')
+            ->setMaxResults($limit)
+            ->setParameter('entreprise', $entreprise)
+            ->getQuery()
+            ->getResult();
+    }
+
     //    /**
     //     * @return Facture[] Returns an array of Facture objects
     //     */

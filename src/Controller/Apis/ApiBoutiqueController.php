@@ -114,15 +114,15 @@ class ApiBoutiqueController extends ApiInterface
 
         try {
             if ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'SADM'])) {
-                $boutiques = $boutiqueRepository->findBy(
+                $boutiques = $this->paginationService->paginate($boutiqueRepository->findBy(
                     ['entreprise' => $this->getUser()->getEntreprise()],
                     ['id' => 'ASC']
-                );
+                ));
             } else {
-                $boutiques = $boutiqueRepository->findBy(
+                $boutiques = $this->paginationService->paginate($boutiqueRepository->findBy(
                     ['id' => $this->getUser()->getBoutique()],
                     ['id' => 'ASC']
-                );
+                ));
             }
             $response = $this->responseData($boutiques, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {

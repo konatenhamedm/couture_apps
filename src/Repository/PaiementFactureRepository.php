@@ -117,4 +117,23 @@ class PaiementFactureRepository extends ServiceEntityRepository
             ->getQuery()
             ->getSingleScalarResult();
     }
+
+    /**
+     * Calcule le total des paiements facture pour une entreprise dans une période
+     */
+    public function sumByEntrepriseAndPeriod($entreprise, \DateTime $dateDebut, \DateTime $dateFin): float
+    {
+        $result = $this->createQueryBuilder('pf')
+            ->select('SUM(pf.montant)')
+            ->leftJoin('pf.facture', 'f')
+            ->where('f.entreprise = :entreprise')
+            ->andWhere('pf.createdAt BETWEEN :dateDebut AND :dateFin')
+            ->setParameter('entreprise', $entreprise)
+            ->setParameter('dateDebut', $dateDebut)
+            ->setParameter('dateFin', $dateFin)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return $result ?? 0;
+    }
 }

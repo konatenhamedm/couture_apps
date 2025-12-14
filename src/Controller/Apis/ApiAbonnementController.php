@@ -70,7 +70,6 @@ class ApiAbonnementController extends ApiInterface
             $this->setMessage("Erreur lors de la récupération des abonnements");
             $response = $this->response([]);
         }
-
         return $response;
     }
 

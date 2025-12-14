@@ -43,6 +43,41 @@ class ClientRepository extends ServiceEntityRepository
             ->getQuery()
             ->getSingleScalarResult();
     }
+
+    /**
+     * Compte les clients actifs pour une entreprise dans une période
+     */
+    public function countActiveByPeriod(\DateTime $dateDebut, \DateTime $dateFin): int
+    {
+        return $this->createQueryBuilder('c')
+            ->select('COUNT(DISTINCT c.id)')
+            ->leftJoin('c.reservations', 'r')
+            ->leftJoin('c.factures', 'f')
+            ->leftJoin('c.paiementBoutiques', 'pb')
+            ->where('(r.createdAt BETWEEN :dateDebut AND :dateFin) OR (f.createdAt BETWEEN :dateDebut AND :dateFin) OR (pb.createdAt BETWEEN :dateDebut AND :dateFin)')
+            ->setParameter('dateDebut', $dateDebut)
+            ->setParameter('dateFin', $dateFin)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * Compte les clients actifs pour une boutique dans une période
+     */
+    public function countActiveByBoutiqueAndPeriod($boutique, \DateTime $dateDebut, \DateTime $dateFin): int
+    {
+        return $this->createQueryBuilder('c')
+            ->select('COUNT(DISTINCT c.id)')
+            ->leftJoin('c.reservations', 'r')
+            ->leftJoin('c.paiementBoutiques', 'pb')
+            ->where('(r.boutique = :boutique AND r.createdAt BETWEEN :dateDebut AND :dateFin) OR (pb.boutique = :boutique AND pb.createdAt BETWEEN :dateDebut AND :dateFin)')
+            ->setParameter('boutique', $boutique)
+            ->setParameter('dateDebut', $dateDebut)
+            ->setParameter('dateFin', $dateFin)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     //    /**
     //     * @return Client[] Returns an array of Client objects
     //     */

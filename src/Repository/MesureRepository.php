@@ -32,6 +32,24 @@ class MesureRepository extends ServiceEntityRepository
             $this->getEntityManager()->flush();
         }
     }
+
+    /**
+     * Compte les mesures par entreprise et période
+     */
+    public function countByEntrepriseAndPeriod($entreprise, \DateTime $dateDebut, \DateTime $dateFin): int
+    {
+        return $this->createQueryBuilder('m')
+            ->select('COUNT(m.id)')
+            ->leftJoin('m.facture', 'f')
+            ->where('f.entreprise = :entreprise')
+            ->andWhere('m.createdAt BETWEEN :dateDebut AND :dateFin')
+            ->setParameter('entreprise', $entreprise)
+            ->setParameter('dateDebut', $dateDebut)
+            ->setParameter('dateFin', $dateFin)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     //    /**
     //     * @return Mesure[] Returns an array of Mesure objects
     //     */
