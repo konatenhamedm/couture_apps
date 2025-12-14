@@ -10,45 +10,47 @@ use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: EntreStockRepository::class)]
 class EntreStock
-{ use TraitEntity;
+{
+    use TraitEntity;
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-     #[Groups(["group1", "group_type","group_ligne","group_details","group_modeleBoutique"])]
+    #[Groups(["group1", "group_type", "group_ligne", "group_details", "group_modeleBoutique"])]
     private ?int $id = null;
 
     #[ORM\Column(nullable: true)]
-     #[Groups(["group1", "group_type","group_ligne","group_details","group_modeleBoutique"])]
+    #[Groups(["group1", "group_type", "group_ligne", "group_details", "group_modeleBoutique"])]
     private ?\DateTime $date = null;
 
     #[ORM\Column]
-     #[Groups(["group1", "group_type","group_ligne","group_details","group_modeleBoutique"])]
+    #[Groups(["group1", "group_type", "group_ligne", "group_details", "group_modeleBoutique"])]
     private ?int $quantite = null;
 
     #[ORM\ManyToOne(inversedBy: 'entreStocks')]
-     #[Groups(["group1", "group_type"])]
+    #[Groups(["group1", "group_type"])]
     private ?Entreprise $entreprise = null;
 
     #[ORM\ManyToOne(inversedBy: 'entreStocks')]
-     #[Groups(["group1", "group_type","group_ligne"])]
+    #[Groups(["group1", "group_type", "group_ligne"])]
     private ?Boutique $boutique = null;
 
     /**
      * @var Collection<int, LigneEntre>
      */
     #[ORM\OneToMany(targetEntity: LigneEntre::class, mappedBy: 'entreStock',)]
-     #[Groups(["group1", "group_type"])]
+    #[Groups(["group1", "group_type"])]
     private Collection $ligneEntres;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["group1", "group_type", "group_ligne", "group_details", "group_modeleBoutique"])]
     private ?string $type = null;
 
-    #[ORM\Column(length: 50, options: ["default" => "EN_ATTENTE"],nullable: true)]
-    #[Groups(["group1", "group_type", "group_ligne", "group_details","group_modeleBoutique"])]
+    #[ORM\Column(length: 50, options: ["default" => "EN_ATTENTE"], nullable: true)]
+    #[Groups(["group1", "group_type", "group_ligne", "group_details", "group_modeleBoutique"])]
     private ?string $statut = 'EN_ATTENTE';
 
     #[ORM\Column(type: 'text', nullable: true)]
-    #[Groups(["group1", "group_type","group_modeleBoutique"])]
+    #[Groups(["group1", "group_type", "group_modeleBoutique"])]
     private ?string $commentaire = null;
 
     public function __construct()
