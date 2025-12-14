@@ -14,6 +14,7 @@ use Nelmio\ApiDocBundle\Attribute\Model;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use App\Service\Utils;
 
 /**
  * Contrôleur pour la gestion des informations d'entreprise
@@ -118,7 +119,7 @@ class ApiEntrepriseController extends ApiInterface
 
             $response = $this->responseData($data, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des boutiques et succursales de l'entreprise");
             $response = $this->response([]);
         }
@@ -197,7 +198,7 @@ $this->setStatusCode(500);
 
             $response = $this->responseData($entreprise, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des informations de l'entreprise");
             $response = $this->response([]);
         }
@@ -251,7 +252,7 @@ $this->setStatusCode(500);
 
             $response = $this->responseData($surccursales, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des succursales");
             $response = $this->response([]);
         }
@@ -306,8 +307,146 @@ $this->setStatusCode(500);
 
             $response = $this->responseData($boutiques, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des boutiques");
+            $response = $this->response([]);
+        }
+
+        return $response;
+    }
+
+    /**
+     * Modifie les informations de l'entreprise
+     */
+    #[Route('/update', methods: ['POST'])]
+    #[OA\Post(
+        path: "/api/entreprise/update",
+        summary: "Modifier les informations de l'entreprise",
+        description: "Permet de mettre à jour les informations de l'entreprise incluant le nom, email, numéro et logo. Les données sont envoyées en multipart/form-data pour supporter l'upload du logo.",
+        tags: ['entreprise']
+    )]
+    #[OA\RequestBody(
+        required: true,
+        description: "Données de l'entreprise à modifier (formData)",
+        content: new OA\MediaType(
+            mediaType: "multipart/form-data",
+            schema: new OA\Schema(
+                type: "object",
+                properties: [
+                    new OA\Property(
+                        property: "libelle",
+                        type: "string",
+                        example: "Mon Entreprise SARL",
+                        description: "Nom de l'entreprise"
+                    ),
+                    new OA\Property(
+                        property: "email",
+                        type: "string",
+                        format: "email",
+                        example: "contact@entreprise.com",
+                        description: "Email de l'entreprise"
+                    ),
+                    new OA\Property(
+                        property: "numero",
+                        type: "string",
+                        example: "+225 0123456789",
+                        description: "Numéro de téléphone"
+                    ),
+                    new OA\Property(
+                        property: "logo",
+                        type: "string",
+                        format: "binary",
+                        description: "Fichier logo de l'entreprise (JPG, PNG, formats acceptés)"
+                    )
+                ]
+            )
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Informations de l'entreprise mises à jour avec succès",
+        content: new OA\JsonContent(
+            type: 'object',
+            properties: [
+                new OA\Property(property: "id", type: "integer", example: 1),
+                new OA\Property(property: "libelle", type: "string", example: "Mon Entreprise SARL"),
+                new OA\Property(property: "email", type: "string", example: "contact@entreprise.com"),
+                new OA\Property(property: "numero", type: "string", example: "+225 0123456789"),
+                new OA\Property(
+                    property: "logo",
+                    type: "object",
+                    nullable: true,
+                    properties: [
+                        new OA\Property(property: "id", type: "integer", example: 1),
+                        new OA\Property(property: "path", type: "string", example: "media_deeps"),
+                        new OA\Property(property: "alt", type: "string", example: "logo_entreprise.png")
+                    ]
+                ),
+                new OA\Property(property: "updatedAt", type: "string", format: "date-time")
+            ]
+        )
+    )]
+    #[OA\Response(response: 400, description: "Données invalides ou fichier non accepté")]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 404, description: "Entreprise non trouvée")]
+    #[OA\Response(response: 500, description: "Erreur lors de la mise à jour")]
+    public function updateEntreprise(
+        Request $request,
+        EntrepriseRepository $entrepriseRepository,
+        Utils $utils
+    ): Response {
+        /* if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+            return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
+        } */
+
+        try {
+            $entreprise = $this->getUser()->getEntreprise();
+
+            if (!$entreprise) {
+                $this->setMessage("Aucune entreprise associée à cet utilisateur");
+                $this->setStatusCode(404);
+                return $this->response('[]');
+            }
+
+            // Mise à jour des champs textuels
+            if ($request->get('libelle')) {
+                $entreprise->setLibelle($request->get('libelle'));
+            }
+
+            if ($request->get('email')) {
+                $entreprise->setEmail($request->get('email'));
+            }
+
+            if ($request->get('numero')) {
+                $entreprise->setNumero($request->get('numero'));
+            }
+
+            // Gestion de l'upload du logo
+            $uploadedFile = $request->files->get('logo');
+            if ($uploadedFile) {
+                $names = 'logo_entreprise_' . $entreprise->getId();
+                $filePrefix = str_slug($names);
+                $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
+
+                if ($fichier = $utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH)) {
+                    $entreprise->setLogo($fichier);
+                }
+            }
+
+            // Vérification des erreurs
+            if ($errorResponse = $this->errorResponse($entreprise)) {
+                return $errorResponse;
+            }
+
+            $entreprise->setUpdatedAt();
+            $entrepriseRepository->add($entreprise, true);
+
+            $this->setMessage("Informations de l'entreprise mises à jour avec succès");
+            $response = $this->responseData($entreprise, 'group1', ['Content-Type' => 'application/json']);
+        } catch (\Exception $exception) {
+            $this->setStatusCode(500);
+            $this->setMessage("Erreur lors de la mise à jour des informations de l'entreprise: " . $exception->getMessage());
             $response = $this->response([]);
         }
 
