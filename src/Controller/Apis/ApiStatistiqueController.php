@@ -612,7 +612,7 @@ class ApiStatistiqueController extends ApiInterface
         $chiffreAffaires = $this->calculateBoutiqueRevenue($boutique, $dateDebut, $dateFin);
         
         // Réservations actives pour cette boutique
-        $reservationsActives = $this->reservationRepository->countActiveByBoutiqueAndPeriod($boutique, $dateDebut, $dateFin);
+        $reservationsActives = $this->reservationRepository->countActiveByBoutiqueAndPeriods($boutique, $dateDebut, $dateFin);
         
         // Clients actifs pour cette boutique
         $clientsActifs = $this->clientRepository->countActiveByBoutiqueAndPeriod($boutique, $dateDebut, $dateFin);

@@ -105,6 +105,24 @@ class ReservationRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
+    public function countActiveByBoutiqueAndPeriods($boutique, \DateTime $dateDebut, \DateTime $dateFin): int
+    {
+        $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebut);
+        $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFin);
+        
+        return $this->createQueryBuilder('r')
+            ->select('SUM(r.montant)')
+            ->where('r.boutique = :boutique')
+            ->andWhere('r.createdAt >= :dateDebut')
+            ->andWhere('r.createdAt <= :dateFin')
+            ->andWhere('r.isActive = true')
+            ->setParameter('boutique', $boutique)
+            ->setParameter('dateDebut', $dateDebutImmutable)
+            ->setParameter('dateFin', $dateFinImmutable)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     /**
      * Compte les commandes en cours pour une entreprise
      */
