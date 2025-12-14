@@ -47,16 +47,23 @@ class ClientRepository extends ServiceEntityRepository
     /**
      * Compte les clients actifs pour une entreprise dans une période
      */
-    public function countActiveByPeriod(\DateTime $dateDebut, \DateTime $dateFin): int
+    public function countActiveByPeriod($entreprise, \DateTime $dateDebut, \DateTime $dateFin): int
     {
+        $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebut);
+        $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFin);
+
+       
+        
         return $this->createQueryBuilder('c')
             ->select('COUNT(DISTINCT c.id)')
-            ->leftJoin('c.reservations', 'r')
-            ->leftJoin('c.factures', 'f')
-            ->leftJoin('c.paiementBoutiques', 'pb')
-            ->where('(r.createdAt BETWEEN :dateDebut AND :dateFin) OR (f.createdAt BETWEEN :dateDebut AND :dateFin) OR (pb.createdAt BETWEEN :dateDebut AND :dateFin)')
-            ->setParameter('dateDebut', $dateDebut)
-            ->setParameter('dateFin', $dateFin)
+            ->where('c.createdAt >= :dateDebut')
+            ->andWhere('c.createdAt <= :dateFin')
+            ->andWhere('c.entreprise = :entreprise')
+            ->andWhere('c.isActive = :isActive')
+            ->setParameter('dateDebut', $dateDebutImmutable)
+            ->setParameter('dateFin', $dateFinImmutable)
+            ->setParameter('entreprise', $entreprise)
+            ->setParameter('isActive', 1)
             ->getQuery()
             ->getSingleScalarResult();
     }
@@ -66,14 +73,17 @@ class ClientRepository extends ServiceEntityRepository
      */
     public function countActiveByBoutiqueAndPeriod($boutique, \DateTime $dateDebut, \DateTime $dateFin): int
     {
+        $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebut);
+        $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFin);
+        
         return $this->createQueryBuilder('c')
             ->select('COUNT(DISTINCT c.id)')
             ->leftJoin('c.reservations', 'r')
             ->leftJoin('c.paiementBoutiques', 'pb')
-            ->where('(r.boutique = :boutique AND r.createdAt BETWEEN :dateDebut AND :dateFin) OR (pb.boutique = :boutique AND pb.createdAt BETWEEN :dateDebut AND :dateFin)')
+            ->where('(r.boutique = :boutique AND r.createdAt >= :dateDebut AND r.createdAt <= :dateFin) OR (pb.boutique = :boutique AND pb.createdAt >= :dateDebut AND pb.createdAt <= :dateFin)')
             ->setParameter('boutique', $boutique)
-            ->setParameter('dateDebut', $dateDebut)
-            ->setParameter('dateFin', $dateFin)
+            ->setParameter('dateDebut', $dateDebutImmutable)
+            ->setParameter('dateFin', $dateFinImmutable)
             ->getQuery()
             ->getSingleScalarResult();
     }

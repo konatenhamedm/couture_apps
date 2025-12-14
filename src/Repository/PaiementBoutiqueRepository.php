@@ -97,14 +97,18 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
      */
     public function sumByEntrepriseAndPeriod($entreprise, \DateTime $dateDebut, \DateTime $dateFin): float
     {
+        $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebut);
+        $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFin);
+        
         $result = $this->createQueryBuilder('pb')
             ->select('SUM(pb.montant)')
             ->leftJoin('pb.boutique', 'b')
             ->where('b.entreprise = :entreprise')
-            ->andWhere('pb.createdAt BETWEEN :dateDebut AND :dateFin')
+            ->andWhere('pb.createdAt >= :dateDebut')
+            ->andWhere('pb.createdAt <= :dateFin')
             ->setParameter('entreprise', $entreprise)
-            ->setParameter('dateDebut', $dateDebut)
-            ->setParameter('dateFin', $dateFin)
+            ->setParameter('dateDebut', $dateDebutImmutable)
+            ->setParameter('dateFin', $dateFinImmutable)
             ->getQuery()
             ->getSingleScalarResult();
 
@@ -116,13 +120,17 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
      */
     public function sumByBoutiqueAndPeriod(Boutique $boutique, \DateTime $dateDebut, \DateTime $dateFin): float
     {
+        $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebut);
+        $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFin);
+        
         $result = $this->createQueryBuilder('pb')
             ->select('SUM(pb.montant)')
             ->where('pb.boutique = :boutique')
-            ->andWhere('pb.createdAt BETWEEN :dateDebut AND :dateFin')
+            ->andWhere('pb.createdAt >= :dateDebut')
+            ->andWhere('pb.createdAt <= :dateFin')
             ->setParameter('boutique', $boutique)
-            ->setParameter('dateDebut', $dateDebut)
-            ->setParameter('dateFin', $dateFin)
+            ->setParameter('dateDebut', $dateDebutImmutable)
+            ->setParameter('dateFin', $dateFinImmutable)
             ->getQuery()
             ->getSingleScalarResult();
 
@@ -136,6 +144,9 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
     {
         $nextDay = clone $date;
         $nextDay->add(new \DateInterval('P1D'));
+        
+        $dateImmutable = \DateTimeImmutable::createFromMutable($date);
+        $nextDayImmutable = \DateTimeImmutable::createFromMutable($nextDay);
 
         return $this->createQueryBuilder('pb')
             ->select('COUNT(pb.id)')
@@ -144,8 +155,8 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
             ->andWhere('pb.createdAt >= :date')
             ->andWhere('pb.createdAt < :nextDay')
             ->setParameter('entreprise', $entreprise)
-            ->setParameter('date', $date)
-            ->setParameter('nextDay', $nextDay)
+            ->setParameter('date', $dateImmutable)
+            ->setParameter('nextDay', $nextDayImmutable)
             ->getQuery()
             ->getSingleScalarResult();
     }
@@ -157,6 +168,9 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
     {
         $nextDay = clone $date;
         $nextDay->add(new \DateInterval('P1D'));
+        
+        $dateImmutable = \DateTimeImmutable::createFromMutable($date);
+        $nextDayImmutable = \DateTimeImmutable::createFromMutable($nextDay);
 
         return $this->createQueryBuilder('pb')
             ->select('COUNT(pb.id)')
@@ -164,8 +178,8 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
             ->andWhere('pb.createdAt >= :date')
             ->andWhere('pb.createdAt < :nextDay')
             ->setParameter('boutique', $boutique)
-            ->setParameter('date', $date)
-            ->setParameter('nextDay', $nextDay)
+            ->setParameter('date', $dateImmutable)
+            ->setParameter('nextDay', $nextDayImmutable)
             ->getQuery()
             ->getSingleScalarResult();
     }

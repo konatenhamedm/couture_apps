@@ -68,14 +68,18 @@ class ReservationRepository extends ServiceEntityRepository
      */
     public function countActiveByEntrepriseAndPeriod($entreprise, \DateTime $dateDebut, \DateTime $dateFin): int
     {
+        $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebut);
+        $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFin);
+        
         return $this->createQueryBuilder('r')
             ->select('COUNT(r.id)')
             ->where('r.entreprise = :entreprise')
-            ->andWhere('r.createdAt BETWEEN :dateDebut AND :dateFin')
+            ->andWhere('r.createdAt >= :dateDebut')
+            ->andWhere('r.createdAt <= :dateFin')
             ->andWhere('r.isActive = true')
             ->setParameter('entreprise', $entreprise)
-            ->setParameter('dateDebut', $dateDebut)
-            ->setParameter('dateFin', $dateFin)
+            ->setParameter('dateDebut', $dateDebutImmutable)
+            ->setParameter('dateFin', $dateFinImmutable)
             ->getQuery()
             ->getSingleScalarResult();
     }
@@ -85,14 +89,18 @@ class ReservationRepository extends ServiceEntityRepository
      */
     public function countActiveByBoutiqueAndPeriod($boutique, \DateTime $dateDebut, \DateTime $dateFin): int
     {
+        $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebut);
+        $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFin);
+        
         return $this->createQueryBuilder('r')
             ->select('COUNT(r.id)')
             ->where('r.boutique = :boutique')
-            ->andWhere('r.createdAt BETWEEN :dateDebut AND :dateFin')
+            ->andWhere('r.createdAt >= :dateDebut')
+            ->andWhere('r.createdAt <= :dateFin')
             ->andWhere('r.isActive = true')
             ->setParameter('boutique', $boutique)
-            ->setParameter('dateDebut', $dateDebut)
-            ->setParameter('dateFin', $dateFin)
+            ->setParameter('dateDebut', $dateDebutImmutable)
+            ->setParameter('dateFin', $dateFinImmutable)
             ->getQuery()
             ->getSingleScalarResult();
     }
@@ -136,6 +144,9 @@ class ReservationRepository extends ServiceEntityRepository
     {
         $nextDay = clone $date;
         $nextDay->add(new \DateInterval('P1D'));
+        
+        $dateImmutable = \DateTimeImmutable::createFromMutable($date);
+        $nextDayImmutable = \DateTimeImmutable::createFromMutable($nextDay);
 
         return $this->createQueryBuilder('r')
             ->select('COUNT(r.id)')
@@ -143,8 +154,8 @@ class ReservationRepository extends ServiceEntityRepository
             ->andWhere('r.createdAt >= :date')
             ->andWhere('r.createdAt < :nextDay')
             ->setParameter('entreprise', $entreprise)
-            ->setParameter('date', $date)
-            ->setParameter('nextDay', $nextDay)
+            ->setParameter('date', $dateImmutable)
+            ->setParameter('nextDay', $nextDayImmutable)
             ->getQuery()
             ->getSingleScalarResult();
     }
@@ -156,6 +167,9 @@ class ReservationRepository extends ServiceEntityRepository
     {
         $nextDay = clone $date;
         $nextDay->add(new \DateInterval('P1D'));
+        
+        $dateImmutable = \DateTimeImmutable::createFromMutable($date);
+        $nextDayImmutable = \DateTimeImmutable::createFromMutable($nextDay);
 
         return $this->createQueryBuilder('r')
             ->select('COUNT(r.id)')
@@ -163,8 +177,8 @@ class ReservationRepository extends ServiceEntityRepository
             ->andWhere('r.createdAt >= :date')
             ->andWhere('r.createdAt < :nextDay')
             ->setParameter('boutique', $boutique)
-            ->setParameter('date', $date)
-            ->setParameter('nextDay', $nextDay)
+            ->setParameter('date', $dateImmutable)
+            ->setParameter('nextDay', $nextDayImmutable)
             ->getQuery()
             ->getSingleScalarResult();
     }

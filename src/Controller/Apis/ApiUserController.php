@@ -846,7 +846,7 @@ class ApiUserController extends ApiInterface
      * Met à jour le profil d'un utilisateur
      */
     #[Route('/update/profil/{id}', methods: ['PUT', 'POST'])]
-    #[OA\Put(
+    #[OA\Post(
         path: "/api/user/update/profil/{id}",
         summary: "Mettre à jour le profil utilisateur",
         description: "Permet de mettre à jour les informations personnelles d'un utilisateur (nom, prénoms, email). L'email doit rester unique.",
@@ -917,8 +917,10 @@ class ApiUserController extends ApiInterface
         UserRepository $userRepository,
         User $user
     ): Response {
+        //dd("data");
         try {
             $data = json_decode($request->getContent(), true);
+
 
             if (!$user) {
                 return $this->json([
@@ -951,12 +953,12 @@ class ApiUserController extends ApiInterface
             //$user->setUpdatedAt(new \DateTime());
             $userRepository->add($user, true);
 
-            $context = [AbstractNormalizer::GROUPS => 'group_pro'];
+            $context = [AbstractNormalizer::GROUPS => 'group1'];
             $json = $this->serializer->serialize($user, 'json', $context);
 
             return new JsonResponse([
                 'code' => 200,
-                'message' => 'Utilisateur mis à jour avec succès',
+                'message' => 'Utilisateur mis à jour avec sssssuccès',
                 'data' => json_decode($json)
             ]);
         } catch (\Exception $exception) {

@@ -127,14 +127,24 @@ class PaiementReservationRepository extends ServiceEntityRepository
      */
     public function sumByEntrepriseAndPeriod($entreprise, \DateTime $dateDebut, \DateTime $dateFin): float
     {
+        // S'assurer que dateDebut commence à 00:00:00 et dateFin finit à 23:59:59
+        $dateDebutClone = clone $dateDebut;
+        $dateDebutClone->setTime(0, 0, 0);
+        $dateFinClone = clone $dateFin;
+        $dateFinClone->setTime(23, 59, 59);
+        
+        $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebutClone);
+        $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFinClone);
+        
         $result = $this->createQueryBuilder('pr')
             ->select('SUM(pr.montant)')
             ->leftJoin('pr.reservation', 'r')
             ->where('r.entreprise = :entreprise')
-            ->andWhere('pr.createdAt BETWEEN :dateDebut AND :dateFin')
+            ->andWhere('pr.createdAt >= :dateDebut')
+            ->andWhere('pr.createdAt <= :dateFin')
             ->setParameter('entreprise', $entreprise)
-            ->setParameter('dateDebut', $dateDebut)
-            ->setParameter('dateFin', $dateFin)
+            ->setParameter('dateDebut', $dateDebutImmutable)
+            ->setParameter('dateFin', $dateFinImmutable)
             ->getQuery()
             ->getSingleScalarResult();
 
@@ -146,14 +156,24 @@ class PaiementReservationRepository extends ServiceEntityRepository
      */
     public function sumByBoutiqueAndPeriod($boutique, \DateTime $dateDebut, \DateTime $dateFin): float
     {
+        // S'assurer que dateDebut commence à 00:00:00 et dateFin finit à 23:59:59
+        $dateDebutClone = clone $dateDebut;
+        $dateDebutClone->setTime(0, 0, 0);
+        $dateFinClone = clone $dateFin;
+        $dateFinClone->setTime(23, 59, 59);
+        
+        $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebutClone);
+        $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFinClone);
+        
         $result = $this->createQueryBuilder('pr')
             ->select('SUM(pr.montant)')
             ->leftJoin('pr.reservation', 'r')
             ->where('r.boutique = :boutique')
-            ->andWhere('pr.createdAt BETWEEN :dateDebut AND :dateFin')
+            ->andWhere('pr.createdAt >= :dateDebut')
+            ->andWhere('pr.createdAt <= :dateFin')
             ->setParameter('boutique', $boutique)
-            ->setParameter('dateDebut', $dateDebut)
-            ->setParameter('dateFin', $dateFin)
+            ->setParameter('dateDebut', $dateDebutImmutable)
+            ->setParameter('dateFin', $dateFinImmutable)
             ->getQuery()
             ->getSingleScalarResult();
 

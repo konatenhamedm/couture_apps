@@ -123,14 +123,18 @@ class PaiementFactureRepository extends ServiceEntityRepository
      */
     public function sumByEntrepriseAndPeriod($entreprise, \DateTime $dateDebut, \DateTime $dateFin): float
     {
+        $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebut);
+        $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFin);
+        
         $result = $this->createQueryBuilder('pf')
             ->select('SUM(pf.montant)')
             ->leftJoin('pf.facture', 'f')
             ->where('f.entreprise = :entreprise')
-            ->andWhere('pf.createdAt BETWEEN :dateDebut AND :dateFin')
+            ->andWhere('pf.createdAt >= :dateDebut')
+            ->andWhere('pf.createdAt <= :dateFin')
             ->setParameter('entreprise', $entreprise)
-            ->setParameter('dateDebut', $dateDebut)
-            ->setParameter('dateFin', $dateFin)
+            ->setParameter('dateDebut', $dateDebutImmutable)
+            ->setParameter('dateFin', $dateFinImmutable)
             ->getQuery()
             ->getSingleScalarResult();
 

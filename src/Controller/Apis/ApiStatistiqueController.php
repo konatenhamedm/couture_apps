@@ -4,6 +4,10 @@ namespace App\Controller\Apis;
 
 use App\Controller\Apis\Config\ApiInterface;
 use App\Service\StatistiquesService;
+use App\Service\Utils;
+use App\Service\PaginationService;
+use App\Service\SendMailService;
+use App\Service\SubscriptionChecker;
 use App\Repository\ClientRepository;
 use App\Repository\ReservationRepository;
 use App\Repository\PaiementReservationRepository;
@@ -14,6 +18,8 @@ use App\Repository\FactureRepository;
 use App\Repository\PaiementBoutiqueRepository;
 use App\Repository\PaiementFactureRepository;
 use App\Repository\MesureRepository;
+use App\Repository\SurccursaleRepository;
+use App\Repository\SettingRepository;
 use App\Entity\Boutique;
 use App\Entity\Reservation;
 use App\Entity\Client;
@@ -22,8 +28,15 @@ use App\Entity\PaiementReservation;
 use App\Entity\PaiementBoutique;
 use App\Entity\PaiementFacture;
 use App\Entity\Mesure;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\String\Slugger\SluggerInterface;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Request;
 use DateTime;
@@ -31,6 +44,52 @@ use DateTime;
 #[Route('/api')]
 class ApiStatistiqueController extends ApiInterface
 {
+    public function __construct(
+        EntityManagerInterface $em,
+        SluggerInterface $slugger,
+        SendMailService $sendMailService,
+        SubscriptionChecker $subscriptionChecker,
+        Utils $utils,
+        UserPasswordHasherInterface $hasher,
+        BoutiqueRepository $boutiqueRepository,
+        SurccursaleRepository $surccursaleRepository,
+        SettingRepository $settingRepository,
+        HttpClientInterface $client,
+        SerializerInterface $serializer,
+        ValidatorInterface $validator,
+        UserRepository $userRepository,
+        StatistiquesService $statistiquesService,
+        PaginationService $paginationService,
+        private ReservationRepository $reservationRepository,
+        private PaiementReservationRepository $paiementReservationRepository,
+        private PaiementBoutiqueRepository $paiementBoutiqueRepository,
+        private PaiementFactureRepository $paiementFactureRepository,
+        private ClientRepository $clientRepository,
+        private FactureRepository $factureRepository,
+        private MesureRepository $mesureRepository,
+        #[Autowire(param: 'SEND_MAIL')] string $sendMail,
+        #[Autowire(param: 'SUPER_ADMIN')] string $superAdmin
+    ) {
+        parent::__construct(
+            $em,
+            $slugger,
+            $sendMailService,
+            $subscriptionChecker,
+            $utils,
+            $hasher,
+            $boutiqueRepository,
+            $surccursaleRepository,
+            $settingRepository,
+            $client,
+            $serializer,
+            $validator,
+            $userRepository,
+            $statistiquesService,
+            $paginationService,
+            $sendMail,
+            $superAdmin
+        );
+    }
   
 
     #[Route('/statistique/dashboard', methods: ['POST'])]
@@ -335,12 +394,80 @@ class ApiStatistiqueController extends ApiInterface
             
             // Récupérer les statistiques pour l'entreprise
             $entreprise = $this->getUser()->getEntreprise();
+            
+            // Debug: Vérifier les dates des paiements
+            $debugInfo = $this->getDebugDates($entreprise);
+            
             $stats = $this->getAteliyaStats($entreprise, $dateDebut, $dateFin);
+            $stats['debug'] = $debugInfo;
+            $stats['periode_recherche'] = [
+                'debut' => $dateDebut->format('Y-m-d H:i:s'),
+                'fin' => $dateFin->format('Y-m-d H:i:s')
+            ];
             
             return $this->json(['success' => true, 'data' => $stats]);
         } catch (\Exception $e) {
             return $this->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
+    }
+    
+    private function getDebugDates($entreprise): array
+    {
+        // Vérifier les dates des paiements réservation
+        $paiementsReservation = $this->paiementReservationRepository->createQueryBuilder('pr')
+            ->select('pr.id', 'pr.montant', 'pr.createdAt')
+            ->leftJoin('pr.reservation', 'r')
+            ->where('r.entreprise = :entreprise')
+            ->setParameter('entreprise', $entreprise)
+            ->setMaxResults(5)
+            ->orderBy('pr.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+        
+        // Vérifier les dates des paiements boutique
+        $paiementsBoutique = $this->paiementBoutiqueRepository->createQueryBuilder('pb')
+            ->select('pb.id', 'pb.montant', 'pb.createdAt')
+            ->leftJoin('pb.boutique', 'b')
+            ->where('b.entreprise = :entreprise')
+            ->setParameter('entreprise', $entreprise)
+            ->setMaxResults(5)
+            ->orderBy('pb.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+        
+        // Vérifier les dates des réservations
+        $reservations = $this->reservationRepository->createQueryBuilder('r')
+            ->select('r.id', 'r.montant', 'r.createdAt')
+            ->where('r.entreprise = :entreprise')
+            ->setParameter('entreprise', $entreprise)
+            ->setMaxResults(5)
+            ->orderBy('r.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+        
+        return [
+            'paiements_reservation' => array_map(function($p) {
+                return [
+                    'id' => $p['id'],
+                    'montant' => $p['montant'],
+                    'createdAt' => $p['createdAt']->format('Y-m-d H:i:s')
+                ];
+            }, $paiementsReservation),
+            'paiements_boutique' => array_map(function($p) {
+                return [
+                    'id' => $p['id'],
+                    'montant' => $p['montant'],
+                    'createdAt' => $p['createdAt']->format('Y-m-d H:i:s')
+                ];
+            }, $paiementsBoutique),
+            'reservations' => array_map(function($r) {
+                return [
+                    'id' => $r['id'],
+                    'montant' => $r['montant'],
+                    'createdAt' => $r['createdAt']->format('Y-m-d H:i:s')
+                ];
+            }, $reservations)
+        ];
     }
 
     /**
@@ -423,25 +550,19 @@ class ApiStatistiqueController extends ApiInterface
 
     private function getAteliyaStats($entreprise, DateTime $dateDebut, DateTime $dateFin): array
     {
-        $reservationRepo = $this->em->getRepository(Reservation::class);
-        $paiementReservationRepo = $this->em->getRepository(PaiementReservation::class);
-        $paiementBoutiqueRepo = $this->em->getRepository(PaiementBoutique::class);
-        $paiementFactureRepo = $this->em->getRepository(PaiementFacture::class);
-        $clientRepo = $this->em->getRepository(Client::class);
-        
         $nbJours = $dateDebut->diff($dateFin)->days + 1;
         
         // Calculer le chiffre d'affaires réel
         $chiffreAffaires = $this->calculateTotalRevenue($entreprise, $dateDebut, $dateFin);
         
         // Compter les réservations actives
-        $reservationsActives = $reservationRepo->countActiveByEntrepriseAndPeriod($entreprise, $dateDebut, $dateFin);
+        $reservationsActives = $this->reservationRepository->countActiveByEntrepriseAndPeriod($entreprise, $dateDebut, $dateFin);
         
         // Compter les clients actifs
-        $clientsActifs = $clientRepo->countActiveByPeriod($dateDebut, $dateFin);
+        $clientsActifs = $this->clientRepository->countActiveByPeriod($entreprise, $dateDebut, $dateFin);
         
         // Compter les commandes en cours
-        $commandesEnCours = $reservationRepo->countCommandesEnCoursByEntreprise($entreprise);
+        $commandesEnCours = $this->reservationRepository->countCommandesEnCoursByEntreprise($entreprise);
         
         return [
             'periode' => [
@@ -464,11 +585,7 @@ class ApiStatistiqueController extends ApiInterface
 
     private function getAteliyaBoutiqueStats(int $boutiqueId, DateTime $dateDebut, DateTime $dateFin): array
     {
-        $boutiqueRepo = $this->em->getRepository(Boutique::class);
-        $reservationRepo = $this->em->getRepository(Reservation::class);
-        $clientRepo = $this->em->getRepository(Client::class);
-        
-        $boutique = $boutiqueRepo->find($boutiqueId);
+        $boutique = $this->boutiqueRepository->find($boutiqueId);
         if (!$boutique) {
             throw new \Exception("Boutique non trouvée");
         }
@@ -479,13 +596,13 @@ class ApiStatistiqueController extends ApiInterface
         $chiffreAffaires = $this->calculateBoutiqueRevenue($boutique, $dateDebut, $dateFin);
         
         // Réservations actives pour cette boutique
-        $reservationsActives = $reservationRepo->countActiveByBoutiqueAndPeriod($boutique, $dateDebut, $dateFin);
+        $reservationsActives = $this->reservationRepository->countActiveByBoutiqueAndPeriod($boutique, $dateDebut, $dateFin);
         
         // Clients actifs pour cette boutique
-        $clientsActifs = $clientRepo->countActiveByBoutiqueAndPeriod($boutique, $dateDebut, $dateFin);
+        $clientsActifs = $this->clientRepository->countActiveByBoutiqueAndPeriod($boutique, $dateDebut, $dateFin);
         
         // Commandes en cours pour cette boutique
-        $commandesEnCours = $reservationRepo->countCommandesEnCoursByBoutique($boutique);
+        $commandesEnCours = $this->reservationRepository->countCommandesEnCoursByBoutique($boutique);
         
         return [
             'boutique_id' => $boutiqueId,
@@ -509,34 +626,23 @@ class ApiStatistiqueController extends ApiInterface
     
     private function calculateTotalRevenue($entreprise, DateTime $dateDebut, DateTime $dateFin): float
     {
-        $paiementReservationRepo = $this->em->getRepository(PaiementReservation::class);
-        $paiementBoutiqueRepo = $this->em->getRepository(PaiementBoutique::class);
-        $paiementFactureRepo = $this->em->getRepository(PaiementFacture::class);
-        
-        $revenusReservations = $paiementReservationRepo->sumByEntrepriseAndPeriod($entreprise, $dateDebut, $dateFin);
-        $revenusBoutique = $paiementBoutiqueRepo->sumByEntrepriseAndPeriod($entreprise, $dateDebut, $dateFin);
-        $revenusFactures = $paiementFactureRepo->sumByEntrepriseAndPeriod($entreprise, $dateDebut, $dateFin);
+        $revenusReservations = $this->paiementReservationRepository->sumByEntrepriseAndPeriod($entreprise, $dateDebut, $dateFin);
+        $revenusBoutique = $this->paiementBoutiqueRepository->sumByEntrepriseAndPeriod($entreprise, $dateDebut, $dateFin);
+        $revenusFactures = $this->paiementFactureRepository->sumByEntrepriseAndPeriod($entreprise, $dateDebut, $dateFin);
         
         return $revenusReservations + $revenusBoutique + $revenusFactures;
     }
     
     private function calculateBoutiqueRevenue($boutique, DateTime $dateDebut, DateTime $dateFin): float
     {
-        $paiementReservationRepo = $this->em->getRepository(PaiementReservation::class);
-        $paiementBoutiqueRepo = $this->em->getRepository(PaiementBoutique::class);
-        
-        $revenusReservations = $paiementReservationRepo->sumByBoutiqueAndPeriod($boutique, $dateDebut, $dateFin);
-        $revenusBoutique = $paiementBoutiqueRepo->sumByBoutiqueAndPeriod($boutique, $dateDebut, $dateFin);
+        $revenusReservations = $this->paiementReservationRepository->sumByBoutiqueAndPeriod($boutique, $dateDebut, $dateFin);
+        $revenusBoutique = $this->paiementBoutiqueRepository->sumByBoutiqueAndPeriod($boutique, $dateDebut, $dateFin);
         
         return $revenusReservations + $revenusBoutique;
     }
     
     private function getRevenusQuotidiensReels($entreprise, DateTime $dateDebut, DateTime $dateFin): array
     {
-        $reservationRepo = $this->em->getRepository(Reservation::class);
-        $paiementBoutiqueRepo = $this->em->getRepository(PaiementBoutique::class);
-        $factureRepo = $this->em->getRepository(Facture::class);
-        
         $revenus = [];
         $current = clone $dateDebut;
         $jours = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
@@ -546,9 +652,9 @@ class ApiStatistiqueController extends ApiInterface
             $nextDay = clone $current;
             $nextDay->add(new \DateInterval('P1D'));
             
-            $nbReservations = $reservationRepo->countByEntrepriseAndDay($entreprise, $current);
-            $nbVentes = $paiementBoutiqueRepo->countByEntrepriseAndDay($entreprise, $current);
-            $nbFactures = $factureRepo->countByEntrepriseAndDay($entreprise, $current);
+            $nbReservations = $this->reservationRepository->countByEntrepriseAndDay($entreprise, $current);
+            $nbVentes = $this->paiementBoutiqueRepository->countByEntrepriseAndDay($entreprise, $current);
+            $nbFactures = $this->factureRepository->countByEntrepriseAndDay($entreprise, $current);
             $revenusJour = $this->calculateTotalRevenue($entreprise, $current, $nextDay);
             
             $revenus[] = [
@@ -567,9 +673,6 @@ class ApiStatistiqueController extends ApiInterface
     
     private function getRevenusQuotidiensBoutiqueReels($boutique, DateTime $dateDebut, DateTime $dateFin): array
     {
-        $reservationRepo = $this->em->getRepository(Reservation::class);
-        $paiementBoutiqueRepo = $this->em->getRepository(PaiementBoutique::class);
-        
         $revenus = [];
         $current = clone $dateDebut;
         $jours = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
@@ -579,8 +682,8 @@ class ApiStatistiqueController extends ApiInterface
             $nextDay = clone $current;
             $nextDay->add(new \DateInterval('P1D'));
             
-            $nbReservations = $reservationRepo->countByBoutiqueAndDay($boutique, $current);
-            $nbVentes = $paiementBoutiqueRepo->countByBoutiqueAndDay($boutique, $current);
+            $nbReservations = $this->reservationRepository->countByBoutiqueAndDay($boutique, $current);
+            $nbVentes = $this->paiementBoutiqueRepository->countByBoutiqueAndDay($boutique, $current);
             $revenusJour = $this->calculateBoutiqueRevenue($boutique, $current, $nextDay);
             
             $revenus[] = [
@@ -599,13 +702,9 @@ class ApiStatistiqueController extends ApiInterface
     
     private function getRevenusParTypeReels($entreprise, DateTime $dateDebut, DateTime $dateFin): array
     {
-        $paiementReservationRepo = $this->em->getRepository(PaiementReservation::class);
-        $paiementBoutiqueRepo = $this->em->getRepository(PaiementBoutique::class);
-        $paiementFactureRepo = $this->em->getRepository(PaiementFacture::class);
-        
-        $revenusReservations = $paiementReservationRepo->sumByEntrepriseAndPeriod($entreprise, $dateDebut, $dateFin);
-        $revenusBoutique = $paiementBoutiqueRepo->sumByEntrepriseAndPeriod($entreprise, $dateDebut, $dateFin);
-        $revenusFactures = $paiementFactureRepo->sumByEntrepriseAndPeriod($entreprise, $dateDebut, $dateFin);
+        $revenusReservations = $this->paiementReservationRepository->sumByEntrepriseAndPeriod($entreprise, $dateDebut, $dateFin);
+        $revenusBoutique = $this->paiementBoutiqueRepository->sumByEntrepriseAndPeriod($entreprise, $dateDebut, $dateFin);
+        $revenusFactures = $this->paiementFactureRepository->sumByEntrepriseAndPeriod($entreprise, $dateDebut, $dateFin);
         
         return [
             ['type' => 'Réservations', 'revenus' => (int)$revenusReservations],
@@ -617,11 +716,8 @@ class ApiStatistiqueController extends ApiInterface
     
     private function getRevenusParTypeBoutiqueReels($boutique, DateTime $dateDebut, DateTime $dateFin): array
     {
-        $paiementReservationRepo = $this->em->getRepository(PaiementReservation::class);
-        $paiementBoutiqueRepo = $this->em->getRepository(PaiementBoutique::class);
-        
-        $revenusReservations = $paiementReservationRepo->sumByBoutiqueAndPeriod($boutique, $dateDebut, $dateFin);
-        $revenusBoutique = $paiementBoutiqueRepo->sumByBoutiqueAndPeriod($boutique, $dateDebut, $dateFin);
+        $revenusReservations = $this->paiementReservationRepository->sumByBoutiqueAndPeriod($boutique, $dateDebut, $dateFin);
+        $revenusBoutique = $this->paiementBoutiqueRepository->sumByBoutiqueAndPeriod($boutique, $dateDebut, $dateFin);
         
         return [
             ['type' => 'Réservations', 'revenus' => (int)$revenusReservations],
@@ -633,15 +729,10 @@ class ApiStatistiqueController extends ApiInterface
     
     private function getActivitesBoutiqueReelles($entreprise, DateTime $dateDebut, DateTime $dateFin): array
     {
-        $reservationRepo = $this->em->getRepository(Reservation::class);
-        $paiementBoutiqueRepo = $this->em->getRepository(PaiementBoutique::class);
-        $factureRepo = $this->em->getRepository(Facture::class);
-        $mesureRepo = $this->em->getRepository(Mesure::class);
-        
-        $nbReservations = $reservationRepo->countActiveByEntrepriseAndPeriod($entreprise, $dateDebut, $dateFin);
-        $nbVentes = $paiementBoutiqueRepo->countByEntrepriseAndDay($entreprise, $dateDebut);
-        $nbFactures = $factureRepo->countByEntrepriseAndPeriod($entreprise, $dateDebut, $dateFin);
-        $nbMesures = $mesureRepo->countByEntrepriseAndPeriod($entreprise, $dateDebut, $dateFin);
+        $nbReservations = $this->reservationRepository->countActiveByEntrepriseAndPeriod($entreprise, $dateDebut, $dateFin);
+        $nbVentes = $this->paiementBoutiqueRepository->countByEntrepriseAndDay($entreprise, $dateDebut);
+        $nbFactures = $this->factureRepository->countByEntrepriseAndPeriod($entreprise, $dateDebut, $dateFin);
+        $nbMesures = $this->mesureRepository->countByEntrepriseAndPeriod($entreprise, $dateDebut, $dateFin);
         
         $revenusParType = $this->getRevenusParTypeReels($entreprise, $dateDebut, $dateFin);
         
@@ -675,11 +766,8 @@ class ApiStatistiqueController extends ApiInterface
     
     private function getActivitesBoutiqueSpecifiqueReelles($boutique, DateTime $dateDebut, DateTime $dateFin): array
     {
-        $reservationRepo = $this->em->getRepository(Reservation::class);
-        $paiementBoutiqueRepo = $this->em->getRepository(PaiementBoutique::class);
-        
-        $nbReservations = $reservationRepo->countActiveByBoutiqueAndPeriod($boutique, $dateDebut, $dateFin);
-        $nbVentes = $paiementBoutiqueRepo->countByBoutiqueAndDay($boutique, $dateDebut);
+        $nbReservations = $this->reservationRepository->countActiveByBoutiqueAndPeriod($boutique, $dateDebut, $dateFin);
+        $nbVentes = $this->paiementBoutiqueRepository->countByBoutiqueAndDay($boutique, $dateDebut);
         
         $revenusParType = $this->getRevenusParTypeBoutiqueReels($boutique, $dateDebut, $dateFin);
         
@@ -713,13 +801,9 @@ class ApiStatistiqueController extends ApiInterface
     
     private function getDernieresTransactionsReelles($entreprise, DateTime $dateFin): array
     {
-        $reservationRepo = $this->em->getRepository(Reservation::class);
-        $paiementBoutiqueRepo = $this->em->getRepository(PaiementBoutique::class);
-        $factureRepo = $this->em->getRepository(Facture::class);
-        
         $transactions = [];
         
-        $reservations = $reservationRepo->findLatestByEntreprise($entreprise, 2);
+        $reservations = $this->reservationRepository->findLatestByEntreprise($entreprise, 2);
         foreach ($reservations as $reservation) {
             $client = $reservation->getClient();
             $transactions[] = [
@@ -731,7 +815,7 @@ class ApiStatistiqueController extends ApiInterface
             ];
         }
         
-        $ventes = $paiementBoutiqueRepo->findLatestByEntreprise($entreprise, 2);
+        $ventes = $this->paiementBoutiqueRepository->findLatestByEntreprise($entreprise, 2);
         foreach ($ventes as $vente) {
             $client = $vente->getClient();
             $transactions[] = [
@@ -743,7 +827,7 @@ class ApiStatistiqueController extends ApiInterface
             ];
         }
         
-        $factures = $factureRepo->findLatestByEntreprise($entreprise, 1);
+        $factures = $this->factureRepository->findLatestByEntreprise($entreprise, 1);
         foreach ($factures as $facture) {
             $client = $facture->getClient();
             $transactions[] = [
@@ -760,12 +844,9 @@ class ApiStatistiqueController extends ApiInterface
     
     private function getDernieresTransactionsBoutiqueReelles($boutique, DateTime $dateFin): array
     {
-        $reservationRepo = $this->em->getRepository(Reservation::class);
-        $paiementBoutiqueRepo = $this->em->getRepository(PaiementBoutique::class);
-        
         $transactions = [];
         
-        $reservations = $reservationRepo->findLatestByBoutique($boutique, 3);
+        $reservations = $this->reservationRepository->findLatestByBoutique($boutique, 3);
         foreach ($reservations as $reservation) {
             $client = $reservation->getClient();
             $transactions[] = [
@@ -777,7 +858,7 @@ class ApiStatistiqueController extends ApiInterface
             ];
         }
         
-        $ventes = $paiementBoutiqueRepo->findLatestByBoutique($boutique, 2);
+        $ventes = $this->paiementBoutiqueRepository->findLatestByBoutique($boutique, 2);
         foreach ($ventes as $vente) {
             $client = $vente->getClient();
             $transactions[] = [

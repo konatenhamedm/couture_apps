@@ -38,14 +38,18 @@ class MesureRepository extends ServiceEntityRepository
      */
     public function countByEntrepriseAndPeriod($entreprise, \DateTime $dateDebut, \DateTime $dateFin): int
     {
+        $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebut);
+        $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFin);
+        
         return $this->createQueryBuilder('m')
             ->select('COUNT(m.id)')
             ->leftJoin('m.facture', 'f')
             ->where('f.entreprise = :entreprise')
-            ->andWhere('m.createdAt BETWEEN :dateDebut AND :dateFin')
+            ->andWhere('m.createdAt >= :dateDebut')
+            ->andWhere('m.createdAt <= :dateFin')
             ->setParameter('entreprise', $entreprise)
-            ->setParameter('dateDebut', $dateDebut)
-            ->setParameter('dateFin', $dateFin)
+            ->setParameter('dateDebut', $dateDebutImmutable)
+            ->setParameter('dateFin', $dateFinImmutable)
             ->getQuery()
             ->getSingleScalarResult();
     }

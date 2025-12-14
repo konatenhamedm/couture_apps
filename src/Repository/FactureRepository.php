@@ -68,13 +68,17 @@ class FactureRepository extends ServiceEntityRepository
      */
     public function countByEntrepriseAndPeriod($entreprise, \DateTime $dateDebut, \DateTime $dateFin): int
     {
+        $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebut);
+        $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFin);
+        
         return $this->createQueryBuilder('f')
             ->select('COUNT(f.id)')
             ->where('f.entreprise = :entreprise')
-            ->andWhere('f.createdAt BETWEEN :dateDebut AND :dateFin')
+            ->andWhere('f.createdAt >= :dateDebut')
+            ->andWhere('f.createdAt <= :dateFin')
             ->setParameter('entreprise', $entreprise)
-            ->setParameter('dateDebut', $dateDebut)
-            ->setParameter('dateFin', $dateFin)
+            ->setParameter('dateDebut', $dateDebutImmutable)
+            ->setParameter('dateFin', $dateFinImmutable)
             ->getQuery()
             ->getSingleScalarResult();
     }
@@ -86,6 +90,9 @@ class FactureRepository extends ServiceEntityRepository
     {
         $nextDay = clone $date;
         $nextDay->add(new \DateInterval('P1D'));
+        
+        $dateImmutable = \DateTimeImmutable::createFromMutable($date);
+        $nextDayImmutable = \DateTimeImmutable::createFromMutable($nextDay);
 
         return $this->createQueryBuilder('f')
             ->select('COUNT(f.id)')
@@ -93,8 +100,8 @@ class FactureRepository extends ServiceEntityRepository
             ->andWhere('f.createdAt >= :date')
             ->andWhere('f.createdAt < :nextDay')
             ->setParameter('entreprise', $entreprise)
-            ->setParameter('date', $date)
-            ->setParameter('nextDay', $nextDay)
+            ->setParameter('date', $dateImmutable)
+            ->setParameter('nextDay', $nextDayImmutable)
             ->getQuery()
             ->getSingleScalarResult();
     }
