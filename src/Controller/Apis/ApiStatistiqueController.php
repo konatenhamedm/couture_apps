@@ -379,20 +379,22 @@ class ApiStatistiqueController extends ApiInterface
 
     private function parseAteliyaFilters(array $data): array
     {
-        if (isset($data['filtre']) && isset($data['valeur'])) {
+        if (isset($data['filtre'])) {
             switch ($data['filtre']) {
                 case 'jour':
-                    $dateDebut = new DateTime($data['valeur']);
-                    $dateFin = new DateTime($data['valeur'] . ' 23:59:59');
+                    // Utiliser la date du système si aucune valeur n'est fournie
+                    $dateValue = (new DateTime())->format('Y-m-d');
+                    $dateDebut = new DateTime($dateValue);
+                    $dateFin = new DateTime($dateValue . ' 23:59:59');
                     break;
                 case 'mois':
-                    $dateDebut = new DateTime($data['valeur'] . '-01');
-                    $dateFin = new DateTime($data['valeur'] . '-01');
+                    $dateDebut = new DateTime(($data['valeur'] ?? (new DateTime())->format('Y-m')) . '-01');
+                    $dateFin = new DateTime(($data['valeur'] ?? (new DateTime())->format('Y-m')) . '-01');
                     $dateFin->modify('last day of this month')->setTime(23, 59, 59);
                     break;
                 case 'annee':
-                    $dateDebut = new DateTime($data['valeur'] . '-01-01');
-                    $dateFin = new DateTime($data['valeur'] . '-12-31 23:59:59');
+                    $dateDebut = new DateTime(($data['valeur'] ?? (new DateTime())->format('Y')) . '-01-01');
+                    $dateFin = new DateTime(($data['valeur'] ?? (new DateTime())->format('Y')) . '-12-31 23:59:59');
                     break;
                 case 'periode':
                 default:
