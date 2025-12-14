@@ -140,4 +140,34 @@ class PaiementFactureRepository extends ServiceEntityRepository
 
         return $result ?? 0;
     }
+    /**
+     * Calcule la somme des paiements facture par jour pour une entreprise
+     */
+    public function sumByEntrepriseAndDay($entreprise, \DateTime $date): float
+    {
+        $nextDay = clone $date;
+        $nextDay->add(new \DateInterval('P1D'));
+        
+        $dateDebutClone = clone $date;
+        $dateDebutClone->setTime(0, 0, 0);
+        $dateFinClone = clone $nextDay;
+        $dateFinClone->setTime(0, 0, 0);
+        
+        $dateImmutable = \DateTimeImmutable::createFromMutable($dateDebutClone);
+        $nextDayImmutable = \DateTimeImmutable::createFromMutable($dateFinClone);
+
+        $result = $this->createQueryBuilder('pf')
+            ->select('SUM(pf.montant)')
+            ->leftJoin('pf.facture', 'f')
+            ->where('f.entreprise = :entreprise')
+            ->andWhere('pf.createdAt >= :date')
+            ->andWhere('pf.createdAt < :nextDay')
+            ->setParameter('entreprise', $entreprise)
+            ->setParameter('date', $dateImmutable)
+            ->setParameter('nextDay', $nextDayImmutable)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return $result ?? 0;
+    }
 }

@@ -212,4 +212,64 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+    /**
+     * Calcule la somme des paiements par jour pour une entreprise
+     */
+    public function sumByEntrepriseAndDay($entreprise, \DateTime $date): float
+    {
+        $nextDay = clone $date;
+        $nextDay->add(new \DateInterval('P1D'));
+        
+        $dateDebutClone = clone $date;
+        $dateDebutClone->setTime(0, 0, 0);
+        $dateFinClone = clone $nextDay;
+        $dateFinClone->setTime(0, 0, 0);
+        
+        $dateImmutable = \DateTimeImmutable::createFromMutable($dateDebutClone);
+        $nextDayImmutable = \DateTimeImmutable::createFromMutable($dateFinClone);
+
+        $result = $this->createQueryBuilder('pb')
+            ->select('SUM(pb.montant)')
+            ->leftJoin('pb.boutique', 'b')
+            ->where('b.entreprise = :entreprise')
+            ->andWhere('pb.createdAt >= :date')
+            ->andWhere('pb.createdAt < :nextDay')
+            ->setParameter('entreprise', $entreprise)
+            ->setParameter('date', $dateImmutable)
+            ->setParameter('nextDay', $nextDayImmutable)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return $result ?? 0;
+    }
+
+    /**
+     * Calcule la somme des paiements par jour pour une boutique
+     */
+    public function sumByBoutiqueAndDay(Boutique $boutique, \DateTime $date): float
+    {
+        $nextDay = clone $date;
+        $nextDay->add(new \DateInterval('P1D'));
+        
+        $dateDebutClone = clone $date;
+        $dateDebutClone->setTime(0, 0, 0);
+        $dateFinClone = clone $nextDay;
+        $dateFinClone->setTime(0, 0, 0);
+        
+        $dateImmutable = \DateTimeImmutable::createFromMutable($dateDebutClone);
+        $nextDayImmutable = \DateTimeImmutable::createFromMutable($dateFinClone);
+
+        $result = $this->createQueryBuilder('pb')
+            ->select('SUM(pb.montant)')
+            ->where('pb.boutique = :boutique')
+            ->andWhere('pb.createdAt >= :date')
+            ->andWhere('pb.createdAt < :nextDay')
+            ->setParameter('boutique', $boutique)
+            ->setParameter('date', $dateImmutable)
+            ->setParameter('nextDay', $nextDayImmutable)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return $result ?? 0;
+    }
 }

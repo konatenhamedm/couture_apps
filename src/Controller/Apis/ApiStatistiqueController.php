@@ -649,20 +649,25 @@ class ApiStatistiqueController extends ApiInterface
         
         while ($current <= $dateFin && count($revenus) < 30) {
             $jourSemaine = $jours[$current->format('w')];
-            $nextDay = clone $current;
-            $nextDay->add(new \DateInterval('P1D'));
             
+            // Utiliser les sommes au lieu des comptages
+            $revenusReservations = $this->paiementReservationRepository->sumByEntrepriseAndDay($entreprise, $current);
+            $revenusVentes = $this->paiementBoutiqueRepository->sumByEntrepriseAndDay($entreprise, $current);
+            $revenusFactures = $this->paiementFactureRepository->sumByEntrepriseAndDay($entreprise, $current);
+            
+            // Compter le nombre de transactions
             $nbReservations = $this->reservationRepository->countByEntrepriseAndDay($entreprise, $current);
             $nbVentes = $this->paiementBoutiqueRepository->countByEntrepriseAndDay($entreprise, $current);
             $nbFactures = $this->factureRepository->countByEntrepriseAndDay($entreprise, $current);
-            $revenusJour = $this->calculateTotalRevenue($entreprise, $current, $nextDay);
+            
+            $revenusTotal = $revenusReservations + $revenusVentes + $revenusFactures;
             
             $revenus[] = [
                 'jour' => $jourSemaine . ' ' . $current->format('d'),
                 'reservations' => (int)$nbReservations,
                 'ventes' => (int)$nbVentes,
                 'factures' => (int)$nbFactures,
-                'revenus' => (int)$revenusJour
+                'revenus' => (int)$revenusTotal
             ];
             
             $current->add(new \DateInterval('P1D'));
@@ -679,19 +684,23 @@ class ApiStatistiqueController extends ApiInterface
         
         while ($current <= $dateFin && count($revenus) < 30) {
             $jourSemaine = $jours[$current->format('w')];
-            $nextDay = clone $current;
-            $nextDay->add(new \DateInterval('P1D'));
             
+            // Utiliser les sommes au lieu des comptages
+            $revenusReservations = $this->paiementReservationRepository->sumByBoutiqueAndDay($boutique, $current);
+            $revenusVentes = $this->paiementBoutiqueRepository->sumByBoutiqueAndDay($boutique, $current);
+            
+            // Compter le nombre de transactions
             $nbReservations = $this->reservationRepository->countByBoutiqueAndDay($boutique, $current);
             $nbVentes = $this->paiementBoutiqueRepository->countByBoutiqueAndDay($boutique, $current);
-            $revenusJour = $this->calculateBoutiqueRevenue($boutique, $current, $nextDay);
+            
+            $revenusTotal = $revenusReservations + $revenusVentes;
             
             $revenus[] = [
                 'jour' => $jourSemaine . ' ' . $current->format('d'),
                 'reservations' => (int)$nbReservations,
                 'ventes' => (int)$nbVentes,
                 'factures' => 0,
-                'revenus' => (int)$revenusJour
+                'revenus' => (int)$revenusTotal
             ];
             
             $current->add(new \DateInterval('P1D'));
