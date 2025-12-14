@@ -20,7 +20,7 @@ trait TraitEntity
 
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(nullable: true)]
-    #[Group(["group_pro"])]
+    #[Group(["group_pro","group_modeleBoutique"])]
     private ?User $createdBy = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]

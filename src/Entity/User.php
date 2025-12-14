@@ -26,14 +26,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: "integer")]
-    #[Groups(["group1"])]
+    #[Groups(["group1", "group_modeleBoutique"])]
     private ?int $id = null;
 
     #[OA\Property(description: 'Login (email ou identifiant)', type: 'string', example: 'jane.doe')]
     #[ORM\Column(type: "string", length: 180, unique: true)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 180)]
-    #[Groups(["group1"])]
+    #[Groups(["group1", "group_modeleBoutique"])]
     private string $login;
 
     #[OA\Property(description: 'Rôles de l’utilisateur', type: 'array', items: new OA\Items(type: 'string'))]
@@ -47,12 +47,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[OA\Property(description: 'Statut actif de l’utilisateur', type: 'boolean', example: true)]
     #[ORM\Column(type: "boolean")]
-    #[Groups(["group1"])]
+    #[Groups(["group1", "group_modeleBoutique"])]
     private bool $isActive = true;
 
     #[OA\Property(description: 'Date de création du compte', type: 'string', format: 'date-time')]
     #[ORM\Column(type: "datetime_immutable", nullable: true)]
-    #[Groups(["group1"])]
+    #[Groups(["group1", "group_modeleBoutique"])]
     private ?\DateTimeImmutable $createdAt;
 
 
@@ -64,11 +64,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?Entreprise $entreprise = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(["group1"])]
+    #[Groups(["group1", "group_modeleBoutique"])]
     private ?string $nom = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(["group1"])]
+    #[Groups(["group1", "group_modeleBoutique"])]
     private ?string $prenoms = null;
 
     /**
@@ -84,7 +84,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\ManyToOne(cascade: ["persist"], fetch: "EAGER")]
     #[ORM\JoinColumn(nullable: true)]
-    #[Groups(["fichier", "group_pro", "group1"])]
+    #[Groups(["fichier", "group_pro", "group1", "group_modeleBoutique"])]
     private ?Fichier $logo = null;
 
     #[ORM\ManyToOne(inversedBy: 'users')]
