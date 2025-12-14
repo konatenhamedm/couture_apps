@@ -127,14 +127,11 @@ class PaiementReservationRepository extends ServiceEntityRepository
      */
     public function sumByEntrepriseAndPeriod($entreprise, \DateTime $dateDebut, \DateTime $dateFin): float
     {
-        // S'assurer que dateDebut commence à 00:00:00 et dateFin finit à 23:59:59
-        $dateDebutClone = clone $dateDebut;
-        $dateDebutClone->setTime(0, 0, 0);
-        $dateFinClone = clone $dateFin;
-        $dateFinClone->setTime(23, 59, 59);
-        
-        $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebutClone);
-        $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFinClone);
+        // Créer les dates de début et fin avec les bonnes heures
+        $dateDebutStart = clone $dateDebut;
+        $dateDebutStart->setTime(0, 0, 0);
+        $dateFinEnd = clone $dateFin;
+        $dateFinEnd->setTime(23, 59, 59);
         
         $result = $this->createQueryBuilder('pr')
             ->select('SUM(pr.montant)')
@@ -143,8 +140,8 @@ class PaiementReservationRepository extends ServiceEntityRepository
             ->andWhere('pr.createdAt >= :dateDebut')
             ->andWhere('pr.createdAt <= :dateFin')
             ->setParameter('entreprise', $entreprise)
-            ->setParameter('dateDebut', $dateDebutImmutable)
-            ->setParameter('dateFin', $dateFinImmutable)
+            ->setParameter('dateDebut', $dateDebutStart)
+            ->setParameter('dateFin', $dateFinEnd)
             ->getQuery()
             ->getSingleScalarResult();
 
@@ -156,14 +153,11 @@ class PaiementReservationRepository extends ServiceEntityRepository
      */
     public function sumByBoutiqueAndPeriod($boutique, \DateTime $dateDebut, \DateTime $dateFin): float
     {
-        // S'assurer que dateDebut commence à 00:00:00 et dateFin finit à 23:59:59
-        $dateDebutClone = clone $dateDebut;
-        $dateDebutClone->setTime(0, 0, 0);
-        $dateFinClone = clone $dateFin;
-        $dateFinClone->setTime(23, 59, 59);
-        
-        $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebutClone);
-        $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFinClone);
+        // Créer les dates de début et fin avec les bonnes heures
+        $dateDebutStart = clone $dateDebut;
+        $dateDebutStart->setTime(0, 0, 0);
+        $dateFinEnd = clone $dateFin;
+        $dateFinEnd->setTime(23, 59, 59);
         
         $result = $this->createQueryBuilder('pr')
             ->select('SUM(pr.montant)')
@@ -172,8 +166,8 @@ class PaiementReservationRepository extends ServiceEntityRepository
             ->andWhere('pr.createdAt >= :dateDebut')
             ->andWhere('pr.createdAt <= :dateFin')
             ->setParameter('boutique', $boutique)
-            ->setParameter('dateDebut', $dateDebutImmutable)
-            ->setParameter('dateFin', $dateFinImmutable)
+            ->setParameter('dateDebut', $dateDebutStart)
+            ->setParameter('dateFin', $dateFinEnd)
             ->getQuery()
             ->getSingleScalarResult();
 
@@ -184,26 +178,21 @@ class PaiementReservationRepository extends ServiceEntityRepository
      */
     public function sumByEntrepriseAndDay($entreprise, \DateTime $date): float
     {
-        $nextDay = clone $date;
-        $nextDay->add(new \DateInterval('P1D'));
+        $dateStart = clone $date;
+        $dateStart->setTime(0, 0, 0);
+        $dateEnd = clone $date;
+        $dateEnd->setTime(23, 59, 59);
         
-        $dateDebutClone = clone $date;
-        $dateDebutClone->setTime(0, 0, 0);
-        $dateFinClone = clone $nextDay;
-        $dateFinClone->setTime(0, 0, 0);
-        
-        $dateImmutable = \DateTimeImmutable::createFromMutable($dateDebutClone);
-        $nextDayImmutable = \DateTimeImmutable::createFromMutable($dateFinClone);
-
         $result = $this->createQueryBuilder('pr')
             ->select('SUM(pr.montant)')
             ->leftJoin('pr.reservation', 'r')
             ->where('r.entreprise = :entreprise')
-            ->andWhere('pr.createdAt >= :date')
-            ->andWhere('pr.createdAt < :nextDay')
+            ->andWhere('pr.isActive = true')
+            ->andWhere('pr.createdAt >= :dateStart')
+            ->andWhere('pr.createdAt <= :dateEnd')
             ->setParameter('entreprise', $entreprise)
-            ->setParameter('date', $dateImmutable)
-            ->setParameter('nextDay', $nextDayImmutable)
+            ->setParameter('dateStart', $dateStart)
+            ->setParameter('dateEnd', $dateEnd)
             ->getQuery()
             ->getSingleScalarResult();
 
@@ -215,26 +204,21 @@ class PaiementReservationRepository extends ServiceEntityRepository
      */
     public function sumByBoutiqueAndDay($boutique, \DateTime $date): float
     {
-        $nextDay = clone $date;
-        $nextDay->add(new \DateInterval('P1D'));
+        $dateStart = clone $date;
+        $dateStart->setTime(0, 0, 0);
+        $dateEnd = clone $date;
+        $dateEnd->setTime(23, 59, 59);
         
-        $dateDebutClone = clone $date;
-        $dateDebutClone->setTime(0, 0, 0);
-        $dateFinClone = clone $nextDay;
-        $dateFinClone->setTime(0, 0, 0);
-        
-        $dateImmutable = \DateTimeImmutable::createFromMutable($dateDebutClone);
-        $nextDayImmutable = \DateTimeImmutable::createFromMutable($dateFinClone);
-
         $result = $this->createQueryBuilder('pr')
             ->select('SUM(pr.montant)')
             ->leftJoin('pr.reservation', 'r')
             ->where('r.boutique = :boutique')
-            ->andWhere('pr.createdAt >= :date')
-            ->andWhere('pr.createdAt < :nextDay')
+            ->andWhere('pr.isActive = true')
+            ->andWhere('pr.createdAt >= :dateStart')
+            ->andWhere('pr.createdAt <= :dateEnd')
             ->setParameter('boutique', $boutique)
-            ->setParameter('date', $dateImmutable)
-            ->setParameter('nextDay', $nextDayImmutable)
+            ->setParameter('dateStart', $dateStart)
+            ->setParameter('dateEnd', $dateEnd)
             ->getQuery()
             ->getSingleScalarResult();
 

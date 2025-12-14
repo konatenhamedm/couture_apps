@@ -123,8 +123,11 @@ class PaiementFactureRepository extends ServiceEntityRepository
      */
     public function sumByEntrepriseAndPeriod($entreprise, \DateTime $dateDebut, \DateTime $dateFin): float
     {
-        $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebut);
-        $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFin);
+        // Créer les dates de début et fin avec les bonnes heures
+        $dateDebutStart = clone $dateDebut;
+        $dateDebutStart->setTime(0, 0, 0);
+        $dateFinEnd = clone $dateFin;
+        $dateFinEnd->setTime(23, 59, 59);
         
         $result = $this->createQueryBuilder('pf')
             ->select('SUM(pf.montant)')
@@ -133,8 +136,8 @@ class PaiementFactureRepository extends ServiceEntityRepository
             ->andWhere('pf.createdAt >= :dateDebut')
             ->andWhere('pf.createdAt <= :dateFin')
             ->setParameter('entreprise', $entreprise)
-            ->setParameter('dateDebut', $dateDebutImmutable)
-            ->setParameter('dateFin', $dateFinImmutable)
+            ->setParameter('dateDebut', $dateDebutStart)
+            ->setParameter('dateFin', $dateFinEnd)
             ->getQuery()
             ->getSingleScalarResult();
 
@@ -145,26 +148,21 @@ class PaiementFactureRepository extends ServiceEntityRepository
      */
     public function sumByEntrepriseAndDay($entreprise, \DateTime $date): float
     {
-        $nextDay = clone $date;
-        $nextDay->add(new \DateInterval('P1D'));
+        $dateStart = clone $date;
+        $dateStart->setTime(0, 0, 0);
+        $dateEnd = clone $date;
+        $dateEnd->setTime(23, 59, 59);
         
-        $dateDebutClone = clone $date;
-        $dateDebutClone->setTime(0, 0, 0);
-        $dateFinClone = clone $nextDay;
-        $dateFinClone->setTime(0, 0, 0);
-        
-        $dateImmutable = \DateTimeImmutable::createFromMutable($dateDebutClone);
-        $nextDayImmutable = \DateTimeImmutable::createFromMutable($dateFinClone);
-
         $result = $this->createQueryBuilder('pf')
             ->select('SUM(pf.montant)')
             ->leftJoin('pf.facture', 'f')
             ->where('f.entreprise = :entreprise')
-            ->andWhere('pf.createdAt >= :date')
-            ->andWhere('pf.createdAt < :nextDay')
+            ->andWhere('pf.isActive = true')
+            ->andWhere('pf.createdAt >= :dateStart')
+            ->andWhere('pf.createdAt <= :dateEnd')
             ->setParameter('entreprise', $entreprise)
-            ->setParameter('date', $dateImmutable)
-            ->setParameter('nextDay', $nextDayImmutable)
+            ->setParameter('dateStart', $dateStart)
+            ->setParameter('dateEnd', $dateEnd)
             ->getQuery()
             ->getSingleScalarResult();
 

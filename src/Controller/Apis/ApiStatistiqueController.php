@@ -564,6 +564,15 @@ class ApiStatistiqueController extends ApiInterface
         // Compter les commandes en cours
         $commandesEnCours = $this->reservationRepository->countCommandesEnCoursByEntreprise($entreprise);
         
+        // Si la période est > 60 jours, afficher les 30 derniers jours au lieu du début
+        $dateDebutRevenus = $dateDebut;
+        $dateFinRevenus = $dateFin;
+        if ($nbJours > 60) {
+            // Prendre les 30 derniers jours de la période
+            $dateDebutRevenus = clone $dateFin;
+            $dateDebutRevenus->modify('-29 days');
+        }
+        
         return [
             'periode' => [
                 'debut' => $dateDebut->format('Y-m-d'),
@@ -576,7 +585,7 @@ class ApiStatistiqueController extends ApiInterface
                 'clientsActifs' => (int)$clientsActifs,
                 'commandesEnCours' => (int)$commandesEnCours
             ],
-            'revenusQuotidiens' => $this->getRevenusQuotidiensReels($entreprise, $dateDebut, $dateFin),
+            'revenusQuotidiens' => $this->getRevenusQuotidiensReels($entreprise, $dateDebutRevenus, $dateFinRevenus),
             'revenusParType' => $this->getRevenusParTypeReels($entreprise, $dateDebut, $dateFin),
             'activitesBoutique' => $this->getActivitesBoutiqueReelles($entreprise, $dateDebut, $dateFin),
             'dernieresTransactions' => $this->getDernieresTransactionsReelles($entreprise, $dateFin)
@@ -604,6 +613,15 @@ class ApiStatistiqueController extends ApiInterface
         // Commandes en cours pour cette boutique
         $commandesEnCours = $this->reservationRepository->countCommandesEnCoursByBoutique($boutique);
         
+        // Si la période est > 60 jours, afficher les 30 derniers jours au lieu du début
+        $dateDebutRevenus = $dateDebut;
+        $dateFinRevenus = $dateFin;
+        if ($nbJours > 60) {
+            // Prendre les 30 derniers jours de la période
+            $dateDebutRevenus = clone $dateFin;
+            $dateDebutRevenus->modify('-29 days');
+        }
+        
         return [
             'boutique_id' => $boutiqueId,
             'periode' => [
@@ -617,7 +635,7 @@ class ApiStatistiqueController extends ApiInterface
                 'clientsActifs' => (int)$clientsActifs,
                 'commandesEnCours' => (int)$commandesEnCours
             ],
-            'revenusQuotidiens' => $this->getRevenusQuotidiensBoutiqueReels($boutique, $dateDebut, $dateFin),
+            'revenusQuotidiens' => $this->getRevenusQuotidiensBoutiqueReels($boutique, $dateDebutRevenus, $dateFinRevenus),
             'revenusParType' => $this->getRevenusParTypeBoutiqueReels($boutique, $dateDebut, $dateFin),
             'activitesBoutique' => $this->getActivitesBoutiqueSpecifiqueReelles($boutique, $dateDebut, $dateFin),
             'dernieresTransactions' => $this->getDernieresTransactionsBoutiqueReelles($boutique, $dateFin)
@@ -645,6 +663,7 @@ class ApiStatistiqueController extends ApiInterface
     {
         $revenus = [];
         $current = clone $dateDebut;
+        $current->setTime(0, 0, 0); // S'assurer que la date de départ est à minuit
         $jours = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
         
         while ($current <= $dateFin && count($revenus) < 30) {
@@ -671,6 +690,7 @@ class ApiStatistiqueController extends ApiInterface
             ];
             
             $current->add(new \DateInterval('P1D'));
+            $current->setTime(0, 0, 0); // Réinitialiser l'heure à minuit après chaque ajout
         }
         
         return $revenus;
@@ -680,6 +700,7 @@ class ApiStatistiqueController extends ApiInterface
     {
         $revenus = [];
         $current = clone $dateDebut;
+        $current->setTime(0, 0, 0); // S'assurer que la date de départ est à minuit
         $jours = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
         
         while ($current <= $dateFin && count($revenus) < 30) {
@@ -704,6 +725,7 @@ class ApiStatistiqueController extends ApiInterface
             ];
             
             $current->add(new \DateInterval('P1D'));
+            $current->setTime(0, 0, 0); // Réinitialiser l'heure à minuit après chaque ajout
         }
         
         return $revenus;
