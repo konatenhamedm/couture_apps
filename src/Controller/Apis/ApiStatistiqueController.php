@@ -697,9 +697,9 @@ class ApiStatistiqueController extends ApiInterface
             
             $revenus[] = [
                 'jour' => $jourSemaine . ' ' . $current->format('d'),
-                'reservations' => (int)$nbReservations,
-                'ventes' => (int)$nbVentes,
-                'factures' => (int)$nbFactures,
+                'reservations' => (int)$revenusReservations,
+                'ventes' => (int)$revenusVentes + (int)$revenusReservations,
+                'factures' => (int)$revenusFactures,
                 'revenus' => (int)$revenusTotal
             ];
             
