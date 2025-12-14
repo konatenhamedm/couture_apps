@@ -564,13 +564,20 @@ class ApiStatistiqueController extends ApiInterface
         // Compter les commandes en cours
         $commandesEnCours = $this->reservationRepository->countCommandesEnCoursByEntreprise($entreprise);
         
-        // Si la période est > 60 jours, afficher les 30 derniers jours au lieu du début
+        // Si la période est > 60 jours, afficher les 30 derniers jours avec des données
         $dateDebutRevenus = $dateDebut;
         $dateFinRevenus = $dateFin;
         if ($nbJours > 60) {
-            // Prendre les 30 derniers jours de la période
-            $dateDebutRevenus = clone $dateFin;
+            // Utiliser la date actuelle ou la date de fin (la plus petite des deux)
+            $now = new DateTime();
+            $dateFinRevenus = ($dateFin > $now) ? $now : $dateFin;
+            $dateDebutRevenus = clone $dateFinRevenus;
             $dateDebutRevenus->modify('-29 days');
+            
+            // S'assurer que dateDebutRevenus n'est pas avant dateDebut
+            if ($dateDebutRevenus < $dateDebut) {
+                $dateDebutRevenus = clone $dateDebut;
+            }
         }
         
         return [
@@ -613,13 +620,20 @@ class ApiStatistiqueController extends ApiInterface
         // Commandes en cours pour cette boutique
         $commandesEnCours = $this->reservationRepository->countCommandesEnCoursByBoutique($boutique);
         
-        // Si la période est > 60 jours, afficher les 30 derniers jours au lieu du début
+        // Si la période est > 60 jours, afficher les 30 derniers jours avec des données
         $dateDebutRevenus = $dateDebut;
         $dateFinRevenus = $dateFin;
         if ($nbJours > 60) {
-            // Prendre les 30 derniers jours de la période
-            $dateDebutRevenus = clone $dateFin;
+            // Utiliser la date actuelle ou la date de fin (la plus petite des deux)
+            $now = new DateTime();
+            $dateFinRevenus = ($dateFin > $now) ? $now : $dateFin;
+            $dateDebutRevenus = clone $dateFinRevenus;
             $dateDebutRevenus->modify('-29 days');
+            
+            // S'assurer que dateDebutRevenus n'est pas avant dateDebut
+            if ($dateDebutRevenus < $dateDebut) {
+                $dateDebutRevenus = clone $dateDebut;
+            }
         }
         
         return [
