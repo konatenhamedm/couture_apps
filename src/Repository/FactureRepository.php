@@ -11,6 +11,8 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class FactureRepository extends ServiceEntityRepository
 {
+    use DynamicDatabaseTrait;
+    
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Facture::class);

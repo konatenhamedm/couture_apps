@@ -60,9 +60,21 @@ services:
             $cache: '@cache.app'  # Utilise le cache système par défaut de Symfony
         autowire: false  # Important pour forcer l'utilisation des arguments
 
+    # Service pour gérer le switch dynamique de base de données
+    App\Service\DynamicDatabaseService:
+        arguments:
+            $doctrine: '@doctrine'
+            $requestStack: '@request_stack'
+
     App\:
         resource: '../src/'
         exclude:
             - '../src/DependencyInjection/'
             - '../src/Entity/'
             - '../src/Kernel.php'
+    
+    # Auto-injection du DynamicDatabaseService dans tous les repositories
+    App\Repository\:
+        resource: '../src/Repository/*'
+        calls:
+            - setDynamicDatabaseService: ['@App\Service\DynamicDatabaseService']
