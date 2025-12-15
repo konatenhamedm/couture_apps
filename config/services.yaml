@@ -12,6 +12,10 @@ parameters:
     PAIEMENT_URL: '%env(PAIEMENT_URL)%'
     SEND_MAIL: '%env(SEND_MAIL)%'
     SUPER_ADMIN: '%env(SUPER_ADMIN)%'
+    
+    # Configuration des bases de données pour le switch dynamique
+    database.dev.url: "mysql://root:@127.0.0.1:3306/app_couture_dev?serverVersion=8.0.32&charset=utf8mb4"
+    database.prod.url: "mysql://root:@127.0.0.1:3306/app_couture_prod?serverVersion=8.0.32&charset=utf8mb4"
 
 services:
     _defaults:
@@ -36,6 +40,16 @@ services:
             $superAdmin: '%super_admin%'
 
     App\helpers\laravel_helper: ~
+    
+    # Listener pour basculer dynamiquement entre les bases de données
+    App\EventListener\DatabaseSwitchListener:
+        arguments:
+            $connection: '@doctrine.dbal.default_connection'
+            $devDatabaseUrl: '%database.dev.url%'
+            $prodDatabaseUrl: '%database.prod.url%'
+        tags:
+            - { name: kernel.event_subscriber }
+    
     # Déclaration ABSOLUMENT EXPLICITE
     App\Service\JwtService:
         arguments:
