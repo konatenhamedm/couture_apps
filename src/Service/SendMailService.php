@@ -108,7 +108,7 @@ class SendMailService
     /**
      * Envoie une notification push Firebase
      */
-    public function sendPushNotification($data = [], User $user)
+    public function sendPushNotification(User $user, array $data = [])
     {
         if ($this->firebase === null) {
             error_log('Firebase non initialisé, impossible d\'envoyer la notification push');

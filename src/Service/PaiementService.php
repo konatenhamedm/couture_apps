@@ -66,7 +66,7 @@ class PaiementService
         return ($code . date("y") . date("m") . date("d") . date("H") . date("i") . date("s") . str_pad($nb + 1, 3, '0', STR_PAD_LEFT));
     }
 
-    public function traiterPaiement($data = [], User $user, ModuleAbonnement $moduleAbonnement): array
+    public function traiterPaiement(User $user, ModuleAbonnement $moduleAbonnement, array $data = []): array
     {
         $paiement = new PaiementAbonnement();
 

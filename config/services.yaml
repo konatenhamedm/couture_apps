@@ -39,7 +39,8 @@ services:
             $sendMail: '%send_mail%'
             $superAdmin: '%super_admin%'
 
-    App\helpers\laravel_helper: ~
+    app.helpers.laravel_helper:
+        class: App\helpers\laravel_helper
     
     # Listener pour basculer dynamiquement entre les bases de données
     App\EventListener\DatabaseSwitchListener:

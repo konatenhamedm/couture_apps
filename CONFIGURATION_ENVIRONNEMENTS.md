@@ -88,6 +88,15 @@ php bin/console cache:clear --env=prod
 3. Tester l'application dans les deux environnements
 4. Configurer le déploiement automatique si souhaité
 
+# Mettre à jour la base DEV
+php bin/console d:s:u --force --em=dev
+
+# Mettre à jour la base PROD
+php bin/console d:s:u --force --em=prod
+
+# Mettre à jour la base DEFAULT
+php bin/console d:s:u --force --em=default
+
 ## 📞 Support
 
 Pour toute question, consultez :
