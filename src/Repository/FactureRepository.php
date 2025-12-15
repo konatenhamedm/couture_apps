@@ -150,7 +150,6 @@ class FactureRepository extends ServiceEntityRepository
             ->andWhere('f.dateRetrait >= :today')
             ->andWhere('f.isActive = :active')
             ->groupBy('f.id')
-            ->having('COALESCE(SUM(pf.montant), 0) < f.MontantTotal')
             ->orderBy('f.dateRetrait', 'ASC')
             ->setParameter('succursale', $succursale)
             ->setParameter('today', $today)
