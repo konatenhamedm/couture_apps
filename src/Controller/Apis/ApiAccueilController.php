@@ -70,6 +70,7 @@ class ApiAccueilController extends ApiInterface
         $meilleuresVentes = $this->combineAndSortSales($ventesBoutique, $ventesReservation, 10);
         
         $response = $this->responseData([
+            "settings"=>$settings,
             "abonnements" => $abonnements,
             "commandes" => $facturesProches,
             "meilleuresVentes" => $meilleuresVentes

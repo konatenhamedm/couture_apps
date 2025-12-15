@@ -239,19 +239,20 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
 
         return $this->createQueryBuilder('pb')
             ->select('
-                m.id as modele_id,
+                IDENTITY(m.modele) as modele_id,
                 mo.libelle as modele_nom,
                 SUM(pbl.quantite) as quantite_totale,
                 SUM(pbl.montant) as chiffre_affaires
             ')
-            ->leftJoin('pb.paiementBoutiqueLignes', 'pbl')
-            ->leftJoin('pbl.modeleBoutique', 'm')
-            ->leftJoin('m.modele', 'mo')
+            ->innerJoin('pb.paiementBoutiqueLignes', 'pbl')
+            ->innerJoin('pbl.modeleBoutique', 'm')
+            ->innerJoin('m.modele', 'mo')
             ->where('pb.boutique = :boutique')
             ->andWhere('pb.createdAt >= :startOfWeek')
             ->andWhere('pb.createdAt <= :endOfWeek')
             ->andWhere('pb.isActive = :active')
-            ->groupBy('m.id, mo.libelle')
+            ->andWhere('pbl.quantite > 0')
+            ->groupBy('mo.id, mo.libelle')
             ->orderBy('quantite_totale', 'DESC')
             ->addOrderBy('chiffre_affaires', 'DESC')
             ->setParameter('boutique', $boutique)

@@ -237,20 +237,21 @@ class PaiementReservationRepository extends ServiceEntityRepository
 
         return $this->createQueryBuilder('pr')
             ->select('
-                m.id as modele_id,
+                IDENTITY(m.modele) as modele_id,
                 mo.libelle as modele_nom,
                 SUM(lr.quantite) as quantite_totale,
                 SUM(lr.avanceModele) as chiffre_affaires
             ')
-            ->leftJoin('pr.reservation', 'r')
-            ->leftJoin('r.ligneReservations', 'lr')
-            ->leftJoin('lr.modele', 'm')
-            ->leftJoin('m.modele', 'mo')
+            ->innerJoin('pr.reservation', 'r')
+            ->innerJoin('r.ligneReservations', 'lr')
+            ->innerJoin('lr.modele', 'm')
+            ->innerJoin('m.modele', 'mo')
             ->where('r.boutique = :boutique')
             ->andWhere('pr.createdAt >= :startOfWeek')
             ->andWhere('pr.createdAt <= :endOfWeek')
             ->andWhere('pr.isActive = :active')
-            ->groupBy('m.id, mo.libelle')
+            ->andWhere('lr.quantite > 0')
+            ->groupBy('mo.id, mo.libelle')
             ->orderBy('quantite_totale', 'DESC')
             ->addOrderBy('chiffre_affaires', 'DESC')
             ->setParameter('boutique', $boutique)
