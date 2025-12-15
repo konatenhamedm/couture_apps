@@ -54,6 +54,38 @@ class MesureRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
+    /**
+     * Récupère les 10 meilleures ventes de la semaine pour une boutique
+     * Retourne les types de mesures les plus vendus avec leur nombre de ventes
+     */
+    public function findTopSellingOfWeek($boutique, int $limit = 10): array
+    {
+        $startOfWeek = new \DateTime('monday this week');
+        $endOfWeek = new \DateTime('sunday this week 23:59:59');
+        
+        $startOfWeekImmutable = \DateTimeImmutable::createFromMutable($startOfWeek);
+        $endOfWeekImmutable = \DateTimeImmutable::createFromMutable($endOfWeek);
+
+        return $this->createQueryBuilder('m')
+            ->select('tm.id, tm.libelle, COUNT(m.id) as nombreVentes, SUM(CAST(m.montant AS DECIMAL(10,2))) as chiffreAffaires')
+            ->leftJoin('m.facture', 'f')
+            ->leftJoin('m.typeMesure', 'tm')
+            ->where('f.entreprise = :boutique')
+            ->andWhere('m.createdAt >= :startOfWeek')
+            ->andWhere('m.createdAt <= :endOfWeek')
+            ->andWhere('m.isActive = :active')
+            ->groupBy('tm.id, tm.libelle')
+            ->orderBy('nombreVentes', 'DESC')
+            ->addOrderBy('chiffreAffaires', 'DESC')
+            ->setParameter('boutique', $boutique)
+            ->setParameter('startOfWeek', $startOfWeekImmutable)
+            ->setParameter('endOfWeek', $endOfWeekImmutable)
+            ->setParameter('active', true)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
     //    /**
     //     * @return Mesure[] Returns an array of Mesure objects
     //     */

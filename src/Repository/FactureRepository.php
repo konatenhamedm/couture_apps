@@ -135,6 +135,31 @@ class FactureRepository extends ServiceEntityRepository
     //        ;
     //    }
 
+    /**
+     * Récupère les factures dont la date de retrait est proche et qui ne sont pas encore honorées
+     * Une facture est considérée comme non honorée si le total des paiements < montant total
+     */
+    public function findUpcomingUnpaidInvoices($succursale, int $limit = 10): array
+    {
+        $today = new \DateTime();
+        
+        // Récupérer les factures avec date de retrait proche
+        return $this->createQueryBuilder('f')
+            ->leftJoin('f.paiementFactures', 'pf')
+            ->where('f.succursale = :succursale')
+            ->andWhere('f.dateRetrait >= :today')
+            ->andWhere('f.isActive = :active')
+            ->groupBy('f.id')
+            ->having('COALESCE(SUM(pf.montant), 0) < f.MontantTotal')
+            ->orderBy('f.dateRetrait', 'ASC')
+            ->setParameter('succursale', $succursale)
+            ->setParameter('today', $today)
+            ->setParameter('active', true)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
     //    public function findOneBySomeField($value): ?Facture
     //    {
     //        return $this->createQueryBuilder('f')

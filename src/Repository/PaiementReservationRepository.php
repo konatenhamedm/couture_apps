@@ -187,7 +187,6 @@ class PaiementReservationRepository extends ServiceEntityRepository
             ->select('SUM(pr.montant)')
             ->leftJoin('pr.reservation', 'r')
             ->where('r.entreprise = :entreprise')
-            ->andWhere('pr.isActive = true')
             ->andWhere('pr.createdAt >= :dateStart')
             ->andWhere('pr.createdAt <= :dateEnd')
             ->setParameter('entreprise', $entreprise)
@@ -213,7 +212,6 @@ class PaiementReservationRepository extends ServiceEntityRepository
             ->select('SUM(pr.montant)')
             ->leftJoin('pr.reservation', 'r')
             ->where('r.boutique = :boutique')
-            ->andWhere('pr.isActive = true')
             ->andWhere('pr.createdAt >= :dateStart')
             ->andWhere('pr.createdAt <= :dateEnd')
             ->setParameter('boutique', $boutique)
@@ -223,5 +221,44 @@ class PaiementReservationRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
 
         return $result ?? 0;
+    }
+
+    /**
+     * Récupère les modèles les plus réservés de la semaine pour une boutique
+     * Retourne les modèles avec leur quantité totale réservée
+     */
+    public function findTopReservedModelsOfWeek($boutique, int $limit = 10): array
+    {
+        $startOfWeek = new \DateTime('monday this week');
+        $endOfWeek = new \DateTime('sunday this week 23:59:59');
+        
+        $startOfWeekImmutable = \DateTimeImmutable::createFromMutable($startOfWeek);
+        $endOfWeekImmutable = \DateTimeImmutable::createFromMutable($endOfWeek);
+
+        return $this->createQueryBuilder('pr')
+            ->select('
+                m.id as modele_id,
+                mo.libelle as modele_nom,
+                SUM(lr.quantite) as quantite_totale,
+                SUM(lr.avanceModele) as chiffre_affaires
+            ')
+            ->leftJoin('pr.reservation', 'r')
+            ->leftJoin('r.ligneReservations', 'lr')
+            ->leftJoin('lr.modele', 'm')
+            ->leftJoin('m.modele', 'mo')
+            ->where('r.boutique = :boutique')
+            ->andWhere('pr.createdAt >= :startOfWeek')
+            ->andWhere('pr.createdAt <= :endOfWeek')
+            ->andWhere('pr.isActive = :active')
+            ->groupBy('m.id, mo.libelle')
+            ->orderBy('quantite_totale', 'DESC')
+            ->addOrderBy('chiffre_affaires', 'DESC')
+            ->setParameter('boutique', $boutique)
+            ->setParameter('startOfWeek', $startOfWeekImmutable)
+            ->setParameter('endOfWeek', $endOfWeekImmutable)
+            ->setParameter('active', true)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
     }
 }

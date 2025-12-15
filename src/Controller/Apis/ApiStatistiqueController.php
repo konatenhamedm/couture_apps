@@ -564,20 +564,13 @@ class ApiStatistiqueController extends ApiInterface
         // Compter les commandes en cours
         $commandesEnCours = $this->reservationRepository->countCommandesEnCoursByEntreprise($entreprise);
         
-        // Si la période est > 60 jours, afficher les 30 derniers jours avec des données
+        // Si la période est > 60 jours, afficher les 30 derniers jours au lieu du début
         $dateDebutRevenus = $dateDebut;
         $dateFinRevenus = $dateFin;
         if ($nbJours > 60) {
-            // Utiliser la date actuelle ou la date de fin (la plus petite des deux)
-            $now = new DateTime();
-            $dateFinRevenus = ($dateFin > $now) ? $now : $dateFin;
-            $dateDebutRevenus = clone $dateFinRevenus;
+            // Prendre les 30 derniers jours de la période
+            $dateDebutRevenus = clone $dateFin;
             $dateDebutRevenus->modify('-29 days');
-            
-            // S'assurer que dateDebutRevenus n'est pas avant dateDebut
-            if ($dateDebutRevenus < $dateDebut) {
-                $dateDebutRevenus = clone $dateDebut;
-            }
         }
         
         return [
@@ -612,7 +605,7 @@ class ApiStatistiqueController extends ApiInterface
         $chiffreAffaires = $this->calculateBoutiqueRevenue($boutique, $dateDebut, $dateFin);
         
         // Réservations actives pour cette boutique
-        $reservationsActives = $this->reservationRepository->countActiveByBoutiqueAndPeriods($boutique, $dateDebut, $dateFin);
+        $reservationsActives = $this->reservationRepository->countActiveByBoutiqueAndPeriod($boutique, $dateDebut, $dateFin);
         
         // Clients actifs pour cette boutique
         $clientsActifs = $this->clientRepository->countActiveByBoutiqueAndPeriod($boutique, $dateDebut, $dateFin);
@@ -620,20 +613,13 @@ class ApiStatistiqueController extends ApiInterface
         // Commandes en cours pour cette boutique
         $commandesEnCours = $this->reservationRepository->countCommandesEnCoursByBoutique($boutique);
         
-        // Si la période est > 60 jours, afficher les 30 derniers jours avec des données
+        // Si la période est > 60 jours, afficher les 30 derniers jours au lieu du début
         $dateDebutRevenus = $dateDebut;
         $dateFinRevenus = $dateFin;
         if ($nbJours > 60) {
-            // Utiliser la date actuelle ou la date de fin (la plus petite des deux)
-            $now = new DateTime();
-            $dateFinRevenus = ($dateFin > $now) ? $now : $dateFin;
-            $dateDebutRevenus = clone $dateFinRevenus;
+            // Prendre les 30 derniers jours de la période
+            $dateDebutRevenus = clone $dateFin;
             $dateDebutRevenus->modify('-29 days');
-            
-            // S'assurer que dateDebutRevenus n'est pas avant dateDebut
-            if ($dateDebutRevenus < $dateDebut) {
-                $dateDebutRevenus = clone $dateDebut;
-            }
         }
         
         return [
@@ -677,7 +663,6 @@ class ApiStatistiqueController extends ApiInterface
     {
         $revenus = [];
         $current = clone $dateDebut;
-        $current->setTime(0, 0, 0); // S'assurer que la date de départ est à minuit
         $jours = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
         
         while ($current <= $dateFin && count($revenus) < 30) {
@@ -697,14 +682,13 @@ class ApiStatistiqueController extends ApiInterface
             
             $revenus[] = [
                 'jour' => $jourSemaine . ' ' . $current->format('d'),
-                'reservations' => (int)$revenusReservations,
-                'ventes' => (int)$revenusVentes + (int)$revenusReservations,
-                'factures' => (int)$revenusFactures,
+                'reservations' => (int)$nbReservations,
+                'ventes' => (int)$nbVentes,
+                'factures' => (int)$nbFactures,
                 'revenus' => (int)$revenusTotal
             ];
             
             $current->add(new \DateInterval('P1D'));
-            $current->setTime(0, 0, 0); // Réinitialiser l'heure à minuit après chaque ajout
         }
         
         return $revenus;
@@ -714,7 +698,6 @@ class ApiStatistiqueController extends ApiInterface
     {
         $revenus = [];
         $current = clone $dateDebut;
-        $current->setTime(0, 0, 0); // S'assurer que la date de départ est à minuit
         $jours = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
         
         while ($current <= $dateFin && count($revenus) < 30) {
@@ -739,7 +722,6 @@ class ApiStatistiqueController extends ApiInterface
             ];
             
             $current->add(new \DateInterval('P1D'));
-            $current->setTime(0, 0, 0); // Réinitialiser l'heure à minuit après chaque ajout
         }
         
         return $revenus;

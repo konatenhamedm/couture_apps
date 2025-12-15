@@ -123,21 +123,15 @@ class PaiementFactureRepository extends ServiceEntityRepository
      */
     public function sumByEntrepriseAndPeriod($entreprise, \DateTime $dateDebut, \DateTime $dateFin): float
     {
-        // Créer les dates de début et fin avec les bonnes heures
-        $dateDebutStart = clone $dateDebut;
-        $dateDebutStart->setTime(0, 0, 0);
-        $dateFinEnd = clone $dateFin;
-        $dateFinEnd->setTime(23, 59, 59);
-        
         $result = $this->createQueryBuilder('pf')
             ->select('SUM(pf.montant)')
             ->leftJoin('pf.facture', 'f')
             ->where('f.entreprise = :entreprise')
-            ->andWhere('pf.createdAt >= :dateDebut')
-            ->andWhere('pf.createdAt <= :dateFin')
+            ->andWhere('DATE(pf.createdAt) >= DATE(:dateDebut)')
+            ->andWhere('DATE(pf.createdAt) <= DATE(:dateFin)')
             ->setParameter('entreprise', $entreprise)
-            ->setParameter('dateDebut', $dateDebutStart)
-            ->setParameter('dateFin', $dateFinEnd)
+            ->setParameter('dateDebut', $dateDebut->format('Y-m-d'))
+            ->setParameter('dateFin', $dateFin->format('Y-m-d'))
             ->getQuery()
             ->getSingleScalarResult();
 
@@ -148,21 +142,13 @@ class PaiementFactureRepository extends ServiceEntityRepository
      */
     public function sumByEntrepriseAndDay($entreprise, \DateTime $date): float
     {
-        $dateStart = clone $date;
-        $dateStart->setTime(0, 0, 0);
-        $dateEnd = clone $date;
-        $dateEnd->setTime(23, 59, 59);
-        
         $result = $this->createQueryBuilder('pf')
             ->select('SUM(pf.montant)')
             ->leftJoin('pf.facture', 'f')
             ->where('f.entreprise = :entreprise')
-            ->andWhere('pf.isActive = true')
-            ->andWhere('pf.createdAt >= :dateStart')
-            ->andWhere('pf.createdAt <= :dateEnd')
+            ->andWhere('DATE(pf.createdAt) = DATE(:date)')
             ->setParameter('entreprise', $entreprise)
-            ->setParameter('dateStart', $dateStart)
-            ->setParameter('dateEnd', $dateEnd)
+            ->setParameter('date', $date->format('Y-m-d'))
             ->getQuery()
             ->getSingleScalarResult();
 

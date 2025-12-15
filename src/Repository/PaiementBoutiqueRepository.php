@@ -97,21 +97,15 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
      */
     public function sumByEntrepriseAndPeriod($entreprise, \DateTime $dateDebut, \DateTime $dateFin): float
     {
-        // Créer les dates de début et fin avec les bonnes heures
-        $dateDebutStart = clone $dateDebut;
-        $dateDebutStart->setTime(0, 0, 0);
-        $dateFinEnd = clone $dateFin;
-        $dateFinEnd->setTime(23, 59, 59);
-        
         $result = $this->createQueryBuilder('pb')
             ->select('SUM(pb.montant)')
             ->leftJoin('pb.boutique', 'b')
             ->where('b.entreprise = :entreprise')
-            ->andWhere('pb.createdAt >= :dateDebut')
-            ->andWhere('pb.createdAt <= :dateFin')
+            ->andWhere('DATE(pb.createdAt) >= DATE(:dateDebut)')
+            ->andWhere('DATE(pb.createdAt) <= DATE(:dateFin)')
             ->setParameter('entreprise', $entreprise)
-            ->setParameter('dateDebut', $dateDebutStart)
-            ->setParameter('dateFin', $dateFinEnd)
+            ->setParameter('dateDebut', $dateDebut->format('Y-m-d'))
+            ->setParameter('dateFin', $dateFin->format('Y-m-d'))
             ->getQuery()
             ->getSingleScalarResult();
 
@@ -123,20 +117,14 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
      */
     public function sumByBoutiqueAndPeriod(Boutique $boutique, \DateTime $dateDebut, \DateTime $dateFin): float
     {
-        // Créer les dates de début et fin avec les bonnes heures
-        $dateDebutStart = clone $dateDebut;
-        $dateDebutStart->setTime(0, 0, 0);
-        $dateFinEnd = clone $dateFin;
-        $dateFinEnd->setTime(23, 59, 59);
-        
         $result = $this->createQueryBuilder('pb')
             ->select('SUM(pb.montant)')
             ->where('pb.boutique = :boutique')
-            ->andWhere('pb.createdAt >= :dateDebut')
-            ->andWhere('pb.createdAt <= :dateFin')
+            ->andWhere('DATE(pb.createdAt) >= DATE(:dateDebut)')
+            ->andWhere('DATE(pb.createdAt) <= DATE(:dateFin)')
             ->setParameter('boutique', $boutique)
-            ->setParameter('dateDebut', $dateDebutStart)
-            ->setParameter('dateFin', $dateFinEnd)
+            ->setParameter('dateDebut', $dateDebut->format('Y-m-d'))
+            ->setParameter('dateFin', $dateFin->format('Y-m-d'))
             ->getQuery()
             ->getSingleScalarResult();
 
@@ -148,20 +136,13 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
      */
     public function countByEntrepriseAndDay($entreprise, \DateTime $date): int
     {
-        $dateStart = clone $date;
-        $dateStart->setTime(0, 0, 0);
-        $dateEnd = clone $date;
-        $dateEnd->setTime(23, 59, 59);
-        
         return $this->createQueryBuilder('pb')
             ->select('COUNT(pb.id)')
             ->leftJoin('pb.boutique', 'b')
             ->where('b.entreprise = :entreprise')
-            ->andWhere('pb.createdAt >= :dateStart')
-            ->andWhere('pb.createdAt <= :dateEnd')
+            ->andWhere('DATE(pb.createdAt) = DATE(:date)')
             ->setParameter('entreprise', $entreprise)
-            ->setParameter('dateStart', $dateStart)
-            ->setParameter('dateEnd', $dateEnd)
+            ->setParameter('date', $date->format('Y-m-d'))
             ->getQuery()
             ->getSingleScalarResult();
     }
@@ -171,19 +152,12 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
      */
     public function countByBoutiqueAndDay(Boutique $boutique, \DateTime $date): int
     {
-        $dateStart = clone $date;
-        $dateStart->setTime(0, 0, 0);
-        $dateEnd = clone $date;
-        $dateEnd->setTime(23, 59, 59);
-        
         return $this->createQueryBuilder('pb')
             ->select('COUNT(pb.id)')
             ->where('pb.boutique = :boutique')
-            ->andWhere('pb.createdAt >= :dateStart')
-            ->andWhere('pb.createdAt <= :dateEnd')
+            ->andWhere('DATE(pb.createdAt) = DATE(:date)')
             ->setParameter('boutique', $boutique)
-            ->setParameter('dateStart', $dateStart)
-            ->setParameter('dateEnd', $dateEnd)
+            ->setParameter('date', $date->format('Y-m-d'))
             ->getQuery()
             ->getSingleScalarResult();
     }
@@ -221,21 +195,13 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
      */
     public function sumByEntrepriseAndDay($entreprise, \DateTime $date): float
     {
-        $dateStart = clone $date;
-        $dateStart->setTime(0, 0, 0);
-        $dateEnd = clone $date;
-        $dateEnd->setTime(23, 59, 59);
-        
         $result = $this->createQueryBuilder('pb')
             ->select('SUM(pb.montant)')
             ->leftJoin('pb.boutique', 'b')
             ->where('b.entreprise = :entreprise')
-            ->andWhere('pb.isActive = true')
-            ->andWhere('pb.createdAt >= :dateStart')
-            ->andWhere('pb.createdAt <= :dateEnd')
+            ->andWhere('DATE(pb.createdAt) = DATE(:date)')
             ->setParameter('entreprise', $entreprise)
-            ->setParameter('dateStart', $dateStart)
-            ->setParameter('dateEnd', $dateEnd)
+            ->setParameter('date', $date->format('Y-m-d'))
             ->getQuery()
             ->getSingleScalarResult();
 
@@ -247,23 +213,53 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
      */
     public function sumByBoutiqueAndDay(Boutique $boutique, \DateTime $date): float
     {
-        $dateStart = clone $date;
-        $dateStart->setTime(0, 0, 0);
-        $dateEnd = clone $date;
-        $dateEnd->setTime(23, 59, 59);
-        
         $result = $this->createQueryBuilder('pb')
             ->select('SUM(pb.montant)')
             ->where('pb.boutique = :boutique')
-            ->andWhere('pb.isActive = true')
-            ->andWhere('pb.createdAt >= :dateStart')
-            ->andWhere('pb.createdAt <= :dateEnd')
+            ->andWhere('DATE(pb.createdAt) = DATE(:date)')
             ->setParameter('boutique', $boutique)
-            ->setParameter('dateStart', $dateStart)
-            ->setParameter('dateEnd', $dateEnd)
+            ->setParameter('date', $date->format('Y-m-d'))
             ->getQuery()
             ->getSingleScalarResult();
 
         return $result ?? 0;
+    }
+
+    /**
+     * Récupère les meilleures ventes de la semaine pour une boutique
+     * Retourne les modèles les plus vendus avec leur quantité totale et chiffre d'affaires
+     */
+    public function findTopSellingModelsOfWeek($boutique, int $limit = 10): array
+    {
+        $startOfWeek = new \DateTime('monday this week');
+        $endOfWeek = new \DateTime('sunday this week 23:59:59');
+        
+        $startOfWeekImmutable = \DateTimeImmutable::createFromMutable($startOfWeek);
+        $endOfWeekImmutable = \DateTimeImmutable::createFromMutable($endOfWeek);
+
+        return $this->createQueryBuilder('pb')
+            ->select('
+                m.id as modele_id,
+                mo.libelle as modele_nom,
+                SUM(pbl.quantite) as quantite_totale,
+                SUM(pbl.montant) as chiffre_affaires
+            ')
+            ->leftJoin('pb.paiementBoutiqueLignes', 'pbl')
+            ->leftJoin('pbl.modeleBoutique', 'm')
+            ->leftJoin('m.modele', 'mo')
+            ->where('pb.boutique = :boutique')
+            ->andWhere('pb.createdAt >= :startOfWeek')
+            ->andWhere('pb.createdAt <= :endOfWeek')
+            ->andWhere('pb.isActive = :active')
+            ->groupBy('m.id, mo.libelle')
+            ->orderBy('quantite_totale', 'DESC')
+            ->addOrderBy('chiffre_affaires', 'DESC')
+            ->setParameter('boutique', $boutique)
+            ->setParameter('startOfWeek', $startOfWeekImmutable)
+            ->setParameter('endOfWeek', $endOfWeekImmutable)
+            ->setParameter('active', true)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
     }
 }
