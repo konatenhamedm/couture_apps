@@ -226,16 +226,17 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
     }
 
     /**
-     * Récupère les meilleures ventes de la semaine pour une boutique
+     * Récupère les meilleures ventes du dernier mois pour une boutique
      * Retourne les modèles les plus vendus avec leur quantité totale et chiffre d'affaires
      */
     public function findTopSellingModelsOfWeek($boutique, int $limit = 10): array
     {
-        $startOfWeek = new \DateTime('monday this week');
-        $endOfWeek = new \DateTime('sunday this week 23:59:59');
+        // Utiliser le dernier mois (30 jours)
+        $endDate = new \DateTime('now');
+        $startDate = new \DateTime('-30 days');
         
-        $startOfWeekImmutable = \DateTimeImmutable::createFromMutable($startOfWeek);
-        $endOfWeekImmutable = \DateTimeImmutable::createFromMutable($endOfWeek);
+        $startDateImmutable = \DateTimeImmutable::createFromMutable($startDate);
+        $endDateImmutable = \DateTimeImmutable::createFromMutable($endDate);
 
         return $this->createQueryBuilder('pb')
             ->select('
@@ -248,17 +249,14 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
             ->innerJoin('pbl.modeleBoutique', 'm')
             ->innerJoin('m.modele', 'mo')
             ->where('pb.boutique = :boutique')
-            ->andWhere('pb.createdAt >= :startOfWeek')
-            ->andWhere('pb.createdAt <= :endOfWeek')
-            ->andWhere('pb.isActive = :active')
-            ->andWhere('pbl.quantite > 0')
+            ->andWhere('pb.createdAt >= :startDate')
+            ->andWhere('pb.createdAt <= :endDate')
             ->groupBy('mo.id, mo.libelle')
             ->orderBy('quantite_totale', 'DESC')
             ->addOrderBy('chiffre_affaires', 'DESC')
             ->setParameter('boutique', $boutique)
-            ->setParameter('startOfWeek', $startOfWeekImmutable)
-            ->setParameter('endOfWeek', $endOfWeekImmutable)
-            ->setParameter('active', true)
+            ->setParameter('startDate', $startDateImmutable)
+            ->setParameter('endDate', $endDateImmutable)
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
