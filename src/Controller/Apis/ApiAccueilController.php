@@ -9,12 +9,15 @@ use App\Entity\Boutique;
 use App\Entity\ModuleAbonnement;
 use App\Entity\PaiementReservation;
 use App\Repository\AbonnementRepository;
+use App\Repository\CaisseBoutiqueRepository;
+use App\Repository\CaisseSuccursaleRepository;
 use App\Repository\FactureRepository;
 use App\Repository\ModuleAbonnementRepository;
 use App\Repository\PaiementBoutiqueRepository;
 use App\Repository\PaiementFactureRepository;
 use App\Repository\PaiementReservationRepository;
 use App\Repository\SettingRepository;
+use App\Repository\TypeUserRepository;
 use App\Repository\UserRepository;
 use App\Service\PaiementService;
 use App\Service\Utils;
@@ -54,26 +57,26 @@ class ApiAccueilController extends ApiInterface
         SettingRepository $settingRepository,
         FactureRepository $factureRepository,
         PaiementBoutiqueRepository $paiementBoutiqueRepository,
-        PaiementReservationRepository $paiementReservationRepository
+        PaiementReservationRepository $paiementReservationRepository,
+        TypeUserRepository $typeUserRepository,
+        CaisseBoutiqueRepository $caisseBoutiqueRepository,
+        CaisseSuccursaleRepository $caisseSuccursaleRepository,
     ): JsonResponse {
+
         $abonnements = $abonnementRepository->findBy(["etat" => 'actif'], ['numero' => 'ASC']);
         $settings = $settingRepository->findOneBy(['entreprise' => $this->getUser()->getEntreprise()]);
-        
-        // Récupérer les 10 premières factures dont la date de retrait est proche et non honorées
         $facturesProches = $factureRepository->findUpcomingUnpaidInvoices($id, 10);
-        
-        // Récupérer les meilleures ventes de la semaine (boutique + réservations)
         $ventesBoutique = $paiementBoutiqueRepository->findTopSellingModelsOfWeek($id, 10);
         $ventesReservation = $paiementReservationRepository->findTopReservedModelsOfWeek($id, 10);
-        
-        // Combiner et trier les résultats
         $meilleuresVentes = $this->combineAndSortSales($ventesBoutique, $ventesReservation, 10);
         
         $response = $this->responseData([
+            "caisse"=> $type == 'boutique' ? $caisseBoutiqueRepository->findOneBy(['boutique' => $id])->getMontant() : $caisseSuccursaleRepository->findOneBy(['succursale' => $id])->getMontant(), 
+            "depenses"=> 0,
             "settings"=>$settings,
             "abonnements" => $abonnements,
             "commandes" => $facturesProches,
-            "meilleuresVentes" => $meilleuresVentes
+            "meilleuresVentes" =>  $meilleuresVentes
         ], 'group1', ['Content-Type' => 'application/json']);
         return $response;
     }
