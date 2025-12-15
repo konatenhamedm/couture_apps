@@ -39,7 +39,8 @@ security:
             # Routes publiques (API)
             - { path: ^/api/login, roles: PUBLIC_ACCESS }
             - { path: ^/api/pays, roles: PUBLIC_ACCESS }
-            - { path: ^/api/pays/actif, roles: PUBLIC_ACCESS }
+            - { path: ^/api/pays, roles: PUBLIC_ACCESS }
+            - { path: ^/api/test/database-info, roles: PUBLIC_ACCESS }
             - { path: ^/api/logout, roles: PUBLIC_ACCESS }
             - { path: ^/api/user/create, roles: PUBLIC_ACCESS }
             - { path: ^/api/user/qr-code, roles: PUBLIC_ACCESS }
