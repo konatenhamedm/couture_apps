@@ -37,7 +37,7 @@ class ApiVenteController extends ApiInterface
         BoutiqueRepository $boutiqueRepository
     ): Response {
         try {
-            $boutique = $boutiqueRepository->find($id);
+            $boutique = $boutiqueRepository->findInEnvironment($id);
             if (!$boutique) {
                 return $this->json(['success' => false, 'message' => 'Boutique non trouvée'], 404);
             }
@@ -136,7 +136,7 @@ class ApiVenteController extends ApiInterface
         BoutiqueRepository $boutiqueRepository
     ): Response {
         try {
-            $boutique = $boutiqueRepository->find($id);
+            $boutique = $boutiqueRepository->findInEnvironment($id);
             if (!$boutique) {
                 return $this->json(['success' => false, 'message' => 'Boutique non trouvée'], 404);
             }
@@ -270,7 +270,7 @@ class ApiVenteController extends ApiInterface
 
             // Si période = "tous", récupérer tous les paiements sans filtre
             if ($periode === 'tous') {
-                $paiements = $paiementFactureRepository->findAll();
+                $paiements = $paiementFactureRepository->findAllInEnvironment();
                 $totalPaiements = $paiementFactureRepository->countAll();
 
                 return $this->json([
@@ -346,7 +346,7 @@ class ApiVenteController extends ApiInterface
         BoutiqueRepository $boutiqueRepository
     ): Response {
         try {
-            $boutique = $boutiqueRepository->find($id);
+            $boutique = $boutiqueRepository->findInEnvironment($id);
             if (!$boutique) {
                 return $this->json(['success' => false, 'message' => 'Boutique non trouvée'], 404);
             }
@@ -434,7 +434,7 @@ class ApiVenteController extends ApiInterface
         BoutiqueRepository $boutiqueRepository
     ): Response {
         try {
-            $boutique = $boutiqueRepository->find($id);
+            $boutique = $boutiqueRepository->findInEnvironment($id);
             if (!$boutique) {
                 return $this->json(['success' => false, 'message' => 'Boutique non trouvée'], 404);
             }
@@ -663,7 +663,7 @@ class ApiVenteController extends ApiInterface
             $paiement->setType($data['modePaiement'] ?? 'Espèces');
 
             if (isset($data['boutiqueId'])) {
-                $boutique = $boutiqueRepository->find($data['boutiqueId']);
+                $boutique = $boutiqueRepository->findInEnvironment($data['boutiqueId']);
                 $paiement->setBoutique($boutique);
             }
 
@@ -738,7 +738,7 @@ class ApiVenteController extends ApiInterface
         BoutiqueRepository $boutiqueRepository
     ): Response {
         try {
-            $boutique = $boutiqueRepository->find($id);
+            $boutique = $boutiqueRepository->findInEnvironment($id);
             if (!$boutique) {
                 return $this->json(['success' => false, 'message' => 'Boutique non trouvée'], 404);
             }

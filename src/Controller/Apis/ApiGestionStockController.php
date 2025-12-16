@@ -76,7 +76,7 @@ class ApiGestionStockController extends ApiInterface
         }
 
         try {
-            $entreStocks = $this->paginationService->paginate($entreStockRepository->findBy(
+            $entreStocks = $this->paginationService->paginate($entreStockRepository->findByInEnvironment(
                 ['boutique' => $boutique->getId()],
                 ['id' => 'DESC']
             ));
@@ -273,7 +273,7 @@ class ApiGestionStockController extends ApiInterface
         }
 
         try {
-            $entrees = $this->paginationService->paginate($entreStockRepository->findBy(
+            $entrees = $this->paginationService->paginate($entreStockRepository->findByInEnvironment(
                 ['boutique' => $boutique->getId()],
                 ['id' => 'DESC']
             ));
@@ -449,7 +449,7 @@ class ApiGestionStockController extends ApiInterface
         }
 
         try {
-            $entrees = $this->paginationService->paginate($ligneEntreRepository->findBy(
+            $entrees = $this->paginationService->paginate($ligneEntreRepository->findByInEnvironment(
                 ['modele' => $modeleBoutique->getId()],
                 ['id' => 'DESC']
             ));
@@ -563,7 +563,7 @@ class ApiGestionStockController extends ApiInterface
 
         // Récupérer tous les ModeleBoutique en une seule requête
         $modeleBoutiqueIds = array_column($lignes, 'modeleBoutiqueId');
-        $modeleBoutiques = $modeleBoutiqueRepository->findBy(['id' => $modeleBoutiqueIds]);
+        $modeleBoutiques = $modeleBoutiqueRepository->findByInEnvironment(['id' => $modeleBoutiqueIds]);
 
         // Indexer par ID pour un accès rapide
         $modeleBoutiquesMap = [];
@@ -580,7 +580,7 @@ class ApiGestionStockController extends ApiInterface
         }
 
         // Créer l'EntreStock
-        $boutique = $boutiqueRepository->find($data['boutiqueId']);
+        $boutique = $boutiqueRepository->findInEnvironment($data['boutiqueId']);
         if (!$boutique) {
             $this->setMessage("Boutique introuvable");
             return $this->response('[]', 400);
@@ -719,7 +719,7 @@ class ApiGestionStockController extends ApiInterface
 
         $data = json_decode($request->getContent(), true);
 
-        $entreStock = $entreStockRepository->find($id);
+        $entreStock = $entreStockRepository->findInEnvironment($id);
         if (!$entreStock) {
             $this->setMessage('Entrée de stock introuvable');
             return $this->response('[]', 404);
@@ -728,7 +728,7 @@ class ApiGestionStockController extends ApiInterface
         $totalQuantite = 0;
 
         if (isset($data['boutiqueId'])) {
-            $entreStock->setBoutique($boutiqueRepository->find($data['boutiqueId']));
+            $entreStock->setBoutique($boutiqueRepository->findInEnvironment($data['boutiqueId']));
         }
 
         $entreStock->setUpdatedBy($this->getUser());
@@ -743,14 +743,14 @@ class ApiGestionStockController extends ApiInterface
         // Ajout des nouvelles lignes
         if (isset($data['lignes']) && is_array($data['lignes'])) {
             foreach ($data['lignes'] as $ligne) {
-                $modeleBoutique = $modeleBoutiqueRepository->find($ligne['modeleBoutiqueId']);
+                $modeleBoutique = $modeleBoutiqueRepository->findInEnvironment($ligne['modeleBoutiqueId']);
 
                 if (!$modeleBoutique) {
                     $this->setMessage('Modèle de boutique introuvable avec ID: ' . $ligne['modeleBoutiqueId']);
                     return $this->response('[]', 400);
                 }
 
-                $modele = $modeleRepository->find($modeleBoutique->getModele()->getId());
+                $modele = $modeleRepository->findInEnvironment($modeleBoutique->getModele()->getId());
                 $quantite = (int)$ligne['quantite'];
                 $totalQuantite += $quantite;
 
@@ -893,7 +893,7 @@ class ApiGestionStockController extends ApiInterface
         }
 
         // Récupérer la boutique
-        $boutique = $boutiqueRepository->find($data['boutiqueId']);
+        $boutique = $boutiqueRepository->findInEnvironment($data['boutiqueId']);
         if (!$boutique) {
             return $this->json([
                 'status' => 'ERROR',
@@ -903,7 +903,7 @@ class ApiGestionStockController extends ApiInterface
 
         // Récupérer tous les ModeleBoutique en une seule requête
         $modeleBoutiqueIds = array_column($lignes, 'modeleBoutiqueId');
-        $modeleBoutiques = $modeleBoutiqueRepository->findBy(['id' => $modeleBoutiqueIds]);
+        $modeleBoutiques = $modeleBoutiqueRepository->findByInEnvironment(['id' => $modeleBoutiqueIds]);
 
         // Indexer par ID pour un accès rapide
         $modeleBoutiquesMap = [];
@@ -1090,7 +1090,7 @@ class ApiGestionStockController extends ApiInterface
         }
 
         $data = json_decode($request->getContent(), true);
-        $entreStock = $entreStockRepository->find($id);
+        $entreStock = $entreStockRepository->findInEnvironment($id);
 
         if (!$entreStock) {
             return $this->json(['status' => 'ERROR', 'message' => 'Mouvement de stock introuvable'], 404);
@@ -1189,7 +1189,7 @@ class ApiGestionStockController extends ApiInterface
         }
 
         $data = json_decode($request->getContent(), true);
-        $entreStock = $entreStockRepository->find($id);
+        $entreStock = $entreStockRepository->findInEnvironment($id);
 
         if (!$entreStock) {
             return $this->json(['status' => 'ERROR', 'message' => 'Mouvement de stock introuvable'], 404);

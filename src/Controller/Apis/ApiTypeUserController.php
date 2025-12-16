@@ -264,7 +264,7 @@ class ApiTypeUserController extends ApiInterface
             $data = json_decode($request->getContent());
 
             foreach ($data['ids'] as $id) {
-                $typeUser = $villeRepository->find($id);
+                $typeUser = $villeRepository->findInEnvironment($id);
 
                 if ($typeUser != null) {
                     $villeRepository->remove($typeUser);

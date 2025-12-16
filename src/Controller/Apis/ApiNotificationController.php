@@ -32,7 +32,7 @@ class ApiNotificationController extends ApiInterface
     {
 
         try {
-            $notifications = $this->paginationService->paginate($notificationRepository->findBy(
+            $notifications = $this->paginationService->paginate($notificationRepository->findByInEnvironment(
                 ['user' => $this->getUser()],
                 ['id' => 'DESC']
             ));
@@ -185,7 +185,7 @@ class ApiNotificationController extends ApiInterface
     public function markAsRead(int $id, NotificationRepository $notificationRepository): Response
     {
         try {
-            $notification = $notificationRepository->find($id);
+            $notification = $notificationRepository->findInEnvironment($id);
 
             if (!$notification) {
                 $this->setMessage("Notification non trouvée");
@@ -244,7 +244,7 @@ class ApiNotificationController extends ApiInterface
     public function deleteNotification(int $id, NotificationRepository $notificationRepository): Response
     {
         try {
-            $notification = $notificationRepository->find($id);
+            $notification = $notificationRepository->findInEnvironment($id);
 
             if (!$notification) {
                 $this->setMessage("Notification non trouvée");

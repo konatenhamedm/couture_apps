@@ -56,7 +56,7 @@ class ApiCategorieTypeMesureController extends ApiInterface
     {
         try {
             
-            $categories = $this->paginationService->paginate($categorieTypeMesureRepository->findBy(['typeMesure' => $typeMesure,'entreprise'=> $this->getUser()->getEntreprise() ,'isActive' => true],['id' => 'ASC']));
+            $categories = $this->paginationService->paginate($categorieTypeMesureRepository->findByInEnvironment(['typeMesure' => $typeMesure,'entreprise'=> $this->getUser()->getEntreprise() ,'isActive' => true],['id' => 'ASC']));
             $response = $this->responseData($categories, 'group1', ['Content-Type' => 'application/json'], true);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
@@ -125,8 +125,8 @@ class ApiCategorieTypeMesureController extends ApiInterface
         foreach ($data['categorieMesures'] as $categorieMesure) {
             $categorieTypeMesure = new CategorieTypeMesure();
             $categorieTypeMesure->setEntreprise($this->getUser()->getEntreprise());
-            $categorieTypeMesure->setTypeMesure($typeMesureRepository->find($data['typeMesure']));
-            $categorieTypeMesure->setCategorieMesure($categorieMesureRepository->find($categorieMesure));
+            $categorieTypeMesure->setTypeMesure($typeMesureRepository->findInEnvironment($data['typeMesure']));
+            $categorieTypeMesure->setCategorieMesure($categorieMesureRepository->findInEnvironment($categorieMesure));
             $categorieTypeMesure->setCreatedBy($this->getUser());
             $categorieTypeMesure->setUpdatedBy($this->getUser());
             $categorieTypeMesure->setIsActive(true);
@@ -136,7 +136,7 @@ class ApiCategorieTypeMesureController extends ApiInterface
         }
 
 
-        $categories = $categorieTypeMesureRepository->findBy(['typeMesure' => $data['typeMesure'],'isActive' => true],['id' => 'ASC']);
+        $categories = $categorieTypeMesureRepository->findByInEnvironment(['typeMesure' => $data['typeMesure'],'isActive' => true],['id' => 'ASC']);
         
     
         return $this->responseData($categories, 'group1', ['Content-Type' => 'application/json']);
@@ -202,7 +202,7 @@ class ApiCategorieTypeMesureController extends ApiInterface
 
             if ($categorieTypeMesure != null) {
                 if (isset($data['categorieMesure'])) {
-                    $categorieTypeMesure->setCategorieMesure($categorieMesureRepository->find($data['categorieMesure']));
+                    $categorieTypeMesure->setCategorieMesure($categorieMesureRepository->findInEnvironment($data['categorieMesure']));
                 }
                 
 
@@ -333,7 +333,7 @@ class ApiCategorieTypeMesureController extends ApiInterface
 
             $count = 0;
             foreach ($data['ids'] as $id) {
-                $categorieTypeMesure = $categorieTypeMesureRepository->find($id);
+                $categorieTypeMesure = $categorieTypeMesureRepository->findInEnvironment($id);
 
                 if ($categorieTypeMesure != null) {
                     $categorieTypeMesureRepository->remove($categorieTypeMesure);

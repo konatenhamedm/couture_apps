@@ -60,8 +60,8 @@ class ApiFixtureController extends ApiInterface
         ModeleBoutiqueRepository $modeleBoutiqueRepository
     ): Response {
         try {
-            $modeles = $modeleRepository->findAll();
-            $boutiques = $boutiqueRepository->findAll();
+            $modeles = $modeleRepository->findAllInEnvironment();
+            $boutiques = $boutiqueRepository->findAllInEnvironment();
             $createdCount = 0;
             $createdModelesBoutique = [];
 
@@ -71,7 +71,7 @@ class ApiFixtureController extends ApiInterface
             foreach ($modeles as $modele) {
                 foreach ($boutiques as $boutique) {
                     // Vérifier si l'association existe déjà
-                    $existing = $modeleBoutiqueRepository->findOneBy([
+                    $existing = $modeleBoutiqueRepository->findOneByInEnvironment([
                         'modele' => $modele,
                         'boutique' => $boutique
                     ]);
@@ -144,8 +144,8 @@ class ApiFixtureController extends ApiInterface
         EntityManagerInterface $entityManager
     ): Response {
         try {
-            $clients = $clientRepository->findAll();
-            $boutiques = $boutiqueRepository->findAll();
+            $clients = $clientRepository->findAllInEnvironment();
+            $boutiques = $boutiqueRepository->findAllInEnvironment();
             $createdCount = 0;
             $createdReservations = [];
 
@@ -159,7 +159,7 @@ class ApiFixtureController extends ApiInterface
                 $boutique = $boutiques[array_rand($boutiques)];
                 
                 // Récupérer des modèles disponibles pour cette boutique
-                $modeleBoutiques = $modeleBoutiqueRepository->findBy(['boutique' => $boutique]);
+                $modeleBoutiques = $modeleBoutiqueRepository->findByInEnvironment(['boutique' => $boutique]);
                 if (empty($modeleBoutiques)) continue;
 
                 $entityManager->beginTransaction();
@@ -234,7 +234,7 @@ class ApiFixtureController extends ApiInterface
                         $entityManager->persist($paiementReservation);
 
                         // Mettre à jour la caisse
-                        $caisseBoutique = $caisseBoutiqueRepository->findOneBy(['boutique' => $boutique]);
+                        $caisseBoutique = $caisseBoutiqueRepository->findOneByInEnvironment(['boutique' => $boutique]);
                         if ($caisseBoutique) {
                             $caisseBoutique->setMontant($caisseBoutique->getMontant() + $avance);
                             $caisseBoutique->setUpdatedBy($this->getUser());
@@ -298,7 +298,7 @@ class ApiFixtureController extends ApiInterface
         EntityManagerInterface $entityManager
     ): Response {
         try {
-            $boutiques = $boutiqueRepository->findAll();
+            $boutiques = $boutiqueRepository->findAllInEnvironment();
             $createdCount = 0;
             $createdEntrees = [];
 
@@ -311,7 +311,7 @@ class ApiFixtureController extends ApiInterface
                 $boutique = $boutiques[array_rand($boutiques)];
                 
                 // Récupérer des modèles disponibles pour cette boutique
-                $modeleBoutiques = $modeleBoutiqueRepository->findBy(['boutique' => $boutique]);
+                $modeleBoutiques = $modeleBoutiqueRepository->findByInEnvironment(['boutique' => $boutique]);
                 if (empty($modeleBoutiques)) continue;
 
                 $entityManager->beginTransaction();

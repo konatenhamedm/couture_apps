@@ -152,7 +152,7 @@ class ApiModeleBoutiqueController extends ApiInterface
         } */
 
         try {
-            $modeleBoutique = $modeleBoutiqueRepository->find($id);
+            $modeleBoutique = $modeleBoutiqueRepository->findInEnvironment($id);
             
             if (!$modeleBoutique) {
                 $this->setMessage("Modèle de boutique non trouvé");
@@ -235,7 +235,7 @@ class ApiModeleBoutiqueController extends ApiInterface
     public function indexAllEntreprise(ModeleBoutiqueRepository $modeleBoutiqueRepository): Response
     {
         try {
-            $modeleBoutiques = $this->paginationService->paginate($modeleBoutiqueRepository->findAll());
+            $modeleBoutiques = $this->paginationService->paginate($modeleBoutiqueRepository->findAllInEnvironment());
             $response = $this->responseData($modeleBoutiques, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
@@ -296,7 +296,7 @@ class ApiModeleBoutiqueController extends ApiInterface
     public function index(ModeleBoutiqueRepository $modeleBoutiqueRepository): Response
     {
         try {
-            $modeleBoutiques = $this->paginationService->paginate($modeleBoutiqueRepository->findBy(
+            $modeleBoutiques = $this->paginationService->paginate($modeleBoutiqueRepository->findByInEnvironment(
                 ['entreprise' => $this->getUser()->getEntreprise()],
                 ['id' => 'DESC']
             ));
@@ -354,7 +354,7 @@ class ApiModeleBoutiqueController extends ApiInterface
         }
 
         try {
-            $modeles = $this->paginationService->paginate($modeleBoutiqueRepository->findBy(
+            $modeles = $this->paginationService->paginate($modeleBoutiqueRepository->findByInEnvironment(
                 ['boutique' => $boutique->getId()],
                 ['id' => 'DESC']
             ));
@@ -412,13 +412,13 @@ class ApiModeleBoutiqueController extends ApiInterface
         }
 
         try {
-            if ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'SADM'])) {
-                $modeleBoutiques = $this->paginationService->paginate($modeleBoutiqueRepository->findBy(
+            if ($this->getUser()->getType() == $typeUserRepository->findOneByInEnvironment(['code' => 'SADM'])) {
+                $modeleBoutiques = $this->paginationService->paginate($modeleBoutiqueRepository->findByInEnvironment(
                     ['boutique' => $boutique],
                     ['id' => 'DESC']
                 ));
             } else {
-                $modeleBoutiques = $this->paginationService->paginate($modeleBoutiqueRepository->findBy(
+                $modeleBoutiques = $this->paginationService->paginate($modeleBoutiqueRepository->findByInEnvironment(
                     ['boutique' => $this->getUser()->getBoutique()],
                     ['id' => 'DESC']
                 ));
@@ -582,13 +582,13 @@ class ApiModeleBoutiqueController extends ApiInterface
 
         $data = json_decode($request->getContent(), true);
 
-        $modele = $modeleRepository->find($data['modele']);
+        $modele = $modeleRepository->findInEnvironment($data['modele']);
         if (!$modele) {
             $this->setMessage("Modèle non trouvé avec l'ID: " . $data['modele']);
             return $this->response('[]', 400);
         }
 
-        $boutique = $boutiqueRepository->find($data['boutique']);
+        $boutique = $boutiqueRepository->findInEnvironment($data['boutique']);
         if (!$boutique) {
             $this->setMessage("Boutique non trouvée avec l'ID: " . $data['boutique']);
             return $this->response('[]', 400);
@@ -701,7 +701,7 @@ class ApiModeleBoutiqueController extends ApiInterface
 
             if ($modeleBoutique != null) {
                 if (isset($data['modele'])) {
-                    $modele = $modeleRepository->find($data['modele']);
+                    $modele = $modeleRepository->findInEnvironment($data['modele']);
                     if (!$modele) {
                         $this->setMessage("Modèle non trouvé avec l'ID: " . $data['modele']);
                         return $this->response('[]', 400);
@@ -718,7 +718,7 @@ class ApiModeleBoutiqueController extends ApiInterface
                 }
 
                 if (isset($data['boutique'])) {
-                    $boutique = $boutiqueRepository->find($data['boutique']);
+                    $boutique = $boutiqueRepository->findInEnvironment($data['boutique']);
                     if (!$boutique) {
                         $this->setMessage("Boutique non trouvée avec l'ID: " . $data['boutique']);
                         return $this->response('[]', 400);
@@ -858,7 +858,7 @@ class ApiModeleBoutiqueController extends ApiInterface
             $data = json_decode($request->getContent(), true);
 
             foreach ($data['ids'] as $id) {
-                $modeleBoutique = $villeRepository->find($id);
+                $modeleBoutique = $modeleBoutiqueRepository->findInEnvironment($id);
 
                 if ($modeleBoutique != null) {
                     $villeRepository->remove($modeleBoutique);

@@ -178,11 +178,11 @@ class ApiPaysController extends ApiInterface
         )
     )]
     #[OA\Response(response: 404, description: "Pays non trouvé")]
-    public function getOne(int $id): Response
+    public function getOne(int $id,PaysRepository $paysRepository): Response
     {
         try {
             // Utiliser le trait pour trouver le pays dans le bon environnement
-            $pays = $this->findInEnvironment(Pays::class, $id);
+            $pays = $paysRepository->findInEnvironment($id);
             
             if ($pays) {
                 $response = $this->response($pays);
@@ -350,13 +350,13 @@ class ApiPaysController extends ApiInterface
     #[OA\Response(response: 400, description: "Données invalides")]
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 404, description: "Pays non trouvé")]
-    public function update(Request $request, int $id): Response
+    public function update(Request $request, int $id,PaysRepository $paysRepository): Response
     {
         try {
             $data = json_decode($request->getContent(), true);
 
             // Utiliser le trait pour trouver le pays dans le bon environnement
-            $pays = $this->findInEnvironment(Pays::class, $id);
+           $pays = $paysRepository->findInEnvironment($id);
 
             if ($pays != null) {
                 if (isset($data['libelle'])) {
@@ -428,12 +428,11 @@ class ApiPaysController extends ApiInterface
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 404, description: "Pays non trouvé")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression (peut-être des dépendances)")]
-    public function delete(Request $request, int $id): Response
+    public function delete(Request $request, int $id,PaysRepository $paysRepository): Response
     {
         try {
             // Utiliser le trait pour trouver le pays dans le bon environnement
-            $pays = $this->findInEnvironment(Pays::class, $id);
-            
+          $pays = $paysRepository->findInEnvironment($id);
             if ($pays != null) {
                 // Utiliser le trait pour supprimer dans le bon environnement
                 $this->remove($pays);
@@ -493,7 +492,7 @@ class ApiPaysController extends ApiInterface
     #[OA\Response(response: 400, description: "Données invalides")]
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
-    public function deleteAll(Request $request): Response
+    public function deleteAll(Request $request,PaysRepository $paysRepository): Response
     {
         try {
             $data = json_decode($request->getContent(), true);
@@ -501,7 +500,7 @@ class ApiPaysController extends ApiInterface
             $count = 0;
             foreach ($data['ids'] as $id) {
                 // Utiliser le trait pour trouver le pays dans le bon environnement
-                $pays = $this->findInEnvironment(Pays::class, $id);
+                 $pays = $paysRepository->findInEnvironment($id);
 
                 if ($pays != null) {
                     // Utiliser le trait pour supprimer dans le bon environnement
@@ -558,7 +557,7 @@ class ApiPaysController extends ApiInterface
     {
         try {
             // Utilisation du repository adapté qui utilise automatiquement le bon environnement
-            $pays = $paysRepository->findByCode($code);
+            $pays = $paysRepository->findOneBy(["code"=>$code]);
             
             if ($pays) {
                 $response = $this->responseData($pays, 'group1', ['Content-Type' => 'application/json']);

@@ -71,7 +71,7 @@ class ApiAccueilController extends ApiInterface
         $meilleuresVentes = $this->combineAndSortSales($ventesBoutique, $ventesReservation, 10);
         
         $response = $this->responseData([
-            "caisse"=> $type == 'boutique' ? $caisseBoutiqueRepository->findOneByInEnvironment(['boutique' => $id])->getMontant() : $caisseSuccursaleRepository->findOneBy(['succursale' => $id])->getMontant(), 
+            "caisse"=> $type == 'boutique' ? $caisseBoutiqueRepository->findOneByInEnvironment(['boutique' => $id])->getMontant() : $caisseSuccursaleRepository->findOneByInEnvironment(['succursale' => $id])->getMontant(), 
             "depenses"=> 0,
             "settings"=>$settings,
             "abonnements" => $abonnements,

@@ -78,7 +78,7 @@ class ApiFactureController extends ApiInterface
     public function index(FactureRepository $factureRepository): Response
     {
         try {
-            $factures = $this->paginationService->paginate($factureRepository->findAll());
+            $factures = $this->paginationService->paginate($factureRepository->findAllInEnvironment());
             $response = $this->responseData($factures, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
@@ -132,13 +132,13 @@ class ApiFactureController extends ApiInterface
 
         try {
 
-            if ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'SADM'])) {
-                $factures = $this->paginationService->paginate($factureRepository->findBy(
+            if ($this->getUser()->getType() == $typeUserRepository->findOneByInEnvironment(['code' => 'SADM'])) {
+                $factures = $this->paginationService->paginate($factureRepository->findByInEnvironment(
                     ['entreprise' => $this->getUser()->getEntreprise()],
                     ['id' => 'DESC']
                 ));
             } else {
-                $factures = $this->paginationService->paginate($factureRepository->findBy(
+                $factures = $this->paginationService->paginate($factureRepository->findByInEnvironment(
                     ['succursale' => $this->getUser()->getSurccursale()],
                     ['id' => 'DESC']
                 ));
@@ -396,10 +396,10 @@ class ApiFactureController extends ApiInterface
         $facture->setEntreprise($this->getUser()->getEntreprise());
         $admin = $userRepository->getUserByCodeType($this->getUser()->getEntreprise());
 
-        $facture->setClient($clientRepository->find($request->get('clientId')));
+        $facture->setClient($clientRepository->findInEnvironment($request->get('clientId')));
         $facture->setDateDepot(new \DateTime());
         $facture->setAvance($request->get('avance'));
-        $facture->setSuccursale($surccursaleRepository->find($request->get('succursaleId')));
+        $facture->setSuccursale($surccursaleRepository->findInEnvironment($request->get('succursaleId')));
 
         // Gestion de la signature
         $uploadedFichierSignature = $request->files->get('signature');
@@ -425,7 +425,7 @@ class ApiFactureController extends ApiInterface
         if (isset($lignesMesure) && is_array($lignesMesure)) {
             foreach ($lignesMesure as $index => $ligne) {
                 $mesure = new Mesure();
-                $mesure->setTypeMesure($typeMesureRepository->find($ligne['typeMesureId']));
+                $mesure->setTypeMesure($typeMesureRepository->findInEnvironment($ligne['typeMesureId']));
                 $mesure->setMontant($ligne['montant']);
                 $mesure->setRemise($ligne['remise'] ?? 0);
                 $mesure->setNom($ligne['nom'] ?? "");
@@ -450,7 +450,7 @@ class ApiFactureController extends ApiInterface
                 if (isset($ligneMesures) && is_array($ligneMesures)) {
                     foreach ($ligneMesures as $ligneData) {
                         $ligneMesure = new LigneMesure();
-                        $ligneMesure->setCategorieMesure($categorieMesureRepository->find($ligneData['categorieId']));
+                        $ligneMesure->setCategorieMesure($categorieMesureRepository->findInEnvironment($ligneData['categorieId']));
                         $ligneMesure->setTaille($ligneData['taille']);
                         $entityManager->persist($ligneMesure);
                         $mesure->addLigneMesure($ligneMesure);
@@ -487,7 +487,7 @@ class ApiFactureController extends ApiInterface
 
         // Mise à jour de la caisse si avance
         if ($request->get('avance') != null && $request->get('avance') > 0) {
-            $caisse = $caisseSuccursaleRepository->findOneBy(['succursale' => $request->get('succursaleId')]);
+            $caisse = $caisseSuccursaleRepository->findOneByInEnvironment(['succursale' => $request->get('succursaleId')]);
             if ($caisse) {
                 $caisse->setMontant((int)$caisse->getMontant() + (int)$request->get('avance'));
                 $caisse->setType('caisse_succursale');
@@ -609,7 +609,7 @@ class ApiFactureController extends ApiInterface
     #[OA\Response(response: 500, description: "Erreur lors de la mise à jour")]
     public function update(
         Request $request,
-        Facture $facture,
+        $id,
         FactureRepository $factureRepository,
         TypeMesureRepository $typeMesureRepository,
         ClientRepository $clientRepository,
@@ -627,6 +627,8 @@ class ApiFactureController extends ApiInterface
         try {
             // Récupération des données depuis formData
             $mesuresJson = $request->get('mesures');
+
+            $facture = $factureRepository->findInEnvironment($id);
             $data = [];
             if ($mesuresJson) {
                 $data['mesures'] = json_decode($mesuresJson, true);
@@ -654,12 +656,12 @@ class ApiFactureController extends ApiInterface
 
             // Mise à jour des informations de base
             if (isset($data['clientId'])) {
-                $facture->setClient($clientRepository->find($data['clientId']));
+                $facture->setClient($clientRepository->findInEnvironment($data['clientId']));
             }
 
             // Mise à jour de la succursale
             if (isset($data['succursaleId'])) {
-                $facture->setSuccursale($surccursaleRepository->find($data['succursaleId']));
+                $facture->setSuccursale($surccursaleRepository->findInEnvironment($data['succursaleId']));
             }
 
             // Gestion de la signature
@@ -701,7 +703,7 @@ class ApiFactureController extends ApiInterface
                     }
 
                     if ($mesure) {
-                        $mesure->setTypeMesure($typeMesureRepository->find($mesureData['typeMesureId']));
+                        $mesure->setTypeMesure($typeMesureRepository->findInEnvironment($mesureData['typeMesureId']));
                         $mesure->setMontant($mesureData['montant']);
                         $mesure->setNom($mesureData['nom'] ?? ""); // ✅ Valeur par défaut ajoutée
                         $mesure->setRemise($mesureData['remise'] ?? 0);
@@ -746,7 +748,7 @@ class ApiFactureController extends ApiInterface
                                 }
 
                                 if ($ligneMesure) {
-                                    $ligneMesure->setCategorieMesure($categorieMesureRepository->find($ligneData['categorieId']));
+                                    $ligneMesure->setCategorieMesure($categorieMesureRepository->findInEnvironment($ligneData['categorieId']));
                                     $ligneMesure->setTaille($ligneData['taille']);
                                     if (!isset($ligneData['id'])) {
                                         $entityManager->persist($ligneMesure);
@@ -785,7 +787,7 @@ class ApiFactureController extends ApiInterface
                 // Mise à jour de la caisse
                 $succursaleId = $facture->getSuccursale() ? $facture->getSuccursale()->getId() : null;
                 if ($succursaleId) {
-                    $caisse = $caisseSuccursaleRepository->findOneBy(['succursale' => $succursaleId]);
+                    $caisse = $caisseSuccursaleRepository->findOneByInEnvironment(['succursale' => $succursaleId]);
                     if ($caisse) {
                         $caisse->setMontant((int)$caisse->getMontant() + (int)$differenceAvance);
                         $caisse->setType('caisse_succursale');
@@ -873,7 +875,7 @@ class ApiFactureController extends ApiInterface
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 404, description: "Facture non trouvée")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
-    public function delete(Request $request, Facture $facture, FactureRepository $villeRepository): Response
+    public function delete(Request $request, Facture $facture, FactureRepository $factureRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
@@ -881,7 +883,7 @@ class ApiFactureController extends ApiInterface
 
         try {
             if ($facture != null) {
-                $villeRepository->remove($facture, true);
+                $factureRepository->remove($facture, true);
                 $this->setMessage("Operation effectuées avec succès");
                 $response = $this->response($facture);
             } else {
@@ -939,7 +941,7 @@ class ApiFactureController extends ApiInterface
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
-    public function deleteAll(Request $request, FactureRepository $villeRepository): Response
+    public function deleteAll(Request $request, FactureRepository $factureRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
@@ -949,10 +951,10 @@ class ApiFactureController extends ApiInterface
             $data = json_decode($request->getContent(), true);
 
             foreach ($data['ids'] as $id) {
-                $facture = $villeRepository->find($id);
+                $facture = $factureRepository->findInEnvironment($id);
 
                 if ($facture != null) {
-                    $villeRepository->remove($facture);
+                    $factureRepository->remove($facture);
                 }
             }
             $this->setMessage("Operation effectuées avec succès");

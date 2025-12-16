@@ -70,7 +70,7 @@ class ApiOperateurController extends ApiInterface
     public function index(OperateurRepository $operateurRepository): Response
     {
         try {
-            $operateurs = $this->paginationService->paginate($operateurRepository->findAll());
+            $operateurs = $this->paginationService->paginate($operateurRepository->findAllInEnvironment());
             $response = $this->responseData($operateurs, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
@@ -121,7 +121,7 @@ class ApiOperateurController extends ApiInterface
     public function indexByPays(OperateurRepository $operateurRepository, Pays $pays): Response
     {
         try {
-            $operateurs = $this->paginationService->paginate($operateurRepository->findBy(
+            $operateurs = $this->paginationService->paginate($operateurRepository->findByInEnvironment(
                 ['pays' => $pays->getId(), 'actif' => true],
                 ['libelle' => 'ASC']
             ));
@@ -393,7 +393,7 @@ class ApiOperateurController extends ApiInterface
                     $operateur->setActif($actif);
                 }
                 if ($pays) {
-                    $paysEntity = $paysRepository->find($pays);
+                    $paysEntity = $paysRepository->findInEnvironment($pays);
                     if ($paysEntity) {
                         $operateur->setPays($paysEntity);
                     }
@@ -528,7 +528,7 @@ class ApiOperateurController extends ApiInterface
 
             $count = 0;
             foreach ($data['ids'] as $id) {
-                $operateur = $villeRepository->find($id);
+                $operateur = $villeRepository->findInEnvironment($id);
 
                 if ($operateur != null) {
                     $villeRepository->remove($operateur);

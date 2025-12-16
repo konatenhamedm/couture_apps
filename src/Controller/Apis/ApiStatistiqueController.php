@@ -594,7 +594,7 @@ class ApiStatistiqueController extends ApiInterface
 
     private function getAteliyaBoutiqueStats(int $boutiqueId, DateTime $dateDebut, DateTime $dateFin): array
     {
-        $boutique = $this->boutiqueRepository->find($boutiqueId);
+        $boutique = $this->boutiqueRepository->findInEnvironment($boutiqueId);
         if (!$boutique) {
             throw new \Exception("Boutique non trouvée");
         }

@@ -84,7 +84,7 @@ class ApiPaiementController extends ApiInterface
     public function index(PaiementFactureRepository $paiementRepository): Response
     {
         try {
-            $paiements = $this->paginationService->paginate($paiementRepository->findAll());
+            $paiements = $this->paginationService->paginate($paiementRepository->findAllInEnvironment());
             $response = $this->responseData($paiements, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
@@ -134,13 +134,13 @@ class ApiPaiementController extends ApiInterface
         }
 
         try {
-            if ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'SADM'])) {
-                $paiements = $this->paginationService->paginate($paiementRepository->findBy(
+            if ($this->getUser()->getType() == $typeUserRepository->findOneByInEnvironment(['code' => 'SADM'])) {
+                $paiements = $this->paginationService->paginate($paiementRepository->findByInEnvironment(
                     ['entreprise' => $this->getUser()->getEntreprise()],
                     ['id' => 'DESC']
                 ));
             } else {
-                $paiements = $this->paginationService->paginate($paiementRepository->findBy(
+                $paiements = $this->paginationService->paginate($paiementRepository->findByInEnvironment(
                     ['surccursale' => $this->getUser()->getSurccursale()],
                     ['id' => 'DESC']
                 ));
@@ -317,7 +317,7 @@ class ApiPaiementController extends ApiInterface
         $facture->setResteArgent((int)$facture->getResteArgent() - (int)$data['montant']);
 
         // Mise à jour de la caisse succursale
-        $caisse = $caisseSuccursaleRepository->findOneBy(['succursale' => $facture->getSuccursale()->getId()]);
+        $caisse = $caisseSuccursaleRepository->findOneByInEnvironment(['succursale' => $facture->getSuccursale()->getId()]);
 
         $caisse->setMontant((int)$caisse->getMontant() + (int)$data['montant']);
         $caisse->setType('caisse_succursale');
@@ -499,7 +499,7 @@ class ApiPaiementController extends ApiInterface
         }
 
         // Récupérer le modèle boutique
-        $modeleBoutique = $modeleBoutiqueRepository->find($data['modeleBoutiqueId']);
+        $modeleBoutique = $modeleBoutiqueRepository->findInEnvironment($data['modeleBoutiqueId']);
         if (!$modeleBoutique) {
             return $this->json([
                 'status' => 'ERROR',
@@ -524,7 +524,7 @@ class ApiPaiementController extends ApiInterface
         }
 
         // Récupérer la caisse
-        $caisse = $caisseBoutiqueRepository->findOneBy(['boutique' => $boutique->getId()]);
+        $caisse = $caisseBoutiqueRepository->findOneByInEnvironment(['boutique' => $boutique->getId()]);
         if (!$caisse) {
             return $this->json([
                 'status' => 'ERROR',
@@ -537,7 +537,7 @@ class ApiPaiementController extends ApiInterface
         $paiement->setMontant($montant);
 
         if (isset($data['client']) && $data['client']) {
-            $client = $clientRepository->find($data['client']);
+            $client = $clientRepository->findInEnvironment($data['client']);
             if ($client) {
                 $paiement->setClient($client);
             }
@@ -770,7 +770,7 @@ class ApiPaiementController extends ApiInterface
 
         // Récupérer tous les ModeleBoutique en une seule requête
         $modeleBoutiqueIds = array_column($lignes, 'modeleBoutiqueId');
-        $modeleBoutiques = $modeleBoutiqueRepository->findBy(['id' => $modeleBoutiqueIds]);
+        $modeleBoutiques = $modeleBoutiqueRepository->findByInEnvironment(['id' => $modeleBoutiqueIds]);
 
         // Indexer par ID pour un accès rapide
         $modeleBoutiquesMap = [];
@@ -846,7 +846,7 @@ class ApiPaiementController extends ApiInterface
         }
 
         // Récupérer la caisse
-        $caisse = $caisseBoutiqueRepository->findOneBy(['boutique' => $boutique->getId()]);
+        $caisse = $caisseBoutiqueRepository->findOneByInEnvironment(['boutique' => $boutique->getId()]);
         if (!$caisse) {
             return $this->json([
                 'status' => 'ERROR',
@@ -865,7 +865,7 @@ class ApiPaiementController extends ApiInterface
         $paiement->setReference($utils->generateReference('PMT'));
 
         if (isset($data['client']) && $data['client']) {
-            $client = $clientRepository->find($data['client']);
+            $client = $clientRepository->findInEnvironment($data['client']);
             if ($client) {
                 $paiement->setClient($client);
             }
@@ -1128,7 +1128,7 @@ class ApiPaiementController extends ApiInterface
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
-    public function deleteAll(Request $request, PaiementFactureRepository $villeRepository): Response
+    public function deleteAll(Request $request, PaiementFactureRepository $paiementRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
@@ -1139,10 +1139,10 @@ class ApiPaiementController extends ApiInterface
 
             $count = 0;
             foreach ($data['ids'] as $id) {
-                $paiement = $villeRepository->find($id);
+                $paiement = $paiementRepository->findInEnvironment($id);
 
                 if ($paiement != null) {
-                    $villeRepository->remove($paiement);
+                    $paiementRepository->remove($paiement);
                     $count++;
                 }
             }

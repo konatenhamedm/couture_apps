@@ -75,7 +75,7 @@ class ApiModuleAbonnementController extends ApiInterface
     public function index(ModuleAbonnementRepository $moduleAbonnementRepository): Response
     {
         try {
-            $moduleAbonnements = $this->paginationService->paginate($moduleAbonnementRepository->findAll());
+            $moduleAbonnements = $this->paginationService->paginate($moduleAbonnementRepository->findAllInEnvironment());
             $response = $this->responseData($moduleAbonnements, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
@@ -294,7 +294,7 @@ class ApiModuleAbonnementController extends ApiInterface
         // Ajout des lignes de modules
         $ligneModules = $data['ligneModules'] ?? [];
         foreach ($ligneModules as $ligneModuleData) {
-            $module = $moduleRepository->find($ligneModuleData['module']);
+            $module = $moduleRepository->findInEnvironment($ligneModuleData['module']);
             if (!$module) {
                 $this->setMessage("Module non trouvé avec l'ID: " . $ligneModuleData['module']);
                 return $this->response('[]', 400);
@@ -418,7 +418,7 @@ class ApiModuleAbonnementController extends ApiInterface
                 foreach ($ligneModules as $ligneModuleData) {
                     if (!isset($ligneModuleData['id']) || $ligneModuleData['id'] == null) {
                         // Création d'une nouvelle ligne
-                        $module = $moduleRepository->find($ligneModuleData['module']);
+                        $module = $moduleRepository->findInEnvironment($ligneModuleData['module']);
                         if (!$module) {
                             $this->setMessage("Module non trouvé avec l'ID: " . $ligneModuleData['module']);
                             return $this->response('[]', 400);
@@ -433,9 +433,9 @@ class ApiModuleAbonnementController extends ApiInterface
                         $moduleAbonnement->addLigneModule($ligneModule);
                     } else {
                         // Mise à jour d'une ligne existante
-                        $ligneModule = $ligneModuleRepository->find($ligneModuleData['id']);
+                        $ligneModule = $ligneModuleRepository->findInEnvironment($ligneModuleData['id']);
                         if ($ligneModule != null) {
-                            $module = $moduleRepository->find($ligneModuleData['module']);
+                            $module = $moduleRepository->findInEnvironment($ligneModuleData['module']);
                             if (!$module) {
                                 $this->setMessage("Module non trouvé avec l'ID: " . $ligneModuleData['module']);
                                 return $this->response('[]', 400);
@@ -453,7 +453,7 @@ class ApiModuleAbonnementController extends ApiInterface
                 $ligneModulesDeletes = $data['ligneModulesDelete'] ?? [];
                 if (isset($ligneModulesDeletes) && is_array($ligneModulesDeletes)) {
                     foreach ($ligneModulesDeletes as $ligneModuleData) {
-                        $ligneModule = $ligneModuleRepository->find($ligneModuleData['id']);
+                        $ligneModule = $ligneModuleRepository->findInEnvironment($ligneModuleData['id']);
                         if ($ligneModule != null) {
                             $moduleAbonnement->removeLigneModule($ligneModule);
                             $ligneModuleRepository->remove($ligneModule, true);
@@ -580,7 +580,7 @@ class ApiModuleAbonnementController extends ApiInterface
             $data = json_decode($request->getContent(), true);
 
             foreach ($data['ids'] as $id) {
-                $moduleAbonnement = $villeRepository->find($id);
+                $moduleAbonnement = $moduleAbonnementRepository->findInEnvironment($id);
 
                 if ($moduleAbonnement != null) {
                     $villeRepository->remove($moduleAbonnement);

@@ -100,7 +100,7 @@ class ApiReservationController extends ApiInterface
     public function index(ReservationRepository $reservationRepository): Response
     {
         try {
-            $reservations = $this->paginationService->paginate($reservationRepository->findAll());
+            $reservations = $this->paginationService->paginate($reservationRepository->findAllInEnvironment());
             $response = $this->responseData($reservations, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
@@ -146,13 +146,13 @@ class ApiReservationController extends ApiInterface
     public function indexAll(ReservationRepository $reservationRepository, TypeUserRepository $typeUserRepository): Response
     {
         try {
-            if ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'SADM'])) {
-                $reservations = $this->paginationService->paginate($reservationRepository->findBy(
+            if ($this->getUser()->getType() == $typeUserRepository->findOneByInEnvironment(['code' => 'SADM'])) {
+                $reservations = $this->paginationService->paginate($reservationRepository->findByInEnvironment(
                     ['entreprise' => $this->getUser()->getEntreprise()],
                     ['id' => 'DESC']
                 ));
             } else {
-                $reservations = $this->paginationService->paginate($reservationRepository->findBy(
+                $reservations = $this->paginationService->paginate($reservationRepository->findByInEnvironment(
                     ['boutique' => $this->getUser()->getBoutique()],
                     ['id' => 'DESC']
                 ));
@@ -202,7 +202,7 @@ class ApiReservationController extends ApiInterface
     {
         try {
             
-                $reservations = $this->paginationService->paginate($reservationRepository->findBy(
+                $reservations = $this->paginationService->paginate($reservationRepository->findByInEnvironment(
                     ['boutique'=> $id],
                     ['id' => 'DESC']
                 ));
@@ -490,7 +490,7 @@ class ApiReservationController extends ApiInterface
         }
 
         // Récupérer le client
-        $client = $clientRepository->find($data['client']);
+        $client = $clientRepository->findInEnvironment($data['client']);
         if (!$client) {
             return $this->json([
                 'status' => 'ERROR',
@@ -499,7 +499,7 @@ class ApiReservationController extends ApiInterface
         }
 
         // Récupérer la boutique
-        $boutique = $boutiqueRepository->find($data['boutique']);
+        $boutique = $boutiqueRepository->findInEnvironment($data['boutique']);
         if (!$boutique) {
             return $this->json([
                 'status' => 'ERROR',
@@ -509,7 +509,7 @@ class ApiReservationController extends ApiInterface
 
         // Récupérer tous les ModeleBoutique en une seule requête
         $modeleBoutiqueIds = array_column($lignes, 'modele');
-        $modeleBoutiques = $modeleBoutiqueRepository->findBy(['id' => $modeleBoutiqueIds]);
+        $modeleBoutiques = $modeleBoutiqueRepository->findByInEnvironment(['id' => $modeleBoutiqueIds]);
 
         // Indexer par ID pour un accès rapide
         $modeleBoutiquesMap = [];
@@ -658,7 +658,7 @@ class ApiReservationController extends ApiInterface
                 $entityManager->persist($paiementReservation);
 
                 // Mise à jour de la caisse boutique
-                $caisseBoutique = $caisseBoutiqueRepository->findOneBy(['boutique' => $boutique->getId()]);
+                $caisseBoutique = $caisseBoutiqueRepository->findOneByInEnvironment(['boutique' => $boutique->getId()]);
                 if ($caisseBoutique) {
                     $caisseBoutique->setMontant($caisseBoutique->getMontant() + $avance);
                     $caisseBoutique->setUpdatedBy($this->getUser());
@@ -831,13 +831,13 @@ class ApiReservationController extends ApiInterface
                     $reservation->setDateRetrait(new \DateTime($data['dateRetrait']));
                 }
                 if (isset($data['client'])) {
-                    $client = $clientRepository->find($data['client']);
+                    $client = $clientRepository->findInEnvironment($data['client']);
                     if ($client) {
                         $reservation->setClient($client);
                     }
                 }
                 if (isset($data['boutique'])) {
-                    $boutique = $boutiqueRepository->find($data['boutique']);
+                    $boutique = $boutiqueRepository->findInEnvironment($data['boutique']);
                     if ($boutique) {
                         $reservation->setBoutique($boutique);
                     }
@@ -858,7 +858,7 @@ class ApiReservationController extends ApiInterface
 
                     // Ajouter les nouvelles lignes
                     foreach ($data['ligne'] as $value) {
-                        $modeleBoutique = $modeleBoutiqueRepository->find($value['modele']);
+                        $modeleBoutique = $modeleBoutiqueRepository->findInEnvironment($value['modele']);
                         if ($modeleBoutique) {
                             $ligne = new LigneReservation();
                             $ligne->setQuantite($value['quantite']);
@@ -989,7 +989,7 @@ class ApiReservationController extends ApiInterface
         $admin = $userRepository->getUserByCodeType($this->getUser()->getEntreprise());
 
 
-        $reservation = $reservationRepository->find($id);
+        $reservation = $reservationRepository->findInEnvironment($id);
         if (!$reservation) {
             $this->setMessage("Réservation non trouvée");
             return $this->response('[]', 404);
@@ -1032,7 +1032,7 @@ class ApiReservationController extends ApiInterface
         $reservationRepository->add($reservation, true);
 
         // Mettre à jour la caisse boutique
-        $caisseBoutique = $caisseBoutiqueRepository->findOneBy(['boutique' => $reservation->getBoutique()->getId()]);
+        $caisseBoutique = $caisseBoutiqueRepository->findOneByInEnvironment(['boutique' => $reservation->getBoutique()->getId()]);
         if ($caisseBoutique) {
             $caisseBoutique->setMontant((int)$caisseBoutique->getMontant() + (int)$montantPaiement);
             $caisseBoutique->setUpdatedBy($this->getUser());
@@ -1187,7 +1187,7 @@ class ApiReservationController extends ApiInterface
 
             $count = 0;
             foreach ($data['ids'] as $id) {
-                $reservation = $villeRepository->find($id);
+                $reservation = $reservationRepository->findInEnvironment($id);
 
                 if ($reservation != null) {
                     $villeRepository->remove($reservation);

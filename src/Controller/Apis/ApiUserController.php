@@ -93,7 +93,7 @@ class ApiUserController extends ApiInterface
     public function index(UserRepository $userRepository): Response
     {
         try {
-            $users = $this->paginationService->paginate($userRepository->findAll());
+            $users = $this->paginationService->paginate($userRepository->findAllInEnvironment());
 
             $context = [AbstractNormalizer::GROUPS => 'group1'];
             $json = $this->serializer->serialize($users, 'json', $context);
@@ -141,7 +141,7 @@ class ApiUserController extends ApiInterface
     public function indexEntrepriseActive(UserRepository $userRepository): Response
     {
         try {
-            $users = $this->paginationService->paginate($userRepository->findBy(
+            $users = $this->paginationService->paginate($userRepository->findByInEnvironment(
                 ['entreprise' => $this->getUser()->getEntreprise(), 'setsetIsActive' => true],
                 ['nom' => 'ASC']
             ));
@@ -190,7 +190,7 @@ class ApiUserController extends ApiInterface
     public function indexUserByBoutique(UserRepository $userRepository,$id): Response
     {
         try {
-            $users = $this->paginationService->paginate($userRepository->findBy(
+            $users = $this->paginationService->paginate($userRepository->findByInEnvironment(
                 ['boutique' => $id, 'isActive' => true],
                 ['nom' => 'ASC']
             ));
@@ -235,7 +235,7 @@ class ApiUserController extends ApiInterface
     public function indexEntreprise(UserRepository $userRepository): Response
     {
         try {
-            $users = $this->paginationService->paginate($userRepository->findBy(
+            $users = $this->paginationService->paginate($userRepository->findByInEnvironment(
                 ['entreprise' => $this->getUser()->getEntreprise()],
                 ['id' => 'DESC']
             ));
@@ -374,7 +374,7 @@ class ApiUserController extends ApiInterface
             $data = json_decode($request->getContent(), true);
 
             // Vérification unicité email
-            if ($userRepository->findOneBy(['login' => $data['email']])) {
+            if ($userRepository->findOneByInEnvironment(['login' => $data['email']])) {
                 return $this->errorResponse(null, "Cet email existe déjà, veuillez utiliser un autre");
             }
 
@@ -385,7 +385,7 @@ class ApiUserController extends ApiInterface
             $entreprise->setNumero($data['numeroEntreprise']);
             $entreprise->setIsActive(true);
 
-            $pays = $paysRepository->find($data['pays']);
+            $pays = $paysRepository->findInEnvironment($data['pays']);
             if (!$pays) {
                 return $this->errorResponse(null, "Pays non trouvé", 404);
             }
@@ -400,12 +400,12 @@ class ApiUserController extends ApiInterface
             $user->setIsActive(true);
             $user->setPassword($this->hasher->hashPassword($user, $data['password']));
             $user->setRoles(['ROLE_ADMIN']);
-            $user->setType($typeUserRepository->findOneBy(['code' => 'SADM']));
+            $user->setType($typeUserRepository->findOneByInEnvironment(['code' => 'SADM']));
             /* $user->setCreatedAtValue(new \DateTime());
             $user->setUpdatedAt(new \DateTime()); */
 
             // Récupération du plan gratuit FREE
-            $module = $moduleAbonnementRepository->findOneBy(['code' => 'FREE']);
+            $module = $moduleAbonnementRepository->findOneByInEnvironment(['code' => 'FREE']);
             if (!$module) {
                 return $this->errorResponse(null, "Plan d'abonnement FREE non trouvé", 500);
             }
@@ -535,7 +535,7 @@ class ApiUserController extends ApiInterface
                         'pays' => $user->getEntreprise()->getPays()->getId(),
                         'boutique' => $user->getBoutique() ? $user->getBoutique()->getId() : null,
                         'succursale' => $user->getSurccursale() ? $user->getSurccursale()->getId() : null,
-                        'settings' => $settingRepository->findOneBy(['entreprise' => $user->getEntreprise()]),
+                        'settings' => $settingRepository->findOneByInEnvironment(['entreprise' => $user->getEntreprise()]),
                         'activeSubscriptions' => $activeSubscriptions
                     ],
                     'token_expires_in' => $jwtService->getTtl()
@@ -661,7 +661,7 @@ class ApiUserController extends ApiInterface
             $data = json_decode($request->getContent(), true);
 
             // Vérification unicité email
-            if ($userRepository->findOneBy(['login' => $data['login']])) {
+            if ($userRepository->findOneByInEnvironment(['login' => $data['login']])) {
                 return $this->errorResponse(null, "Cet email existe déjà, veuillez utiliser un autre");
             }
 
@@ -674,7 +674,7 @@ class ApiUserController extends ApiInterface
 
             // Affectation à une succursale (optionnel)
             if (isset($data['succursale']) && $data['succursale'] != null) {
-                $succursale = $surccursaleRepository->find($data['succursale']);
+                $succursale = $surccursaleRepository->findInEnvironment($data['succursale']);
                 if ($succursale) {
                     $user->setSurccursale($succursale);
                 }
@@ -682,7 +682,7 @@ class ApiUserController extends ApiInterface
 
             // Affectation à une boutique (optionnel)
             if (isset($data['boutique']) && $data['boutique'] != null) {
-                $boutique = $boutiqueRepository->find($data['boutique']);
+                $boutique = $boutiqueRepository->findInEnvironment($data['boutique']);
                 if ($boutique) {
                     $user->setBoutique($boutique);
                 }
@@ -692,7 +692,7 @@ class ApiUserController extends ApiInterface
             $user->setPassword($this->hasher->hashPassword($user, $data['password']));
             $user->setRoles(['ROLE_MEMBRE']);
 
-            $typeUser = $typeUserRepository->find($data['type']);
+            $typeUser = $typeUserRepository->findInEnvironment($data['type']);
             if (!$typeUser) {
                 return $this->errorResponse(null, "Type d'utilisateur non trouvé", 404);
             }
@@ -794,21 +794,21 @@ class ApiUserController extends ApiInterface
 
             // Affectation succursale
             if ($data['succursale'] != null) {
-                $succursale = $surccursaleRepository->find($data['succursale']);
+                $succursale = $surccursaleRepository->findInEnvironment($data['succursale']);
                $user->setSurccursale($succursale);
             } else {
                 $user->setSurccursale(null);
             }
 
             if ($data['boutique'] != null) {
-                $boutique = $boutiqueRepository->find($data['boutique']);
+                $boutique = $boutiqueRepository->findInEnvironment($data['boutique']);
               $user->setBoutique($boutique);
             } else {
                 $user->setBoutique(null);
             }
 
             if ($data['type'] != null) {
-                $typeUser = $typeUserRepository->find($data['type']);
+                $typeUser = $typeUserRepository->findInEnvironment($data['type']);
                 if (!$typeUser) {
                     return $this->errorResponse(null, "Type d'utilisateur non trouvé", 404);
                 }
@@ -940,7 +940,7 @@ class ApiUserController extends ApiInterface
             /* 
             if (isset($data['login'])) {
                 // Vérification unicité email
-                $existingUser = $userRepository->findOneBy(['login' => $data['email']]);
+                $existingUser = $userRepository->findOneByInEnvironment(['login' => $data['email']]);
                 if ($existingUser && $existingUser->getId() !== $user->getId()) {
                     return $this->json([
                         'code' => 400,

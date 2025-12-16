@@ -60,7 +60,7 @@ class ApiModeleController extends ApiInterface
     public function index(ModeleRepository $modeleRepository): Response
     {
         try {
-            $modeles = $this->paginationService->paginate($modeleRepository->findAll());
+            $modeles = $this->paginationService->paginate($modeleRepository->findAllInEnvironment());
             $response = $this->responseData($modeles, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
@@ -110,13 +110,13 @@ class ApiModeleController extends ApiInterface
         }
 
         try {
-            if ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'SADM'])) {
-                $modeles = $this->paginationService->paginate($modeleRepository->findBy(
+            if ($this->getUser()->getType() == $typeUserRepository->findOneByInEnvironment(['code' => 'SADM'])) {
+                $modeles = $this->paginationService->paginate($modeleRepository->findByInEnvironment(
                     ['entreprise' => $this->getUser()->getEntreprise()],
                     ['id' => 'DESC']
                 ));
             } else {
-                $modeles = $this->paginationService->paginate($modeleRepository->findBy(
+                $modeles = $this->paginationService->paginate($modeleRepository->findByInEnvironment(
                     ['surccursale' => $this->getUser()->getSurccursale()],
                     ['id' => 'DESC']
                 ));
@@ -517,7 +517,7 @@ class ApiModeleController extends ApiInterface
             $data = json_decode($request->getContent(), true);
 
             foreach ($data['ids'] as $id) {
-                $modele = $villeRepository->find($id);
+                $modele = $villeRepository->findInEnvironment($id);
 
                 if ($modele != null) {
                     $villeRepository->remove($modele);

@@ -82,7 +82,7 @@ class ApiSurccursaleController extends ApiInterface
     public function index(SurccursaleRepository $surccursaleRepository): Response
     {
         try {
-            $surccursales = $this->paginationService->paginate($surccursaleRepository->findAll());
+            $surccursales = $this->paginationService->paginate($surccursaleRepository->findAllInEnvironment());
             $response = $this->responseData($surccursales, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
@@ -126,7 +126,7 @@ class ApiSurccursaleController extends ApiInterface
     public function indexAllActive(SurccursaleRepository $surccursaleRepository): Response
     {
         try {
-            $surccursales = $this->paginationService->paginate($surccursaleRepository->findBy(
+            $surccursales = $this->paginationService->paginate($surccursaleRepository->findByInEnvironment(
                 ['entreprise' => $this->getUser()->getEntreprise(), 'setIsActive' => true],
                 ['libelle' => 'ASC']
             ));
@@ -175,7 +175,7 @@ class ApiSurccursaleController extends ApiInterface
     public function indexAll(SurccursaleRepository $surccursaleRepository): Response
     {
         try {
-            $surccursales = $this->paginationService->paginate($surccursaleRepository->findBy(
+            $surccursales = $this->paginationService->paginate($surccursaleRepository->findByInEnvironment(
                 ['entreprise' => $this->getUser()->getEntreprise()],
                 ['id' => 'DESC']
             ));
@@ -565,7 +565,7 @@ class ApiSurccursaleController extends ApiInterface
 
             $count = 0;
             foreach ($data['ids'] as $id) {
-                $surccursale = $villeRepository->find($id);
+                $surccursale = $villeRepository->findInEnvironment($id);
                 if ($surccursale != null) {
                     $villeRepository->remove($surccursale);
                     $count++;

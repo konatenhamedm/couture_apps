@@ -56,7 +56,7 @@ class ApiCategorieMesureController extends ApiInterface
     public function index(CategorieMesureRepository $moduleRepository): Response
     {
         try {
-            $categories = $this->paginationService->paginate($moduleRepository->findAll());
+            $categories = $this->paginationService->paginate($moduleRepository->findAllInEnvironment());
             $response = $this->responseData($categories, 'group1', ['Content-Type' => 'application/json'], true);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
@@ -114,7 +114,7 @@ class ApiCategorieMesureController extends ApiInterface
  */
         try {
             $typeMesures = $this->paginationService->paginate(
-                $moduleRepository->findBy(
+                $moduleRepository->findByInEnvironment(
                     ['setIsActive' => true],
                     ['id' => 'ASC']
                 )
@@ -467,7 +467,7 @@ class ApiCategorieMesureController extends ApiInterface
             $data = json_decode($request->getContent(), true);
 
             foreach ($data['ids'] as $id) {
-                $categorieMesure = $villeRepository->find($id);
+                $categorieMesure = $villeRepository->findInEnvironment($id);
 
                 if ($categorieMesure != null) {
                     $villeRepository->remove($categorieMesure);

@@ -46,7 +46,7 @@ class ApiTypeMesureController extends ApiInterface
     {
         try {
 
-            $typeMesures = $this->paginationService->paginate($typeMesureRepository->findAll());
+            $typeMesures = $this->paginationService->paginate($typeMesureRepository->findAllInEnvironment());
 
             $response =  $this->responseData($typeMesures, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -81,12 +81,12 @@ class ApiTypeMesureController extends ApiInterface
         }  */
 
         try {
-            $typeMesures = $typeMesureRepository->findBy([],['id' => 'ASC']);
+            $typeMesures = $typeMesureRepository->findByInEnvironment([],['id' => 'ASC']);
 
 
              $formattedTypeMesures = array_map(function ($typeMesure) use ($categorieTypeMesureRepository) {
 
-                $categorieTypeMesures = $categorieTypeMesureRepository->findBy(['typeMesure' => $typeMesure,'entreprise' => $this->getUser()->getEntreprise()]);
+                $categorieTypeMesures = $categorieTypeMesureRepository->findByInEnvironment(['typeMesure' => $typeMesure,'entreprise' => $this->getUser()->getEntreprise()]);
         
                 return [
                     'id' => $typeMesure->getId(),
@@ -141,7 +141,7 @@ class ApiTypeMesureController extends ApiInterface
 
         try {
 
-            $categories = $this->paginationService->paginate($categorieTypeMesureRepository->findBy(
+            $categories = $this->paginationService->paginate($categorieTypeMesureRepository->findByInEnvironment(
                 ['typeMesure' => $typeMesure],
                 ['id' => 'ASC']
             ));
@@ -259,7 +259,7 @@ class ApiTypeMesureController extends ApiInterface
         if (isset($lignesCategoriesMesure) && is_array($lignesCategoriesMesure)) {
             foreach ($lignesCategoriesMesure as $ligneCategorieMesure) {
                 $categorieMesure = new CategorieTypeMesure();
-                $categorieMesure->setCategorieMesure($categorieMesureRepository->find($ligneCategorieMesure['categorieId']));
+                $categorieMesure->setCategorieMesure($categorieMesureRepository->findInEnvironment($ligneCategorieMesure['categorieId']));
                 $errorResponse = $this->errorResponse($categorieMesure);
 
                 $typeMesure->addCategorieTypeMesure($categorieMesure);
@@ -325,7 +325,7 @@ class ApiTypeMesureController extends ApiInterface
                             $categorieMesure->setUpdatedBy($this->getUser());
                             $categorieMesureRepository->add($categorieMesure, true);
                         } else {
-                            $categorieMesure = $categorieMesureRepository->find($ligneCategorieMesure->id);
+                            $categorieMesure = $categorieMesureRepository->findInEnvironment($ligneCategorieMesure->id);
                             $categorieMesure->setLibelle($ligneCategorieMesure->libelle);
                             $categorieMesure->setCreatedBy($this->getUser());
                             $categorieMesure->setUpdatedBy($this->getUser());
@@ -339,7 +339,7 @@ class ApiTypeMesureController extends ApiInterface
 
                 if (isset($lignesCategoriesMesureDelete) && is_array($lignesCategoriesMesureDelete)) {
                     foreach ($lignesCategoriesMesureDelete as $ligneCategorieMesure) {
-                        $categorieMesure = $categorieMesureRepository->find($ligneCategorieMesure->id);
+                        $categorieMesure = $categorieMesureRepository->findInEnvironment($ligneCategorieMesure->id);
                         if ($categorieMesure != null) {
                             $typeMesure->removeCategorieTypeMesure($categorieMesure);
                             $categorieMesureRepository->remove($categorieMesure, true);
@@ -443,7 +443,7 @@ class ApiTypeMesureController extends ApiInterface
             $data = json_decode($request->getContent());
 
             foreach ($data['ids'] as $id) {
-                $typeMesure = $villeRepository->find($id);
+                $typeMesure = $villeRepository->findInEnvironment($id);
 
                 if ($typeMesure != null) {
                     $villeRepository->remove($typeMesure);

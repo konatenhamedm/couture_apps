@@ -99,14 +99,14 @@ class ApiEntrepriseController extends ApiInterface
 
         try {
             $surccursales = $this->paginationService->paginate(
-                $surccursaleRepository->findBy(
+                $surccursaleRepository->findByInEnvironment(
                     ['entreprise' => $this->getUser()->getEntreprise()],
                     ['id' => 'ASC']
                 )
             );
 
             $boutiques = $this->paginationService->paginate(
-                $boutiqueRepository->findBy(
+                $boutiqueRepository->findByInEnvironment(
                     ['entreprise' => $this->getUser()->getEntreprise()],
                     ['id' => 'ASC']
                 )
@@ -244,7 +244,7 @@ class ApiEntrepriseController extends ApiInterface
 
         try {
             $surccursales = $this->paginationService->paginate(
-                $surccursaleRepository->findBy(
+                $surccursaleRepository->findByInEnvironment(
                     ['entreprise' => $this->getUser()->getEntreprise()],
                     ['id' => 'ASC']
                 )
@@ -299,7 +299,7 @@ class ApiEntrepriseController extends ApiInterface
 
         try {
             $boutiques = $this->paginationService->paginate(
-                $boutiqueRepository->findBy(
+                $boutiqueRepository->findByInEnvironment(
                     ['entreprise' => $this->getUser()->getEntreprise()],
                     ['id' => 'ASC']
                 )
