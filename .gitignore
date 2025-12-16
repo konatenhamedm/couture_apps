@@ -3,6 +3,8 @@
 /.env.local
 /.env.local.php
 /.env.*.local
+/.env.prod
+/.env.dev
 /.env
 /.htaccess
 /config/secrets/prod/prod.decrypt.private.php
