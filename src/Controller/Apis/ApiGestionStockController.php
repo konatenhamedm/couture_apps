@@ -21,6 +21,7 @@ use Nelmio\ApiDocBundle\Annotation\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
+
 /**
  * Contrôleur pour la gestion des stocks
  * Permet de gérer les entrées et sorties de stock des modèles de vêtements dans les boutiques
@@ -28,8 +29,7 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 #[Route('/api/stock')]
 class ApiGestionStockController extends ApiInterface
 {
-
-
+  
     /**
      * Liste tous les mouvements de stock d'une boutique spécifique
      */

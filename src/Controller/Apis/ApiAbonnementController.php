@@ -21,6 +21,7 @@ use Nelmio\ApiDocBundle\Attribute\Model as AttributeModel;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
+
 /**
  * Contrôleur pour la gestion des abonnements
  * Permet de créer, lister et gérer les abonnements des entreprises
@@ -29,6 +30,8 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 #[OA\Tag(name: 'abonnement', description: 'Gestion des abonnements d\'entreprise')]
 class ApiAbonnementController extends ApiInterface
 {
+
+
     /**
      * Liste tous les abonnements disponibles dans le système
      */

@@ -22,6 +22,7 @@ use Nelmio\ApiDocBundle\Attribute\Model as AttributeModel;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
+
 /**
  * Contrôleur pour la gestion des succursales
  * Permet de gérer les établissements secondaires d'une entreprise avec création automatique de caisse
@@ -30,6 +31,8 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 #[OA\Tag(name: 'surccursale', description: 'Gestion des succursales (établissements secondaires) avec caisses dédiées')]
 class ApiSurccursaleController extends ApiInterface
 {
+   
+
     /**
      * Liste toutes les succursales du système
      */

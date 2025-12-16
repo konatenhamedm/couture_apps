@@ -69,7 +69,10 @@ class ApiPaysController extends ApiInterface
     public function index(PaysRepository $paysRepository): Response
     {
         try {
-            $pays = $this->paginationService->paginate($paysRepository->findAll());
+            // Utiliser le trait pour obtenir automatiquement les données du bon environnement
+            $paysData = $this->findAll(Pays::class);
+            
+            $pays = $this->paginationService->paginate($paysData);
             $response = $this->responseData($pays, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
@@ -109,14 +112,13 @@ class ApiPaysController extends ApiInterface
         )
     )]
     #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
-    public function indexActif(PaysRepository $paysRepository): Response
+    public function indexActif(): Response
     {
         try {
-            $pays = $this->paginationService->paginate($paysRepository->findBy(
-                ['actif' => true],
-                ['libelle' => 'ASC']
-            ));
-
+            // Utiliser le trait pour obtenir automatiquement les pays actifs du bon environnement
+            $paysData = $this->findBy(Pays::class, ['actif' => true], ['libelle' => 'ASC']);
+            
+            $pays = $this->paginationService->paginate($paysData);
             $response = $this->responseData($pays, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
@@ -176,9 +178,12 @@ class ApiPaysController extends ApiInterface
         )
     )]
     #[OA\Response(response: 404, description: "Pays non trouvé")]
-    public function getOne(?Pays $pays): Response
+    public function getOne(int $id): Response
     {
         try {
+            // Utiliser le trait pour trouver le pays dans le bon environnement
+            $pays = $this->find(Pays::class, $id);
+            
             if ($pays) {
                 $response = $this->response($pays);
             } else {
@@ -250,7 +255,7 @@ class ApiPaysController extends ApiInterface
     )]
     #[OA\Response(response: 400, description: "Données invalides ou code pays déjà existant")]
     #[OA\Response(response: 401, description: "Non authentifié")]
-    public function create(Request $request, PaysRepository $paysRepository): Response
+    public function create(Request $request): Response
     {
         $data = json_decode($request->getContent(), true);
 
@@ -269,7 +274,8 @@ class ApiPaysController extends ApiInterface
         if ($errorResponse !== null) {
             return $errorResponse;
         } else {
-            $paysRepository->add($pays, true);
+            // Utiliser le trait pour sauvegarder dans le bon environnement
+            $this->save($pays);
         }
 
         return $this->responseData($pays, 'group1', ['Content-Type' => 'application/json']);
@@ -344,10 +350,13 @@ class ApiPaysController extends ApiInterface
     #[OA\Response(response: 400, description: "Données invalides")]
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 404, description: "Pays non trouvé")]
-    public function update(Request $request, Pays $pays, PaysRepository $paysRepository): Response
+    public function update(Request $request, int $id): Response
     {
         try {
             $data = json_decode($request->getContent(), true);
+
+            // Utiliser le trait pour trouver le pays dans le bon environnement
+            $pays = $this->find(Pays::class, $id);
 
             if ($pays != null) {
                 if (isset($data['libelle'])) {
@@ -370,7 +379,8 @@ class ApiPaysController extends ApiInterface
                 if ($errorResponse !== null) {
                     return $errorResponse;
                 } else {
-                    $paysRepository->add($pays, true);
+                    // Utiliser le trait pour sauvegarder dans le bon environnement
+                    $this->save($pays);
                 }
 
                 $response = $this->responseData($pays, 'group1', ['Content-Type' => 'application/json']);
@@ -418,11 +428,15 @@ class ApiPaysController extends ApiInterface
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 404, description: "Pays non trouvé")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression (peut-être des dépendances)")]
-    public function delete(Request $request, Pays $pays, PaysRepository $villeRepository): Response
+    public function delete(Request $request, int $id): Response
     {
         try {
+            // Utiliser le trait pour trouver le pays dans le bon environnement
+            $pays = $this->find(Pays::class, $id);
+            
             if ($pays != null) {
-                $villeRepository->remove($pays, true);
+                // Utiliser le trait pour supprimer dans le bon environnement
+                $this->remove($pays);
                 $this->setMessage("Operation effectuées avec succès");
                 $response = $this->response($pays);
             } else {
@@ -479,20 +493,26 @@ class ApiPaysController extends ApiInterface
     #[OA\Response(response: 400, description: "Données invalides")]
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
-    public function deleteAll(Request $request, PaysRepository $villeRepository): Response
+    public function deleteAll(Request $request): Response
     {
         try {
             $data = json_decode($request->getContent(), true);
 
             $count = 0;
             foreach ($data['ids'] as $id) {
-                $pays = $villeRepository->find($id);
+                // Utiliser le trait pour trouver le pays dans le bon environnement
+                $pays = $this->find(Pays::class, $id);
 
                 if ($pays != null) {
-                    $villeRepository->remove($pays);
+                    // Utiliser le trait pour supprimer dans le bon environnement
+                    $this->remove($pays, false); // Ne pas flush à chaque suppression
                     $count++;
                 }
             }
+            
+            // Flush une seule fois à la fin
+            $this->getEntityManager()->flush();
+            
             $this->setMessage("Operation effectuées avec succès");
             $response = $this->json(['message' => 'Operation effectuées avec succès', 'deletedCount' => $count]);
         } catch (\Exception $exception) {

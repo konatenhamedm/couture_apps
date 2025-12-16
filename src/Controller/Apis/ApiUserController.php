@@ -40,6 +40,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
+
 /**
  * Contrôleur pour la gestion des utilisateurs
  * Gère l'inscription des entreprises, la création de membres, la mise à jour des profils
@@ -48,7 +49,7 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 #[OA\Tag(name: 'user', description: 'Gestion des utilisateurs : inscription entreprises avec abonnement gratuit, création membres, profils')]
 class ApiUserController extends ApiInterface
 {
-
+  
     /**
      * Liste tous les utilisateurs du système
      */

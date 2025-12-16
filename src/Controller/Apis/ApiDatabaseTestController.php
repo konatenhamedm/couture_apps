@@ -7,9 +7,12 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 
+use App\Trait\DatabaseEnvironmentTrait;
 #[Route('/api/test')]
 class ApiDatabaseTestController extends AbstractController
 {
+    use DatabaseEnvironmentTrait;
+
     #[Route('/database-info', name: 'api_test_database_info', methods: ['GET'])]
     public function testDatabaseInfo(DynamicDatabaseService $dynamicDb): JsonResponse
     {

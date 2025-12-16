@@ -41,10 +41,13 @@ use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Request;
 use DateTime;
 
+
 #[Route('/api')]
 class ApiStatistiqueController extends ApiInterface
 {
-    public function __construct(
+  
+
+   /*  public function __construct(
         EntityManagerInterface $em,
         SluggerInterface $slugger,
         SendMailService $sendMailService,
@@ -89,7 +92,7 @@ class ApiStatistiqueController extends ApiInterface
             $sendMail,
             $superAdmin
         );
-    }
+    } */
   
 
     #[Route('/statistique/dashboard', methods: ['POST'])]

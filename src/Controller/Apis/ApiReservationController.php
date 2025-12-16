@@ -35,6 +35,7 @@ use Nelmio\ApiDocBundle\Annotation\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
+
 /**
  * Contrôleur pour la gestion des réservations de vêtements
  * Permet aux clients de réserver des articles avec acompte et retrait ultérieur
@@ -43,6 +44,8 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 #[OA\Tag(name: 'reservation', description: 'Gestion des réservations de vêtements avec acomptes et retraits programmés')]
 class ApiReservationController extends ApiInterface
 {
+   
+
     /**
      * Liste toutes les réservations du système
      */

@@ -22,6 +22,7 @@ use Nelmio\ApiDocBundle\Annotation\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
+
 /**
  * Contrôleur pour la gestion des boutiques
  * Permet de créer, lire, mettre à jour et supprimer des boutiques avec leurs caisses associées
@@ -30,6 +31,8 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 #[OA\Tag(name: 'boutique', description: 'Gestion des boutiques et points de vente')]
 class ApiBoutiqueController extends ApiInterface
 {
+   
+
     /**
      * Liste toutes les boutiques du système
      */

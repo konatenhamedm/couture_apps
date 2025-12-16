@@ -10,7 +10,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
-
+use App\Trait\DatabaseEnvironmentTrait;
 #[Route('/api')]
 class NotificationController extends AbstractController
 {
@@ -18,7 +18,7 @@ class NotificationController extends AbstractController
         private EntityManagerInterface $em,
         private UserRepository $userRepository
     ) {}
-
+use DatabaseEnvironmentTrait;
 
     
 

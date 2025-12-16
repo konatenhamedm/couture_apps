@@ -30,6 +30,7 @@ use Nelmio\ApiDocBundle\Attribute\Model as AttributeModel;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
+
 /**
  * 
  */
@@ -37,6 +38,8 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 #[OA\Tag(name: 'accueil', description: '')]
 class ApiAccueilController extends ApiInterface
 {
+  
+
     #[Route('', name: 'api_accueil_info', methods: ['GET'])]
     #[OA\Response(
         response: 200,
@@ -51,27 +54,37 @@ class ApiAccueilController extends ApiInterface
         )
     )]
     public function getAllInfoAccueil(
-        ModuleAbonnementRepository $abonnementRepository,
         $id,
-        $type,
-        SettingRepository $settingRepository,
-        FactureRepository $factureRepository,
-        PaiementBoutiqueRepository $paiementBoutiqueRepository,
-        PaiementReservationRepository $paiementReservationRepository,
-        TypeUserRepository $typeUserRepository,
-        CaisseBoutiqueRepository $caisseBoutiqueRepository,
-        CaisseSuccursaleRepository $caisseSuccursaleRepository,
+        $type
     ): JsonResponse {
 
-        $abonnements = $abonnementRepository->findBy(["etat" => 'actif'], ['numero' => 'ASC']);
-        $settings = $settingRepository->findOneBy(['entreprise' => $this->getUser()->getEntreprise()]);
+        // Utiliser le trait pour obtenir automatiquement les données du bon environnement
+        $abonnements = $this->findBy(ModuleAbonnement::class, ["etat" => 'actif'], ['numero' => 'ASC']);
+        $settings = $this->getRepository(\App\Entity\Setting::class)->findOneBy(['entreprise' => $this->getUser()->getEntreprise()]);
+        
+        // Pour les méthodes personnalisées, utiliser le repository du bon environnement
+        $factureRepository = $this->getRepository(\App\Entity\Facture::class);
         $facturesProches = $factureRepository->findUpcomingUnpaidInvoices($id, 10);
+        
+        $paiementBoutiqueRepository = $this->getRepository(\App\Entity\PaiementBoutique::class);
         $ventesBoutique = $paiementBoutiqueRepository->findTopSellingModelsOfWeek($id, 10);
+        
+        $paiementReservationRepository = $this->getRepository(PaiementReservation::class);
         $ventesReservation = $paiementReservationRepository->findTopReservedModelsOfWeek($id, 10);
         $meilleuresVentes = $this->combineAndSortSales($ventesBoutique, $ventesReservation, 10);
         
+        // Obtenir le montant de caisse selon le type
+        $montantCaisse = 0;
+        if ($type == 'boutique') {
+            $caisseBoutique = $this->getRepository(\App\Entity\CaisseBoutique::class)->findOneBy(['boutique' => $id]);
+            $montantCaisse = $caisseBoutique ? $caisseBoutique->getMontant() : 0;
+        } else {
+            $caisseSuccursale = $this->getRepository(\App\Entity\CaisseSuccursale::class)->findOneBy(['succursale' => $id]);
+            $montantCaisse = $caisseSuccursale ? $caisseSuccursale->getMontant() : 0;
+        }
+        
         $response = $this->responseData([
-            "caisse"=> $type == 'boutique' ? $caisseBoutiqueRepository->findOneBy(['boutique' => $id])->getMontant() : $caisseSuccursaleRepository->findOneBy(['succursale' => $id])->getMontant(), 
+            "caisse"=> $montantCaisse, 
             "depenses"=> 0,
             "settings"=>$settings,
             "abonnements" => $abonnements,

@@ -3,11 +3,13 @@
 namespace App\Controller\Apis\Config;
 
 use App\Controller\FileTrait;
+use App\Trait\DatabaseEnvironmentTrait;
 use App\Entity\Boutique;
 use App\Repository\BoutiqueRepository;
 use App\Repository\SettingRepository;
 use App\Repository\SurccursaleRepository;
 use App\Repository\UserRepository;
+use App\Service\EntityManagerProvider;
 use App\Service\Menu;
 use App\Service\PaginationService;
 use App\Service\SendMailService;
@@ -36,6 +38,8 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 class ApiInterface extends AbstractController
 {
     use FileTrait;
+    use DatabaseEnvironmentTrait;
+    
 
     protected const UPLOAD_PATH = 'media_deeps';
     protected $security;
@@ -75,6 +79,7 @@ class ApiInterface extends AbstractController
         UserRepository $userRepository,
         protected StatistiquesService $statistiquesService,
         protected PaginationService $paginationService,
+        EntityManagerProvider $entityManagerProvider,
        #[Autowire(param: 'SEND_MAIL')] string $sendMail,
         #[Autowire(param: 'SUPER_ADMIN')] string $superAdmin
     ) {
@@ -93,6 +98,9 @@ class ApiInterface extends AbstractController
         $this->settingRepository = $settingRepository;
         $this->sendMail = $sendMail;
         $this->superAdmin = $superAdmin;
+        
+        // Injecter l'EntityManagerProvider dans le trait
+        $this->setEntityManagerProvider($entityManagerProvider);
 
     }
 

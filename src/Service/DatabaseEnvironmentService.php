@@ -39,7 +39,20 @@ class DatabaseEnvironmentService
         $env = $this->getCurrentEnvironment();
         $connectionName = $env === 'dev' ? 'dev' : 'prod';
         
-        return $this->doctrine->getManager($connectionName);
+        // Vider le cache de tous les EntityManagers pour éviter les conflits
+        foreach (['default', 'dev', 'prod'] as $managerName) {
+            try {
+                $manager = $this->doctrine->getManager($managerName);
+                $manager->clear();
+            } catch (\Exception $e) {
+                // Ignorer si le manager n'existe pas
+            }
+        }
+        
+        // Obtenir l'EntityManager pour l'environnement spécifique
+        $entityManager = $this->doctrine->getManager($connectionName);
+        
+        return $entityManager;
     }
 
     /**

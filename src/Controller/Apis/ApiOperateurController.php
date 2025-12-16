@@ -19,6 +19,7 @@ use Nelmio\ApiDocBundle\Annotation\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
+
 /**
  * Contrôleur pour la gestion des opérateurs téléphoniques
  * Permet de gérer les opérateurs de téléphonie mobile (Orange, MTN, Moov, etc.) par pays
@@ -27,6 +28,8 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 #[OA\Tag(name: 'operateur', description: 'Gestion des opérateurs téléphoniques par pays (Orange, MTN, Moov, etc.)')]
 class ApiOperateurController extends ApiInterface
 {
+    
+
     /**
      * Liste tous les opérateurs téléphoniques du système
      */

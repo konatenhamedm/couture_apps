@@ -12,10 +12,12 @@ parameters:
     PAIEMENT_URL: '%env(PAIEMENT_URL)%'
     SEND_MAIL: '%env(SEND_MAIL)%'
     SUPER_ADMIN: '%env(SUPER_ADMIN)%'
+    send_mail: '%env(SEND_MAIL)%'
+    super_admin: '%env(SUPER_ADMIN)%'
     
     # Configuration des bases de données pour le switch dynamique
-    database.dev.url: "mysql://root:@127.0.0.1:3306/app_couture_dev?serverVersion=8.0.32&charset=utf8mb4"
-    database.prod.url: "mysql://root:@127.0.0.1:3306/app_couture_prod?serverVersion=8.0.32&charset=utf8mb4"
+    database.dev.url: "mysql://root:@127.0.0.1:3306/app_couture_dev?serverVersion=mariadb-10.4.28&charset=utf8mb4"
+    database.prod.url: "mysql://root:@127.0.0.1:3306/app_couture_prod?serverVersion=mariadb-10.4.28&charset=utf8mb4"
 
 services:
     _defaults:
@@ -34,6 +36,7 @@ services:
             $sendMail: '%env(SEND_MAIL)%'
             $superAdmin: '%env(SUPER_ADMIN)%'
 
+    # Configuration pour ApiInterface (tous les contrôleurs API héritent automatiquement)
     App\Controller\Apis\Config\ApiInterface:
         arguments:
             $sendMail: '%send_mail%'
@@ -45,9 +48,7 @@ services:
     # Listener pour basculer dynamiquement entre les bases de données
     App\EventListener\DatabaseSwitchListener:
         arguments:
-            $connection: '@doctrine.dbal.default_connection'
-            $devDatabaseUrl: '%database.dev.url%'
-            $prodDatabaseUrl: '%database.prod.url%'
+            $doctrine: '@doctrine'
         tags:
             - { name: kernel.event_subscriber }
     
@@ -73,8 +74,3 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
     
-    # Auto-injection du DynamicDatabaseService dans tous les repositories
-    App\Repository\:
-        resource: '../src/Repository/*'
-        calls:
-            - setDynamicDatabaseService: ['@App\Service\DynamicDatabaseService']

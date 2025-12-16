@@ -23,6 +23,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Request;
 
+
 /**
  * Contrôleur pour les fixtures de données de test
  */
@@ -30,6 +31,8 @@ use Symfony\Component\HttpFoundation\Request;
 #[OA\Tag(name: 'fixture', description: 'Génération de données de test pour le développement')]
 class ApiFixtureController extends ApiInterface
 {
+   
+
     /**
      * Génère des modèles de boutique de test
      */

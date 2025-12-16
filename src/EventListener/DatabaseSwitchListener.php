@@ -60,26 +60,11 @@ class DatabaseSwitchListener implements EventSubscriberInterface
         $connectionName = $finalEnv === 'dev' ? 'dev' : 'prod';
         
         try {
-            // Fermer la connexion par défaut si elle est ouverte
-            $defaultConnection = $this->doctrine->getConnection();
-            if ($defaultConnection->isConnected()) {
-                $defaultConnection->close();
-            }
+            // Pour l'instant, on stocke juste l'environnement dans les attributs de la requête
+            // L'EntityManager sera fourni par le service DatabaseEnvironmentService
             
-            // Obtenir la connexion appropriée
-            $connection = $this->doctrine->getConnection($connectionName);
-            
-            // S'assurer que la connexion est active
-            if (!$connection->isConnected()) {
-                $connection->connect();
-            }
-            
-            // Définir cette connexion comme connexion par défaut pour cette requête
-            // En modifiant les paramètres de la connexion par défaut
-            $params = $connection->getParams();
-            foreach ($params as $key => $value) {
-                $defaultConnection->setParam($key, $value);
-            }
+            // Log pour debug
+            error_log("DatabaseSwitchListener: Environment set to " . $finalEnv);
             
         } catch (\Exception $e) {
             // En cas d'erreur, logger et continuer avec la connexion par défaut

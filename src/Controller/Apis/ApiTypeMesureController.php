@@ -21,12 +21,11 @@ use Nelmio\ApiDocBundle\Attribute\Model as AttributeModel;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
+
 #[Route('/api/typeMesure')]
 class ApiTypeMesureController extends ApiInterface
 {
-
-
-
+    
     #[Route('/', methods: ['GET'])]
     /**
      * Retourne la liste des typeMesures.

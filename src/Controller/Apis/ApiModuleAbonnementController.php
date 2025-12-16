@@ -19,6 +19,7 @@ use Nelmio\ApiDocBundle\Attribute\Model as AttributeModel;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
+
 /**
  * Contrôleur pour la gestion des modules d'abonnement
  * Permet de créer, lire, mettre à jour et supprimer des plans d'abonnement avec leurs modules/fonctionnalités associés
@@ -27,6 +28,8 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 #[OA\Tag(name: 'moduleAbonnement', description: 'Gestion des plans d\'abonnement et leurs modules/fonctionnalités inclus')]
 class ApiModuleAbonnementController extends ApiInterface
 {
+
+
     /**
      * Liste tous les modules d'abonnement (plans d'abonnement)
      */

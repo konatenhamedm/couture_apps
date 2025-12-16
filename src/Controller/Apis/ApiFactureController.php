@@ -32,6 +32,7 @@ use Nelmio\ApiDocBundle\Attribute\Model as AttributeModel;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
+
 /**
  * Contrôleur pour la gestion des factures
  * Permet de créer, lire, mettre à jour et supprimer des factures avec mesures, lignes de mesures et paiements associés
@@ -40,6 +41,7 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 #[OA\Tag(name: 'facture', description: 'Gestion des factures de couture avec mesures et paiements')]
 class ApiFactureController extends ApiInterface
 {
+  
     /**
      * Liste toutes les factures du système
      */
