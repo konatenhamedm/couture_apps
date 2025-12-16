@@ -7,6 +7,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use App\Entity\Abonnement;
 use App\Entity\ModuleAbonnement;
 use App\Repository\AbonnementRepository;
+use App\Repository\ModuleAbonnementRepository;
 use App\Repository\FactureRepository;
 use App\Repository\PaiementFactureRepository;
 use App\Repository\UserRepository;
@@ -165,16 +166,25 @@ class ApiAbonnementController extends ApiInterface
     #[OA\Response(response: 404, description: "Module d'abonnement non trouvé")]
     #[OA\Response(response: 500, description: "Erreur lors du traitement du paiement")]
     public function createAbonnement(
+        int $id,
         Request $request,
         UserRepository $userRepository,
         PaiementService $paiementService,
         AbonnementRepository $abonnementRepository,
         Utils $utils,
-        ModuleAbonnement $moduleAbonnement,
+        ModuleAbonnementRepository $moduleAbonnementRepository,
         FactureRepository $factureRepository,
         PaiementFactureRepository $paiementRepository
     ): Response {
         $data = json_decode($request->getContent(), true);
+        
+        $moduleAbonnement = $moduleAbonnementRepository->findInEnvironment($id);
+        
+        if (!$moduleAbonnement) {
+            $this->setMessage('Module d\'abonnement non trouvé');
+            $this->setStatusCode(404);
+            return $this->response(null);
+        }
 
         $createTransactionData = $paiementService->traiterPaiement($this->getUser(), $moduleAbonnement,[
             'dataUser' => $data['dataUser'] ?? [],

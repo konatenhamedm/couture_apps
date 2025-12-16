@@ -195,9 +195,10 @@ class ApiCategorieTypeMesureController extends ApiInterface
     #[OA\Response(response: 400, description: "Données invalides")]
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 404, description: "CategorieTypeMesure non trouvé")]
-    public function update(Request $request, CategorieTypeMesure $categorieTypeMesure,CategorieTypeMesureRepository $categorieTypeMesureRepository, CategorieMesureRepository $categorieMesureRepository ): Response
+    public function update(Request $request, int $id, CategorieTypeMesureRepository $categorieTypeMesureRepository, CategorieMesureRepository $categorieMesureRepository ): Response
     {
         try {
+            $categorieTypeMesure = $categorieTypeMesureRepository->findInEnvironment($id);
             $data = json_decode($request->getContent(), true);
 
             if ($categorieTypeMesure != null) {
@@ -261,9 +262,10 @@ class ApiCategorieTypeMesureController extends ApiInterface
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 404, description: "CategorieTypeMesure non trouvé")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression (peut-être des dépendances)")]
-    public function delete(Request $request, CategorieTypeMesure $categorieTypeMesure, CategorieTypeMesureRepository $categorieTypeMesureRepository): Response
+    public function delete(Request $request, int $id, CategorieTypeMesureRepository $categorieTypeMesureRepository): Response
     {
         try {
+            $categorieTypeMesure = $categorieTypeMesureRepository->findInEnvironment($id);
             if ($categorieTypeMesure != null) {
                 $categorieTypeMesure->setIsActive(false);
                 $categorieTypeMesure->setUpdatedBy($this->getUser());

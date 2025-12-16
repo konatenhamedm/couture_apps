@@ -481,8 +481,10 @@ class ApiModeleBoutiqueController extends ApiInterface
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 404, description: "Modèle de boutique non trouvé")]
-    public function getOne(?ModeleBoutique $modeleBoutique): Response
+    public function getOne(int $id, ModeleBoutiqueRepository $modeleBoutiqueRepository): Response
     {
+        
+        $modeleBoutique = $modeleBoutiqueRepository->findInEnvironment($id);
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
@@ -782,13 +784,14 @@ class ApiModeleBoutiqueController extends ApiInterface
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 404, description: "Modèle de boutique non trouvé")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
-    public function delete(Request $request, ModeleBoutique $modeleBoutique, ModeleBoutiqueRepository $villeRepository): Response
+    public function delete(Request $request, int $id, ModeleBoutiqueRepository $villeRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         try {
+            $modeleBoutique = $villeRepository->findInEnvironment($id);
             if ($modeleBoutique != null) {
                 $villeRepository->remove($modeleBoutique, true);
                 $this->setMessage("Operation effectuées avec succès");

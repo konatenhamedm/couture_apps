@@ -165,9 +165,10 @@ class ApiTypeUserController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'typeUser')]
-    public function update(Request $request, TypeUser $typeUser, TypeUserRepository $typeUserRepository): Response
+    public function update(Request $request, int $id, TypeUserRepository $typeUserRepository): Response
     {
         try {
+            $typeUser = $typeUserRepository->findInEnvironment($id);
             $data = json_decode($request->getContent());
             if ($typeUser != null) {
 
@@ -216,10 +217,10 @@ class ApiTypeUserController extends ApiInterface
     )]
     #[OA\Tag(name: 'typeUser')]
     //#[Security(name: 'Bearer')]
-    public function delete(Request $request, TypeUser $typeUser, TypeUserRepository $villeRepository): Response
+    public function delete(Request $request, int $id, TypeUserRepository $villeRepository): Response
     {
         try {
-
+            $typeUser = $villeRepository->findInEnvironment($id);
             if ($typeUser != null) {
 
                 $villeRepository->remove($typeUser, true);

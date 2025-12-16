@@ -136,9 +136,11 @@ class ApiModuleAbonnementController extends ApiInterface
         )
     )]
     #[OA\Response(response: 404, description: "Plan d'abonnement non trouvé")]
-    public function getOne(?ModuleAbonnement $moduleAbonnement): Response
+    public function getOne(int $id, ModuleAbonnementRepository $moduleAbonnementRepository): Response
     {
         try {
+            $moduleAbonnement = $moduleAbonnementRepository->findInEnvironment($id);
+            
             if ($moduleAbonnement) {
                 $response = $this->response($moduleAbonnement);
             } else {
@@ -395,12 +397,13 @@ class ApiModuleAbonnementController extends ApiInterface
     #[OA\Response(response: 404, description: "Plan d'abonnement non trouvé")]
     public function update(
         Request $request,
-        ModuleAbonnement $moduleAbonnement,
+        int $id,
         LigneModuleRepository $ligneModuleRepository,
         ModuleAbonnementRepository $moduleAbonnementRepository,
         ModuleRepository $moduleRepository
     ): Response {
         try {
+            $moduleAbonnement = $moduleAbonnementRepository->findInEnvironment($id);
             $data = json_decode($request->getContent(), true);
 
             if ($moduleAbonnement != null) {
@@ -512,9 +515,10 @@ class ApiModuleAbonnementController extends ApiInterface
     )]
     #[OA\Response(response: 404, description: "Plan d'abonnement non trouvé")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
-    public function delete(Request $request, ModuleAbonnement $moduleAbonnement, ModuleAbonnementRepository $villeRepository): Response
+    public function delete(Request $request, int $id, ModuleAbonnementRepository $villeRepository): Response
     {
         try {
+            $moduleAbonnement = $villeRepository->findInEnvironment($id);
             if ($moduleAbonnement != null) {
                 $villeRepository->remove($moduleAbonnement, true);
                 $this->setMessage("Operation effectuées avec succès");
@@ -574,7 +578,7 @@ class ApiModuleAbonnementController extends ApiInterface
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
     /* #[Security(name: 'Bearer')] */
-    public function deleteAll(Request $request, ModuleAbonnementRepository $villeRepository): Response
+    public function deleteAll(Request $request, ModuleAbonnementRepository $moduleAbonnementRepository): Response
     {
         try {
             $data = json_decode($request->getContent(), true);
@@ -583,7 +587,7 @@ class ApiModuleAbonnementController extends ApiInterface
                 $moduleAbonnement = $moduleAbonnementRepository->findInEnvironment($id);
 
                 if ($moduleAbonnement != null) {
-                    $villeRepository->remove($moduleAbonnement);
+                    $moduleAbonnementRepository->remove($moduleAbonnement);
                 }
             }
             $this->setMessage("Operation effectuées avec succès");

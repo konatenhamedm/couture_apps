@@ -297,13 +297,14 @@ class ApiTypeMesureController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'typeMesure')]
-    public function update(Request $request, TypeMesure $typeMesure, TypeMesureRepository $typeMesureRepository, EntrepriseRepository $entrepriseRepository, CategorieMesureRepository $categorieMesureRepository): Response
+    public function update(Request $request, int $id, TypeMesureRepository $typeMesureRepository, EntrepriseRepository $entrepriseRepository, CategorieMesureRepository $categorieMesureRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         try {
+            $typeMesure = $typeMesureRepository->findInEnvironment($id);
             $data = json_decode($request->getContent());
             if ($typeMesure != null) {
 
@@ -387,14 +388,14 @@ class ApiTypeMesureController extends ApiInterface
     )]
     #[OA\Tag(name: 'typeMesure')]
     //#[Security(name: 'Bearer')]
-    public function delete(Request $request, TypeMesure $typeMesure, TypeMesureRepository $villeRepository): Response
+    public function delete(Request $request, int $id, TypeMesureRepository $villeRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         try {
-
+            $typeMesure = $villeRepository->findInEnvironment($id);
             if ($typeMesure != null) {
 
                 $villeRepository->remove($typeMesure, true);

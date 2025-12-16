@@ -261,8 +261,10 @@ class ApiReservationController extends ApiInterface
         )
     )]
     #[OA\Response(response: 404, description: "Réservation non trouvée")]
-    public function getOne(?Reservation $reservation): Response
+    public function getOne(int $id, ReservationRepository $reservationRepository): Response
     {
+        
+        $reservation = $reservationRepository->findInEnvironment($id);
         try {
             if ($reservation) {
                 $response = $this->response($reservation);
@@ -1110,13 +1112,14 @@ class ApiReservationController extends ApiInterface
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 404, description: "Réservation non trouvée")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
-    public function delete(Request $request, Reservation $reservation, ReservationRepository $villeRepository): Response
+    public function delete(Request $request, int $id, ReservationRepository $villeRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         try {
+            $reservation = $villeRepository->findInEnvironment($id);
             if ($reservation != null) {
                 $villeRepository->remove($reservation, true);
                 $this->setMessage("Operation effectuées avec succès");

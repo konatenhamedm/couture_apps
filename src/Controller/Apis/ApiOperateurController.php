@@ -182,8 +182,10 @@ class ApiOperateurController extends ApiInterface
         )
     )]
     #[OA\Response(response: 404, description: "Opérateur non trouvé")]
-    public function getOne(?Operateur $operateur): Response
+    public function getOne(int $id, OperateurRepository $operateurRepository): Response
     {
+        
+        $operateur = $operateurRepository->findInEnvironment($id);
         try {
             if ($operateur) {
                 $response = $this->response($operateur);
@@ -460,9 +462,10 @@ class ApiOperateurController extends ApiInterface
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 404, description: "Opérateur non trouvé")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
-    public function delete(Request $request, Operateur $operateur, OperateurRepository $villeRepository): Response
+    public function delete(Request $request, int $id, OperateurRepository $villeRepository): Response
     {
         try {
+            $operateur = $villeRepository->findInEnvironment($id);
             if ($operateur != null) {
                 $villeRepository->remove($operateur, true);
                 $this->setMessage("Operation effectuées avec succès");

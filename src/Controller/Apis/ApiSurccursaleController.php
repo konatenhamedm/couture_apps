@@ -238,8 +238,10 @@ class ApiSurccursaleController extends ApiInterface
         )
     )]
     #[OA\Response(response: 404, description: "Succursale non trouvée")]
-    public function getOne(?Surccursale $surccursale): Response
+    public function getOne(int $id, SurccursaleRepository $surccursaleRepository): Response
     {
+        
+        $surccursale = $surccursaleRepository->findInEnvironment($id);
         try {
             if ($surccursale) {
                 $response = $this->response($surccursale);
@@ -488,13 +490,14 @@ class ApiSurccursaleController extends ApiInterface
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 404, description: "Succursale non trouvée")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression (peut-être des dépendances)")]
-    public function delete(Request $request, Surccursale $surccursale, SurccursaleRepository $villeRepository): Response
+    public function delete(Request $request, int $id, SurccursaleRepository $villeRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         try {
+            $surccursale = $villeRepository->findInEnvironment($id);
             if ($surccursale != null) {
                 $villeRepository->remove($surccursale, true);
                 $this->setMessage("Operation effectuées avec succès");

@@ -168,13 +168,14 @@ class ApiCategorieMesureController extends ApiInterface
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 404, description: "Catégorie de mesure non trouvée")]
     #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
-    public function getOne(?CategorieMesure $categorieMesure): Response
+    public function getOne($id,CategorieMesureRepository $categorieMesureRepository): Response
     {
         /* if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         } */
 
         try {
+            $categorieMesure = $categorieMesureRepository->findInEnvironment($id);
             if ($categorieMesure) {
                 $response = $this->response($categorieMesure);
             } else {
@@ -321,13 +322,14 @@ class ApiCategorieMesureController extends ApiInterface
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 404, description: "Catégorie de mesure non trouvée")]
-    public function update(Request $request, CategorieMesure $categorieMesure, CategorieMesureRepository $moduleRepository): Response
+    public function update(Request $request, int $id, CategorieMesureRepository $moduleRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         try {
+            $categorieMesure = $moduleRepository->findInEnvironment($id);
             $data = json_decode($request->getContent());
             if ($categorieMesure != null) {
                 $categorieMesure->setLibelle($data->libelle);
@@ -388,18 +390,20 @@ class ApiCategorieMesureController extends ApiInterface
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 404, description: "Catégorie de mesure non trouvée")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
-    public function delete(Request $request, CategorieMesure $categorieMesure, CategorieMesureRepository $villeRepository): Response
+    public function delete(Request $request, $id, CategorieMesureRepository $categorieMesureRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+       /*  if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
-        }
+        } */
 
         try {
+            $categorieMesure = $categorieMesureRepository->findInEnvironment($id);
+
             if ($categorieMesure != null) {
                 $categorieMesure->setIsActive(false);
                 $categorieMesure->setUpdatedBy($this->getUser());
                 $categorieMesure->setUpdatedAt(new \DateTime());
-                $villeRepository->add($categorieMesure, true);
+                $categorieMesureRepository->add($categorieMesure, true);
                 $this->setMessage("Operation effectuées avec succès");
                 $response = $this->response($categorieMesure);
             } else {

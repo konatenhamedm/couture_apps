@@ -180,7 +180,7 @@ class ApiBoutiqueController extends ApiInterface
     )]
     #[OA\Response(response: 404, description: "Boutique non trouvée")]
     #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
-    public function getOne(?BoutiqueRepository $boutiqueRepository, $id): Response
+    public function getOne(int $id, BoutiqueRepository $boutiqueRepository): Response
     {
         try {
             $boutique = $boutiqueRepository->findInEnvironment($id);

@@ -172,8 +172,10 @@ class ApiModeleController extends ApiInterface
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 404, description: "Modèle non trouvé")]
-    public function getOne(?Modele $modele): Response
+    public function getOne(int $id, ModeleRepository $modeleRepository): Response
     {
+        
+        $modele = $modeleRepository->findInEnvironment($id);
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
@@ -441,13 +443,14 @@ class ApiModeleController extends ApiInterface
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 404, description: "Modèle non trouvé")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
-    public function delete(Request $request, Modele $modele, ModeleRepository $villeRepository): Response
+    public function delete(Request $request, int $id, ModeleRepository $villeRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         try {
+            $modele = $villeRepository->findInEnvironment($id);
             if ($modele != null) {
                 $villeRepository->remove($modele, true);
                 $this->setMessage("Operation effectuées avec succès");

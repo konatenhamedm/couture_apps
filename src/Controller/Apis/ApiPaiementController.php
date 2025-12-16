@@ -196,8 +196,10 @@ class ApiPaiementController extends ApiInterface
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 404, description: "Paiement non trouvé")]
-    public function getOne(?PaiementFacture $paiement): Response
+    public function getOne(int $id, PaiementFactureRepository $paiementFactureRepository): Response
     {
+        
+        $paiement = $paiementFactureRepository->findInEnvironment($id);
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
@@ -1062,13 +1064,14 @@ class ApiPaiementController extends ApiInterface
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 404, description: "Paiement non trouvé")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
-    public function delete(Request $request, PaiementFacture $paiement, PaiementFactureRepository $villeRepository): Response
+    public function delete(Request $request, int $id, PaiementFactureRepository $villeRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         try {
+            $paiement = $villeRepository->findInEnvironment($id);
             if ($paiement != null) {
                 $villeRepository->remove($paiement, true);
                 $this->setMessage("Operation effectuées avec succès");

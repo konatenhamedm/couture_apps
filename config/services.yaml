@@ -71,6 +71,8 @@ services:
             $doctrine: '@doctrine'
             $requestStack: '@request_stack'
 
+
+
     App\:
         resource: '../src/'
         exclude:

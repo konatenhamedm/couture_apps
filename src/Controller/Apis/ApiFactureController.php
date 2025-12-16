@@ -205,8 +205,10 @@ class ApiFactureController extends ApiInterface
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 404, description: "Facture non trouvée")]
-    public function getOne(?Facture $facture): Response
+    public function getOne(int $id, FactureRepository $factureRepository): Response
     {
+        
+        $facture = $factureRepository->findInEnvironment($id);
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
@@ -875,13 +877,14 @@ class ApiFactureController extends ApiInterface
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 404, description: "Facture non trouvée")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
-    public function delete(Request $request, Facture $facture, FactureRepository $factureRepository): Response
+    public function delete(Request $request, int $id, FactureRepository $factureRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         try {
+            $facture = $factureRepository->findInEnvironment($id);
             if ($facture != null) {
                 $factureRepository->remove($facture, true);
                 $this->setMessage("Operation effectuées avec succès");

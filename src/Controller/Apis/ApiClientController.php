@@ -179,13 +179,14 @@ class ApiClientController extends ApiInterface
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 404, description: "Client non trouvé")]
-    public function getOne(?Client $client): Response
+    public function getOne(int $id, ClientRepository $clientRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         try {
+            $client = $clientRepository->findInEnvironment($id);
             if ($client) {
                 $response = $this->response($client);
             } else {
@@ -535,13 +536,14 @@ class ApiClientController extends ApiInterface
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 404, description: "Client non trouvé")]
-    public function update(Request $request, Client $client, ClientRepository $clientRepository, BoutiqueRepository $boutiqueRepository, SurccursaleRepository $surccursaleRepository): Response
+    public function update(Request $request, int $id, ClientRepository $clientRepository, BoutiqueRepository $boutiqueRepository, SurccursaleRepository $surccursaleRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         try {
+            $client = $clientRepository->findInEnvironment($id);
             $names = 'document_' . '01';
             $filePrefix = str_slug($names);
             $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
@@ -626,13 +628,14 @@ class ApiClientController extends ApiInterface
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 404, description: "Client non trouvé")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
-    public function delete(Request $request, Client $client, ClientRepository $villeRepository): Response
+    public function delete(Request $request, int $id, ClientRepository $villeRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         try {
+            $client = $villeRepository->findInEnvironment($id);
             if ($client != null) {
                 $villeRepository->remove($client, true);
                 $this->setMessage("Operation effectuées avec succès");
