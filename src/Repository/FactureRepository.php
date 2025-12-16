@@ -3,36 +3,28 @@
 namespace App\Repository;
 
 use App\Entity\Facture;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Service\EntityManagerProvider;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<Facture>
+ * @extends BaseRepository<Facture>
  */
-class FactureRepository extends ServiceEntityRepository
+class FactureRepository extends BaseRepository
 {
     use DynamicDatabaseTrait;
     
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, EntityManagerProvider $entityManagerProvider)
     {
-        parent::__construct($registry, Facture::class);
+        parent::__construct($registry, Facture::class, $entityManagerProvider);
     }
     public function add(Facture $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->saveInEnvironment($entity, $flush);
     }
 
     public function remove(Facture $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->removeInEnvironment($entity, $flush);
     }
 
     public function getEvolutionCommandes(\DateTime $debut, \DateTime $fin, string $groupBy = 'jour'): array
@@ -56,7 +48,7 @@ class FactureRepository extends ServiceEntityRepository
 
     public function countByDateRange(\DateTime $debut, \DateTime $fin): int
     {
-        return $this->createQueryBuilder('f')
+        return $this->createQueryBuilderForEnvironment('f')
             ->select('COUNT(f.id)')
             ->where('f.createdAt BETWEEN :debut AND :fin')
             ->setParameter('debut', $debut)
@@ -73,7 +65,7 @@ class FactureRepository extends ServiceEntityRepository
         $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebut);
         $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFin);
         
-        return $this->createQueryBuilder('f')
+        return $this->createQueryBuilderForEnvironment('f')
             ->select('COUNT(f.id)')
             ->where('f.entreprise = :entreprise')
             ->andWhere('f.createdAt >= :dateDebut')
@@ -96,7 +88,7 @@ class FactureRepository extends ServiceEntityRepository
         $dateImmutable = \DateTimeImmutable::createFromMutable($date);
         $nextDayImmutable = \DateTimeImmutable::createFromMutable($nextDay);
 
-        return $this->createQueryBuilder('f')
+        return $this->createQueryBuilderForEnvironment('f')
             ->select('COUNT(f.id)')
             ->where('f.entreprise = :entreprise')
             ->andWhere('f.createdAt >= :date')
@@ -113,7 +105,7 @@ class FactureRepository extends ServiceEntityRepository
      */
     public function findLatestByEntreprise($entreprise, int $limit = 5): array
     {
-        return $this->createQueryBuilder('f')
+        return $this->createQueryBuilderForEnvironment('f')
             ->where('f.entreprise = :entreprise')
             ->orderBy('f.createdAt', 'DESC')
             ->setMaxResults($limit)
@@ -127,7 +119,7 @@ class FactureRepository extends ServiceEntityRepository
     //     */
     //    public function findByExampleField($value): array
     //    {
-    //        return $this->createQueryBuilder('f')
+    //        return $this->createQueryBuilderForEnvironment('f')
     //            ->andWhere('f.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->orderBy('f.id', 'ASC')
@@ -146,7 +138,7 @@ class FactureRepository extends ServiceEntityRepository
         $today = new \DateTime();
         
         // Récupérer les factures avec date de retrait proche
-        return $this->createQueryBuilder('f')
+        return $this->createQueryBuilderForEnvironment('f')
             ->leftJoin('f.paiementFactures', 'pf')
             ->where('f.succursale = :succursale')
             ->andWhere('f.dateRetrait >= :today')
@@ -163,7 +155,7 @@ class FactureRepository extends ServiceEntityRepository
 
     //    public function findOneBySomeField($value): ?Facture
     //    {
-    //        return $this->createQueryBuilder('f')
+    //        return $this->createQueryBuilderForEnvironment('f')
     //            ->andWhere('f.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->getQuery()

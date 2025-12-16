@@ -3,16 +3,16 @@
 namespace App\Repository;
 
 use App\Entity\LigneVente;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Service\EntityManagerProvider;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<LigneVente>
+ * @extends BaseRepository<LigneVente>
  */
-class LigneVenteRepository extends ServiceEntityRepository
+class LigneVenteRepository extends BaseRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, EntityManagerProvider $entityManagerProvider)
     {
-        parent::__construct($registry, LigneVente::class);
+        parent::__construct($registry, LigneVente::class, $entityManagerProvider);
     }
 }

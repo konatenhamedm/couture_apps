@@ -16,7 +16,6 @@ use Nelmio\ApiDocBundle\Attribute\Model as AttributeModel;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
-
 /**
  * Contrôleur pour la gestion des catégories de mesure
  * Permet de créer, lire, mettre à jour et supprimer des catégories de mesure
@@ -25,8 +24,6 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 #[OA\Tag(name: 'categorieMesure', description: 'Gestion des catégories de mesure')]
 class ApiCategorieMesureController extends ApiInterface
 {
-   
-
     /**
      * Liste toutes les catégories de mesure du système
      */

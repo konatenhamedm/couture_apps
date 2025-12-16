@@ -26,7 +26,7 @@ class SubscriptionChecker
 
     public function getInactiveSubscriptions(Entreprise $entreprise)
     {
-        return $this->abonnementRepository->findOneBy([
+        return $this->abonnementRepository->findOneByInEnvironment([
             'entreprise' => $entreprise,
             'etat' => 'inactif'
         ], ['dateFin' => 'DESC']);
@@ -82,15 +82,15 @@ class SubscriptionChecker
     public function getSettingByUser(Entreprise $entreprise,$type)
      {
 
-        $set = $this->settingRepository->findOneBy(['entreprise' => $entreprise]);
+        $set = $this->settingRepository->findOneByInEnvironment(['entreprise' => $entreprise]);
 
         $nombreBoutique = (int)$set->getNombreBoutique();
         $nombreUser = (int)$set->getNombreUser();
         $nombreSuccursale = (int)$set->getNombreSuccursale();
         $nombreSms = (int)$set->getNombreSms();
-        $nombreUserActive =  count($this->userRepository->findBy(['entreprise' => $entreprise, 'isActive' => true]));
-        $nombreBoutiqueActive =  count($this->boutiqueRepository->findBy(['entreprise' => $entreprise, 'isActive' => true]));
-        $nombreSuccursaleActive =  count($this->surccursaleRepository->findBy(['entreprise' => $entreprise, 'isActive' => true]));
+        $nombreUserActive =  count($this->userRepository->findByInEnvironment(['entreprise' => $entreprise, 'isActive' => true]));
+        $nombreBoutiqueActive =  count($this->boutiqueRepository->findByInEnvironment(['entreprise' => $entreprise, 'isActive' => true]));
+        $nombreSuccursaleActive =  count($this->surccursaleRepository->findByInEnvironment(['entreprise' => $entreprise, 'isActive' => true]));
 
 
         if($type == "user"){

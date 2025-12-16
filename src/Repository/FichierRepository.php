@@ -3,40 +3,32 @@
 namespace App\Repository;
 
 use App\Entity\Fichier;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Service\EntityManagerProvider;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<Fichier>
+ * @extends BaseRepository<Fichier>
  *
  * @method Fichier|null find($id, $lockMode = null, $lockVersion = null)
  * @method Fichier|null findOneBy(array $criteria, array $orderBy = null)
  * @method Fichier[]    findAll()
  * @method Fichier[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
-class FichierRepository extends ServiceEntityRepository
+class FichierRepository extends BaseRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, EntityManagerProvider $entityManagerProvider)
     {
-        parent::__construct($registry, Fichier::class);
+        parent::__construct($registry, Fichier::class, $entityManagerProvider);
     }
 
     public function save(Fichier $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->saveInEnvironment($entity, $flush);
     }
 
     public function remove(Fichier $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->removeInEnvironment($entity, $flush);
     }
 
 //    /**
@@ -44,7 +36,7 @@ class FichierRepository extends ServiceEntityRepository
 //     */
 //    public function findByExampleField($value): array
 //    {
-//        return $this->createQueryBuilder('f')
+//        return $this->createQueryBuilderForEnvironment('f')
 //            ->andWhere('f.exampleField = :val')
 //            ->setParameter('val', $value)
 //            ->orderBy('f.id', 'ASC')
@@ -56,7 +48,7 @@ class FichierRepository extends ServiceEntityRepository
 
 //    public function findOneBySomeField($value): ?Fichier
 //    {
-//        return $this->createQueryBuilder('f')
+//        return $this->createQueryBuilderForEnvironment('f')
 //            ->andWhere('f.exampleField = :val')
 //            ->setParameter('val', $value)
 //            ->getQuery()

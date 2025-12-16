@@ -3,34 +3,26 @@
 namespace App\Repository;
 
 use App\Entity\Mesure;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Service\EntityManagerProvider;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<Mesure>
+ * @extends BaseRepository<Mesure>
  */
-class MesureRepository extends ServiceEntityRepository
+class MesureRepository extends BaseRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, EntityManagerProvider $entityManagerProvider)
     {
-        parent::__construct($registry, Mesure::class);
+        parent::__construct($registry, Mesure::class, $entityManagerProvider);
     }
     public function add(Mesure $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->saveInEnvironment($entity, $flush);
     }
 
     public function remove(Mesure $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->removeInEnvironment($entity, $flush);
     }
 
     /**
@@ -41,7 +33,7 @@ class MesureRepository extends ServiceEntityRepository
         $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebut);
         $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFin);
         
-        return $this->createQueryBuilder('m')
+        return $this->createQueryBuilderForEnvironment('m')
             ->select('COUNT(m.id)')
             ->leftJoin('m.facture', 'f')
             ->where('f.entreprise = :entreprise')
@@ -66,7 +58,7 @@ class MesureRepository extends ServiceEntityRepository
         $startOfWeekImmutable = \DateTimeImmutable::createFromMutable($startOfWeek);
         $endOfWeekImmutable = \DateTimeImmutable::createFromMutable($endOfWeek);
 
-        return $this->createQueryBuilder('m')
+        return $this->createQueryBuilderForEnvironment('m')
             ->select('tm.id, tm.libelle, COUNT(m.id) as nombreVentes, SUM(CAST(m.montant AS DECIMAL(10,2))) as chiffreAffaires')
             ->leftJoin('m.facture', 'f')
             ->leftJoin('m.typeMesure', 'tm')
@@ -91,7 +83,7 @@ class MesureRepository extends ServiceEntityRepository
     //     */
     //    public function findByExampleField($value): array
     //    {
-    //        return $this->createQueryBuilder('m')
+    //        return $this->createQueryBuilderForEnvironment('m')
     //            ->andWhere('m.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->orderBy('m.id', 'ASC')
@@ -103,7 +95,7 @@ class MesureRepository extends ServiceEntityRepository
 
     //    public function findOneBySomeField($value): ?Mesure
     //    {
-    //        return $this->createQueryBuilder('m')
+    //        return $this->createQueryBuilderForEnvironment('m')
     //            ->andWhere('m.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->getQuery()

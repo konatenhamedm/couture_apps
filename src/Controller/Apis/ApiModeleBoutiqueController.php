@@ -20,7 +20,6 @@ use Nelmio\ApiDocBundle\Annotation\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
-
 /**
  * Contrôleur pour la gestion des modèles de boutique
  * Gère l'association entre les modèles de vêtements et les boutiques avec prix et quantités spécifiques
@@ -29,7 +28,10 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 #[OA\Tag(name: 'modeleBoutique', description: 'Gestion des modèles de vêtements dans les boutiques (prix et stock par boutique)')]
 class ApiModeleBoutiqueController extends ApiInterface
 {
-   
+
+
+
+
     /**
      * Récupère toutes les informations liées à un modèle de boutique
      */
@@ -141,14 +143,16 @@ class ApiModeleBoutiqueController extends ApiInterface
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 404, description: "Modèle de boutique non trouvé")]
     #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
-    public function getDetails(int $id): Response {
+    public function getDetails(
+        int $id,
+        ModeleBoutiqueRepository $modeleBoutiqueRepository
+    ): Response {
        /*  if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         } */
 
         try {
-            // Utiliser le trait pour trouver le modèle dans le bon environnement
-            $modeleBoutique = $this->find(ModeleBoutique::class, $id);
+            $modeleBoutique = $modeleBoutiqueRepository->find($id);
             
             if (!$modeleBoutique) {
                 $this->setMessage("Modèle de boutique non trouvé");
@@ -228,12 +232,10 @@ class ApiModeleBoutiqueController extends ApiInterface
         )
     )]
     #[OA\Response(response: 500, description: "Erreur serveur lors de la récupération")]
-    public function indexAllEntreprise(): Response
+    public function indexAllEntreprise(ModeleBoutiqueRepository $modeleBoutiqueRepository): Response
     {
         try {
-            // Utiliser le trait pour obtenir automatiquement les données du bon environnement
-            $modeleBoutiquesData = $this->findAll(ModeleBoutique::class);
-            $modeleBoutiques = $this->paginationService->paginate($modeleBoutiquesData);
+            $modeleBoutiques = $this->paginationService->paginate($modeleBoutiqueRepository->findAll());
             $response = $this->responseData($modeleBoutiques, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
@@ -291,16 +293,13 @@ class ApiModeleBoutiqueController extends ApiInterface
         )
     )]
     #[OA\Response(response: 500, description: "Erreur serveur lors de la récupération")]
-    public function index(): Response
+    public function index(ModeleBoutiqueRepository $modeleBoutiqueRepository): Response
     {
         try {
-            // Utiliser le trait pour obtenir automatiquement les données du bon environnement
-            $modeleBoutiquesData = $this->findBy(
-                ModeleBoutique::class,
+            $modeleBoutiques = $this->paginationService->paginate($modeleBoutiqueRepository->findBy(
                 ['entreprise' => $this->getUser()->getEntreprise()],
                 ['id' => 'DESC']
-            );
-            $modeleBoutiques = $this->paginationService->paginate($modeleBoutiquesData);
+            ));
             $response = $this->responseData($modeleBoutiques, "group_modeleBoutique", ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
@@ -348,20 +347,17 @@ class ApiModeleBoutiqueController extends ApiInterface
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 404, description: "Boutique non trouvée")]
-    public function indexByBoutique(Boutique $boutique): Response
+    public function indexByBoutique(ModeleBoutiqueRepository $modeleBoutiqueRepository, Boutique $boutique, BoutiqueRepository $boutiqueRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         try {
-            // Utiliser le trait pour obtenir automatiquement les données du bon environnement
-            $modelesData = $this->findBy(
-                ModeleBoutique::class,
+            $modeles = $this->paginationService->paginate($modeleBoutiqueRepository->findBy(
                 ['boutique' => $boutique->getId()],
                 ['id' => 'DESC']
-            );
-            $modeles = $this->paginationService->paginate($modelesData);
+            ));
 
             $response = $this->responseData($modeles, "group_modeleBoutique", ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -409,31 +405,25 @@ class ApiModeleBoutiqueController extends ApiInterface
     )]
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
-    public function indexAll($boutique): Response
+    public function indexAll(ModeleBoutiqueRepository $modeleBoutiqueRepository, TypeUserRepository $typeUserRepository, $boutique): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         try {
-            // Utiliser le trait pour obtenir automatiquement les données du bon environnement
-            $typeUserSADM = $this->getRepository(\App\Entity\TypeUser::class)->findOneBy(['code' => 'SADM']);
-            
-            if ($this->getUser()->getType() == $typeUserSADM) {
-                $modeleBoutiquesData = $this->findBy(
-                    ModeleBoutique::class,
+            if ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'SADM'])) {
+                $modeleBoutiques = $this->paginationService->paginate($modeleBoutiqueRepository->findBy(
                     ['boutique' => $boutique],
                     ['id' => 'DESC']
-                );
+                ));
             } else {
-                $modeleBoutiquesData = $this->findBy(
-                    ModeleBoutique::class,
+                $modeleBoutiques = $this->paginationService->paginate($modeleBoutiqueRepository->findBy(
                     ['boutique' => $this->getUser()->getBoutique()],
                     ['id' => 'DESC']
-                );
+                ));
             }
-            
-            $modeleBoutiques = $this->paginationService->paginate($modeleBoutiquesData);
+
             $response = $this->responseData($modeleBoutiques, "group_modeleBoutique", ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
@@ -584,7 +574,7 @@ class ApiModeleBoutiqueController extends ApiInterface
     #[OA\Response(response: 400, description: "Données invalides ou modèle/boutique non trouvé")]
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
-    public function create(Request $request): Response
+    public function create(Request $request, ModeleRepository $modeleRepository, BoutiqueRepository $boutiqueRepository, ModeleBoutiqueRepository $modeleBoutiqueRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
@@ -592,14 +582,13 @@ class ApiModeleBoutiqueController extends ApiInterface
 
         $data = json_decode($request->getContent(), true);
 
-        // Utiliser le trait pour trouver les entités dans le bon environnement
-        $modele = $this->find(\App\Entity\Modele::class, $data['modele']);
+        $modele = $modeleRepository->find($data['modele']);
         if (!$modele) {
             $this->setMessage("Modèle non trouvé avec l'ID: " . $data['modele']);
             return $this->response('[]', 400);
         }
 
-        $boutique = $this->find(Boutique::class, $data['boutique']);
+        $boutique = $boutiqueRepository->find($data['boutique']);
         if (!$boutique) {
             $this->setMessage("Boutique non trouvée avec l'ID: " . $data['boutique']);
             return $this->response('[]', 400);
@@ -620,12 +609,11 @@ class ApiModeleBoutiqueController extends ApiInterface
         if ($errorResponse !== null) {
             return $errorResponse;
         } else {
-            // Utiliser le trait pour sauvegarder dans le bon environnement
-            $this->save($modeleBoutique);
+            $modeleBoutiqueRepository->add($modeleBoutique, true);
 
             // Mise à jour de la quantité globale du modèle
             $modele->setQuantiteGlobale($modele->getQuantiteGlobale() + $modeleBoutique->getQuantite());
-            $this->save($modele);
+            $modeleRepository->add($modele, true);
         }
 
         return $this->responseData($modeleBoutique, 'group_modeleBoutique', ['Content-Type' => 'application/json']);
@@ -702,7 +690,7 @@ class ApiModeleBoutiqueController extends ApiInterface
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 404, description: "Modèle de boutique non trouvé")]
-    public function update(Request $request, int $id): Response
+    public function update(Request $request, ModeleBoutique $modeleBoutique, ModeleRepository $modeleRepository, BoutiqueRepository $boutiqueRepository, ModeleBoutiqueRepository $modeleBoutiqueRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
@@ -711,12 +699,9 @@ class ApiModeleBoutiqueController extends ApiInterface
         try {
             $data = json_decode($request->getContent(), true);
 
-            // Utiliser le trait pour trouver le modèle dans le bon environnement
-            $modeleBoutique = $this->find(ModeleBoutique::class, $id);
-
             if ($modeleBoutique != null) {
                 if (isset($data['modele'])) {
-                    $modele = $this->find(\App\Entity\Modele::class, $data['modele']);
+                    $modele = $modeleRepository->find($data['modele']);
                     if (!$modele) {
                         $this->setMessage("Modèle non trouvé avec l'ID: " . $data['modele']);
                         return $this->response('[]', 400);
@@ -733,7 +718,7 @@ class ApiModeleBoutiqueController extends ApiInterface
                 }
 
                 if (isset($data['boutique'])) {
-                    $boutique = $this->find(Boutique::class, $data['boutique']);
+                    $boutique = $boutiqueRepository->find($data['boutique']);
                     if (!$boutique) {
                         $this->setMessage("Boutique non trouvée avec l'ID: " . $data['boutique']);
                         return $this->response('[]', 400);
@@ -748,8 +733,7 @@ class ApiModeleBoutiqueController extends ApiInterface
                 if ($errorResponse !== null) {
                     return $errorResponse;
                 } else {
-                    // Utiliser le trait pour sauvegarder dans le bon environnement
-                    $this->save($modeleBoutique);
+                    $modeleBoutiqueRepository->add($modeleBoutique, true);
                 }
 
                 $response = $this->responseData($modeleBoutique, "group_modeleBoutique", ['Content-Type' => 'application/json']);
@@ -798,19 +782,15 @@ class ApiModeleBoutiqueController extends ApiInterface
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 404, description: "Modèle de boutique non trouvé")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
-    public function delete(Request $request, int $id): Response
+    public function delete(Request $request, ModeleBoutique $modeleBoutique, ModeleBoutiqueRepository $villeRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         try {
-            // Utiliser le trait pour trouver le modèle dans le bon environnement
-            $modeleBoutique = $this->find(ModeleBoutique::class, $id);
-            
             if ($modeleBoutique != null) {
-                // Utiliser le trait pour supprimer dans le bon environnement
-                $this->remove($modeleBoutique);
+                $villeRepository->remove($modeleBoutique, true);
                 $this->setMessage("Operation effectuées avec succès");
                 $response = $this->response($modeleBoutique);
             } else {
@@ -868,7 +848,7 @@ class ApiModeleBoutiqueController extends ApiInterface
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
-    public function deleteAll(Request $request): Response
+    public function deleteAll(Request $request, ModeleBoutiqueRepository $villeRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
@@ -877,23 +857,15 @@ class ApiModeleBoutiqueController extends ApiInterface
         try {
             $data = json_decode($request->getContent(), true);
 
-            $count = 0;
             foreach ($data['ids'] as $id) {
-                // Utiliser le trait pour trouver le modèle dans le bon environnement
-                $modeleBoutique = $this->find(ModeleBoutique::class, $id);
+                $modeleBoutique = $villeRepository->find($id);
 
                 if ($modeleBoutique != null) {
-                    // Utiliser le trait pour supprimer dans le bon environnement
-                    $this->remove($modeleBoutique, false); // Ne pas flush à chaque suppression
-                    $count++;
+                    $villeRepository->remove($modeleBoutique);
                 }
             }
-            
-            // Flush une seule fois à la fin
-            $this->getEntityManager()->flush();
-            
             $this->setMessage("Operation effectuées avec succès");
-            $response = $this->json(['message' => 'Operation effectuées avec succès', 'deletedCount' => $count]);
+            $response = $this->response([]);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la suppression des modèles de boutique");

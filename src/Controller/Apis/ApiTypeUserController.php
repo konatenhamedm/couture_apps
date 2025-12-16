@@ -17,10 +17,11 @@ use Nelmio\ApiDocBundle\Annotation\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
-
 #[Route('/api/typeUser')]
 class ApiTypeUserController extends ApiInterface
 {
+
+
 
     #[Route('/', methods: ['GET'])]
     /**

@@ -3,17 +3,17 @@
 namespace App\Repository;
 
 use App\Entity\Vente;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Service\EntityManagerProvider;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<Vente>
+ * @extends BaseRepository<Vente>
  */
-class VenteRepository extends ServiceEntityRepository
+class VenteRepository extends BaseRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, EntityManagerProvider $entityManagerProvider)
     {
-        parent::__construct($registry, Vente::class);
+        parent::__construct($registry, Vente::class, $entityManagerProvider);
     }
 
     /**
@@ -21,7 +21,7 @@ class VenteRepository extends ServiceEntityRepository
      */
     public function findByBoutiqueWithPagination(int $boutiqueId, int $page = 1, int $limit = 10): array
     {
-        return $this->createQueryBuilder('v')
+        return $this->createQueryBuilderForEnvironment('v')
             ->leftJoin('v.client', 'c')
             ->leftJoin('v.ligneVentes', 'lv')
             ->where('v.boutique = :boutiqueId')
@@ -38,7 +38,7 @@ class VenteRepository extends ServiceEntityRepository
      */
     public function getStatsByPeriod(\DateTime $dateDebut, \DateTime $dateFin, int $boutiqueId = null): array
     {
-        $qb = $this->createQueryBuilder('v')
+        $qb = $this->createQueryBuilderForEnvironment('v')
             ->select('COUNT(v.id) as nombre, SUM(v.montant) as total')
             ->where('v.date BETWEEN :dateDebut AND :dateFin')
             ->setParameter('dateDebut', $dateDebut)
@@ -57,7 +57,7 @@ class VenteRepository extends ServiceEntityRepository
      */
     public function getTopProduits(int $limit = 10, int $boutiqueId = null): array
     {
-        $qb = $this->createQueryBuilder('v')
+        $qb = $this->createQueryBuilderForEnvironment('v')
             ->select('lv.produit, SUM(lv.quantite) as totalQuantite, SUM(lv.total) as totalMontant')
             ->leftJoin('v.ligneVentes', 'lv')
             ->groupBy('lv.produit')

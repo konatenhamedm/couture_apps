@@ -66,13 +66,12 @@ class ApiPaysController extends ApiInterface
         )
     )]
     #[OA\Response(response: 500, description: "Erreur serveur lors de la récupération")]
-    public function index(PaysRepository $paysRepository): Response
-    {
+    public function index(PaysRepository $paysRepository): Response {
         try {
             // Utiliser le trait pour obtenir automatiquement les données du bon environnement
-            $paysData = $this->findAll(Pays::class);
+         
             
-            $pays = $this->paginationService->paginate($paysData);
+            $pays = $this->paginationService->paginate($paysRepository->findAllInEnvironment());
             $response = $this->responseData($pays, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
@@ -112,11 +111,12 @@ class ApiPaysController extends ApiInterface
         )
     )]
     #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
-    public function indexActif(): Response
+    public function indexActif(PaysRepository $paysRepository): Response
     {
         try {
             // Utiliser le trait pour obtenir automatiquement les pays actifs du bon environnement
-            $paysData = $this->findBy(Pays::class, ['actif' => true], ['libelle' => 'ASC']);
+            //$paysData = $paysRepository->findByInEnvironment(['actif' => true], ['libelle' => 'ASC']);
+            $paysData = $paysRepository->findActivePays();
             
             $pays = $this->paginationService->paginate($paysData);
             $response = $this->responseData($pays, 'group1', ['Content-Type' => 'application/json']);
@@ -182,7 +182,7 @@ class ApiPaysController extends ApiInterface
     {
         try {
             // Utiliser le trait pour trouver le pays dans le bon environnement
-            $pays = $this->find(Pays::class, $id);
+            $pays = $this->findInEnvironment(Pays::class, $id);
             
             if ($pays) {
                 $response = $this->response($pays);
@@ -356,7 +356,7 @@ class ApiPaysController extends ApiInterface
             $data = json_decode($request->getContent(), true);
 
             // Utiliser le trait pour trouver le pays dans le bon environnement
-            $pays = $this->find(Pays::class, $id);
+            $pays = $this->findInEnvironment(Pays::class, $id);
 
             if ($pays != null) {
                 if (isset($data['libelle'])) {
@@ -432,7 +432,7 @@ class ApiPaysController extends ApiInterface
     {
         try {
             // Utiliser le trait pour trouver le pays dans le bon environnement
-            $pays = $this->find(Pays::class, $id);
+            $pays = $this->findInEnvironment(Pays::class, $id);
             
             if ($pays != null) {
                 // Utiliser le trait pour supprimer dans le bon environnement
@@ -501,7 +501,7 @@ class ApiPaysController extends ApiInterface
             $count = 0;
             foreach ($data['ids'] as $id) {
                 // Utiliser le trait pour trouver le pays dans le bon environnement
-                $pays = $this->find(Pays::class, $id);
+                $pays = $this->findInEnvironment(Pays::class, $id);
 
                 if ($pays != null) {
                     // Utiliser le trait pour supprimer dans le bon environnement
@@ -520,6 +520,90 @@ class ApiPaysController extends ApiInterface
             $this->setMessage("Erreur lors de la suppression des pays");
             $response = $this->response([]);
         }
+        return $response;
+    }
+
+    /**
+     * Exemple d'utilisation du repository adapté - Recherche par code pays
+     */
+    #[Route('/search/code/{code}', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/pays/search/code/{code}",
+        summary: "Rechercher un pays par son code",
+        description: "Utilise le repository adapté pour rechercher un pays par son code dans l'environnement actuel",
+        tags: ['pays']
+    )]
+    #[OA\Parameter(
+        name: 'code',
+        in: 'path',
+        required: true,
+        description: "Code du pays (ex: CI, FR, US)",
+        schema: new OA\Schema(type: 'string', example: 'CI')
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Pays trouvé avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "id", type: "integer", example: 1),
+                new OA\Property(property: "libelle", type: "string", example: "Côte d'Ivoire"),
+                new OA\Property(property: "code", type: "string", example: "CI"),
+                new OA\Property(property: "indicatif", type: "string", example: "+225")
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: "Pays non trouvé")]
+    public function searchByCode(string $code, PaysRepository $paysRepository): Response
+    {
+        try {
+            // Utilisation du repository adapté qui utilise automatiquement le bon environnement
+            $pays = $paysRepository->findByCode($code);
+            
+            if ($pays) {
+                $response = $this->responseData($pays, 'group1', ['Content-Type' => 'application/json']);
+            } else {
+                $this->setMessage('Pays non trouvé avec ce code');
+                $this->setStatusCode(404);
+                $response = $this->response(null);
+            }
+        } catch (\Exception $exception) {
+            $this->setStatusCode(500);
+            $this->setMessage("Erreur lors de la recherche du pays");
+            $response = $this->response([]);
+        }
+
+        return $response;
+    }
+
+    /**
+     * Exemple d'utilisation mixte - Liste des pays actifs via repository
+     */
+    #[Route('/active/repository', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/pays/active/repository",
+        summary: "Lister les pays actifs via repository",
+        description: "Exemple d'utilisation du repository adapté pour récupérer les pays actifs",
+        tags: ['pays']
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Liste des pays actifs récupérée avec succès"
+    )]
+    public function getActivePaysViaRepository(PaysRepository $paysRepository): Response
+    {
+        try {
+            // Utilisation du repository adapté
+            $paysActifs = $paysRepository->findActivePays();
+            
+            $pays = $this->paginationService->paginate($paysActifs);
+            $response = $this->responseData($pays, 'group1', ['Content-Type' => 'application/json']);
+        } catch (\Exception $exception) {
+            $this->setStatusCode(500);
+            $this->setMessage("Erreur lors de la récupération des pays actifs");
+            $response = $this->response([]);
+        }
+
         return $response;
     }
 }

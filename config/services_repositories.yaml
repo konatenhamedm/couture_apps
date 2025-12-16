@@ -1,0 +1,28 @@
+# Configuration des repositories avec EntityManagerProvider
+services:
+    # Repository de base avec EntityManagerProvider
+    App\Repository\BaseRepository:
+        abstract: true
+        arguments:
+            $registry: '@doctrine'
+            $entityManagerProvider: '@App\Service\EntityManagerProvider'
+
+    # Repositories spécifiques
+    App\Repository\CategorieMesureRepository:
+        parent: App\Repository\BaseRepository
+        arguments:
+            $entityClass: 'App\Entity\CategorieMesure'
+        tags: ['doctrine.repository_service']
+
+    App\Repository\PaysRepository:
+        parent: App\Repository\BaseRepository
+        arguments:
+            $entityClass: 'App\Entity\Pays'
+        tags: ['doctrine.repository_service']
+
+    # Vous pouvez ajouter d'autres repositories ici en suivant le même pattern
+    # App\Repository\ClientRepository:
+    #     parent: App\Repository\BaseRepository
+    #     arguments:
+    #         $entityClass: 'App\Entity\Client'
+    #     tags: ['doctrine.repository_service']

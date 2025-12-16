@@ -3,35 +3,27 @@
 namespace App\Repository;
 
 use App\Entity\CaisseBoutique;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Service\EntityManagerProvider;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<CaisseBoutique>
+ * @extends BaseRepository<CaisseBoutique>
  */
-class CaisseBoutiqueRepository extends ServiceEntityRepository
+class CaisseBoutiqueRepository extends BaseRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, EntityManagerProvider $entityManagerProvider)
     {
-        parent::__construct($registry, CaisseBoutique::class);
+        parent::__construct($registry, CaisseBoutique::class, $entityManagerProvider);
     }
 
-        public function add(CaisseBoutique $entity, bool $flush = false): void
+    public function add(CaisseBoutique $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->saveInEnvironment($entity, $flush);
     }
 
     public function remove(CaisseBoutique $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->removeInEnvironment($entity, $flush);
     }
 
     //    /**
@@ -39,7 +31,7 @@ class CaisseBoutiqueRepository extends ServiceEntityRepository
     //     */
     //    public function findByExampleField($value): array
     //    {
-    //        return $this->createQueryBuilder('c')
+    //        return $this->createQueryBuilderForEnvironment('c')
     //            ->andWhere('c.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->orderBy('c.id', 'ASC')
@@ -51,7 +43,7 @@ class CaisseBoutiqueRepository extends ServiceEntityRepository
 
     //    public function findOneBySomeField($value): ?CaisseBoutique
     //    {
-    //        return $this->createQueryBuilder('c')
+    //        return $this->createQueryBuilderForEnvironment('c')
     //            ->andWhere('c.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->getQuery()

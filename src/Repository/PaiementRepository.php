@@ -3,34 +3,26 @@
 namespace App\Repository;
 
 use App\Entity\Paiement;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Service\EntityManagerProvider;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<Paiement>
+ * @extends BaseRepository<Paiement>
  */
-class PaiementRepository extends ServiceEntityRepository
+class PaiementRepository extends BaseRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, EntityManagerProvider $entityManagerProvider)
     {
-        parent::__construct($registry, Paiement::class);
+        parent::__construct($registry, Paiement::class, $entityManagerProvider);
     }
     public function add(Paiement $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->saveInEnvironment($entity, $flush);
     }
 
     public function remove(Paiement $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->removeInEnvironment($entity, $flush);
     }
 
     public function getEvolutionRevenus(\DateTime $debut, \DateTime $fin, string $groupBy = 'jour'): array
@@ -112,7 +104,7 @@ class PaiementRepository extends ServiceEntityRepository
 
     public function sumMontantByDateRange(\DateTime $debut, \DateTime $fin): float
     {
-        $result = $this->createQueryBuilder('p')
+        $result = $this->createQueryBuilderForEnvironment('p')
             ->select('SUM(p.montant)')
             ->where('p.createdAt BETWEEN :debut AND :fin')
             ->setParameter('debut', $debut)
@@ -127,7 +119,7 @@ class PaiementRepository extends ServiceEntityRepository
     //     */
     //    public function findByExampleField($value): array
     //    {
-    //        return $this->createQueryBuilder('p')
+    //        return $this->createQueryBuilderForEnvironment('p')
     //            ->andWhere('p.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->orderBy('p.id', 'ASC')
@@ -139,7 +131,7 @@ class PaiementRepository extends ServiceEntityRepository
 
     //    public function findOneBySomeField($value): ?Paiement
     //    {
-    //        return $this->createQueryBuilder('p')
+    //        return $this->createQueryBuilderForEnvironment('p')
     //            ->andWhere('p.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->getQuery()

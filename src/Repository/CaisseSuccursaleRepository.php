@@ -3,35 +3,27 @@
 namespace App\Repository;
 
 use App\Entity\CaisseSuccursale;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Service\EntityManagerProvider;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<CaisseSuccursale>
+ * @extends BaseRepository<CaisseSuccursale>
  */
-class CaisseSuccursaleRepository extends ServiceEntityRepository
+class CaisseSuccursaleRepository extends BaseRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, EntityManagerProvider $entityManagerProvider)
     {
-        parent::__construct($registry, CaisseSuccursale::class);
+        parent::__construct($registry, CaisseSuccursale::class, $entityManagerProvider);
     }
 
     public function add(CaisseSuccursale $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->saveInEnvironment($entity, $flush);
     }
 
     public function remove(CaisseSuccursale $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->removeInEnvironment($entity, $flush);
     }
 
     //    /**
@@ -39,7 +31,7 @@ class CaisseSuccursaleRepository extends ServiceEntityRepository
     //     */
     //    public function findByExampleField($value): array
     //    {
-    //        return $this->createQueryBuilder('c')
+    //        return $this->createQueryBuilderForEnvironment('c')
     //            ->andWhere('c.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->orderBy('c.id', 'ASC')
@@ -51,7 +43,7 @@ class CaisseSuccursaleRepository extends ServiceEntityRepository
 
     //    public function findOneBySomeField($value): ?CaisseSuccursale
     //    {
-    //        return $this->createQueryBuilder('c')
+    //        return $this->createQueryBuilderForEnvironment('c')
     //            ->andWhere('c.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->getQuery()

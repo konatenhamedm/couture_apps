@@ -3,41 +3,33 @@
 namespace App\Repository;
 
 use App\Entity\Notification;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Service\EntityManagerProvider;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<Notification>
+ * @extends BaseRepository<Notification>
  */
-class NotificationRepository extends ServiceEntityRepository
+class NotificationRepository extends BaseRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, EntityManagerProvider $entityManagerProvider)
     {
-        parent::__construct($registry, Notification::class);
+        parent::__construct($registry, Notification::class, $entityManagerProvider);
     }
     public function add(Notification $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->saveInEnvironment($entity, $flush);
     }
 
     public function remove(Notification $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->removeInEnvironment($entity, $flush);
     }
     //    /**
     //     * @return Notification[] Returns an array of Notification objects
     //     */
     //    public function findByExampleField($value): array
     //    {
-    //        return $this->createQueryBuilder('n')
+    //        return $this->createQueryBuilderForEnvironment('n')
     //            ->andWhere('n.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->orderBy('n.id', 'ASC')
@@ -49,7 +41,7 @@ class NotificationRepository extends ServiceEntityRepository
 
     //    public function findOneBySomeField($value): ?Notification
     //    {
-    //        return $this->createQueryBuilder('n')
+    //        return $this->createQueryBuilderForEnvironment('n')
     //            ->andWhere('n.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->getQuery()

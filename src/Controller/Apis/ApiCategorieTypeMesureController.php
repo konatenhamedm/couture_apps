@@ -19,7 +19,6 @@ use Nelmio\ApiDocBundle\Annotation\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
-
 /**
  * Contrôleur pour la gestion des categorieTypeMesure
  * Permet de gérer les categorieTypeMesure avec leurs indicatifs téléphoniques et leurs opérateurs associés
@@ -28,7 +27,7 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 #[OA\Tag(name: 'categorieTypeMesure', description: 'Gestion des categorieTypeMesure avec indicatifs téléphoniques et opérateurs mobiles')]
 class ApiCategorieTypeMesureController extends ApiInterface
 {
-
+    
  /**
      * Liste toutes les catégories de mesure du système
      */

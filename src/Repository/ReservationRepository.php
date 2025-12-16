@@ -3,35 +3,27 @@
 namespace App\Repository;
 
 use App\Entity\Reservation;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Service\EntityManagerProvider;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<Reservation>
+ * @extends BaseRepository<Reservation>
  */
-class ReservationRepository extends ServiceEntityRepository
+class ReservationRepository extends BaseRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, EntityManagerProvider $entityManagerProvider)
     {
-        parent::__construct($registry, Reservation::class);
+        parent::__construct($registry, Reservation::class, $entityManagerProvider);
     }
 
     public function add(Reservation $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->saveInEnvironment($entity, $flush);
     }
 
     public function remove(Reservation $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->removeInEnvironment($entity, $flush);
     }
     public function getEvolutionCommandes(\DateTime $debut, \DateTime $fin, string $groupBy = 'jour'): array
     {
@@ -54,7 +46,7 @@ class ReservationRepository extends ServiceEntityRepository
 
     public function countByDateRange(\DateTime $debut, \DateTime $fin): int
     {
-        return $this->createQueryBuilder('r')
+        return $this->createQueryBuilderForEnvironment('r')
             ->select('COUNT(r.id)')
             ->where('r.createdAt BETWEEN :debut AND :fin')
             ->setParameter('debut', $debut)
@@ -71,7 +63,7 @@ class ReservationRepository extends ServiceEntityRepository
         $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebut);
         $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFin);
         
-        return $this->createQueryBuilder('r')
+        return $this->createQueryBuilderForEnvironment('r')
             ->select('COUNT(r.id)')
             ->where('r.entreprise = :entreprise')
             ->andWhere('r.createdAt >= :dateDebut')
@@ -92,7 +84,7 @@ class ReservationRepository extends ServiceEntityRepository
         $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebut);
         $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFin);
         
-        return $this->createQueryBuilder('r')
+        return $this->createQueryBuilderForEnvironment('r')
             ->select('COUNT(r.id)')
             ->where('r.boutique = :boutique')
             ->andWhere('r.createdAt >= :dateDebut')
@@ -110,7 +102,7 @@ class ReservationRepository extends ServiceEntityRepository
         $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebut);
         $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFin);
         
-        return $this->createQueryBuilder('r')
+        return $this->createQueryBuilderForEnvironment('r')
             ->select('SUM(r.montant)')
             ->where('r.boutique = :boutique')
             ->andWhere('r.createdAt >= :dateDebut')
@@ -128,7 +120,7 @@ class ReservationRepository extends ServiceEntityRepository
      */
     public function countCommandesEnCoursByEntreprise($entreprise): int
     {
-        return $this->createQueryBuilder('r')
+        return $this->createQueryBuilderForEnvironment('r')
             ->select('COUNT(r.id)')
             ->where('r.entreprise = :entreprise')
             ->andWhere('r.dateRetrait > :now')
@@ -144,7 +136,7 @@ class ReservationRepository extends ServiceEntityRepository
      */
     public function countCommandesEnCoursByBoutique($boutique): int
     {
-        return $this->createQueryBuilder('r')
+        return $this->createQueryBuilderForEnvironment('r')
             ->select('COUNT(r.id)')
             ->where('r.boutique = :boutique')
             ->andWhere('r.dateRetrait > :now')
@@ -166,7 +158,7 @@ class ReservationRepository extends ServiceEntityRepository
         $dateImmutable = \DateTimeImmutable::createFromMutable($date);
         $nextDayImmutable = \DateTimeImmutable::createFromMutable($nextDay);
 
-        return $this->createQueryBuilder('r')
+        return $this->createQueryBuilderForEnvironment('r')
             ->select('COUNT(r.id)')
             ->where('r.entreprise = :entreprise')
             ->andWhere('r.createdAt >= :date')
@@ -189,7 +181,7 @@ class ReservationRepository extends ServiceEntityRepository
         $dateImmutable = \DateTimeImmutable::createFromMutable($date);
         $nextDayImmutable = \DateTimeImmutable::createFromMutable($nextDay);
 
-        return $this->createQueryBuilder('r')
+        return $this->createQueryBuilderForEnvironment('r')
             ->select('COUNT(r.id)')
             ->where('r.boutique = :boutique')
             ->andWhere('r.createdAt >= :date')
@@ -206,7 +198,7 @@ class ReservationRepository extends ServiceEntityRepository
      */
     public function findLatestByEntreprise($entreprise, int $limit = 5): array
     {
-        return $this->createQueryBuilder('r')
+        return $this->createQueryBuilderForEnvironment('r')
             ->where('r.entreprise = :entreprise')
             ->andWhere('r.isActive = true')
             ->orderBy('r.createdAt', 'DESC')
@@ -221,7 +213,7 @@ class ReservationRepository extends ServiceEntityRepository
      */
     public function findLatestByBoutique($boutique, int $limit = 5): array
     {
-        return $this->createQueryBuilder('r')
+        return $this->createQueryBuilderForEnvironment('r')
             ->where('r.boutique = :boutique')
             ->andWhere('r.isActive = true')
             ->orderBy('r.createdAt', 'DESC')
@@ -236,7 +228,7 @@ class ReservationRepository extends ServiceEntityRepository
     //     */
     //    public function findByExampleField($value): array
     //    {
-    //        return $this->createQueryBuilder('r')
+    //        return $this->createQueryBuilderForEnvironment('r')
     //            ->andWhere('r.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->orderBy('r.id', 'ASC')
@@ -248,7 +240,7 @@ class ReservationRepository extends ServiceEntityRepository
 
     //    public function findOneBySomeField($value): ?Reservation
     //    {
-    //        return $this->createQueryBuilder('r')
+    //        return $this->createQueryBuilderForEnvironment('r')
     //            ->andWhere('r.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->getQuery()

@@ -22,7 +22,6 @@ use Nelmio\ApiDocBundle\Annotation\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
-
 /**
  * Contrôleur pour la gestion des boutiques
  * Permet de créer, lire, mettre à jour et supprimer des boutiques avec leurs caisses associées
@@ -31,8 +30,6 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 #[OA\Tag(name: 'boutique', description: 'Gestion des boutiques et points de vente')]
 class ApiBoutiqueController extends ApiInterface
 {
-   
-
     /**
      * Liste toutes les boutiques du système
      */
@@ -66,7 +63,7 @@ class ApiBoutiqueController extends ApiInterface
     public function index(BoutiqueRepository $boutiqueRepository): Response
     {
         try {
-            $boutiques = $this->paginationService->paginate($boutiqueRepository->findAll());
+            $boutiques = $this->paginationService->paginate($boutiqueRepository->findAllInEnvironment());
             $response = $this->responseData($boutiques, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
@@ -116,13 +113,13 @@ class ApiBoutiqueController extends ApiInterface
         }
 
         try {
-            if ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'SADM'])) {
-                $boutiques = $this->paginationService->paginate($boutiqueRepository->findBy(
+            if ($this->getUser()->getType() == $typeUserRepository->findOneByInEnvironment(['code' => 'SADM'])) {
+                $boutiques = $this->paginationService->paginate($boutiqueRepository->findByInEnvironment(
                     ['entreprise' => $this->getUser()->getEntreprise()],
                     ['id' => 'ASC']
                 ));
             } else {
-                $boutiques = $this->paginationService->paginate($boutiqueRepository->findBy(
+                $boutiques = $this->paginationService->paginate($boutiqueRepository->findByInEnvironment(
                     ['id' => $this->getUser()->getBoutique()],
                     ['id' => 'ASC']
                 ));
@@ -183,9 +180,10 @@ class ApiBoutiqueController extends ApiInterface
     )]
     #[OA\Response(response: 404, description: "Boutique non trouvée")]
     #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
-    public function getOne(?Boutique $boutique): Response
+    public function getOne(?BoutiqueRepository $boutiqueRepository, $id): Response
     {
         try {
+            $boutique = $boutiqueRepository->findInEnvironment($id);
             if ($boutique) {
                 $response = $this->response($boutique);
             } else {
@@ -284,7 +282,7 @@ class ApiBoutiqueController extends ApiInterface
         $boutique = new Boutique();
         $boutique->setLibelle($data['libelle']);
         $boutique->setSituation($data['situation']);
-  
+
         $boutique->setEntreprise($this->getUser()->getEntreprise());
         $boutique->setContact($data['contact']);
         $boutique->setIsActive($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "boutique"));
@@ -379,7 +377,7 @@ class ApiBoutiqueController extends ApiInterface
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 404, description: "Boutique non trouvée")]
-    public function update(Request $request, Boutique $boutique, BoutiqueRepository $boutiqueRepository): Response
+    public function update(Request $request, $id, BoutiqueRepository $boutiqueRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
@@ -387,7 +385,7 @@ class ApiBoutiqueController extends ApiInterface
 
         try {
             $data = json_decode($request->getContent());
-
+            $boutique = $boutiqueRepository->findInEnvironment($id);
             if ($boutique != null) {
                 $boutique->setLibelle($data->libelle);
                 $boutique->setSituation($data->situation);
@@ -449,15 +447,18 @@ class ApiBoutiqueController extends ApiInterface
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 404, description: "Boutique non trouvée")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
-    public function delete(Request $request, Boutique $boutique, BoutiqueRepository $villeRepository): Response
+    public function delete(Request $request,  $id, BoutiqueRepository $boutiqueRepository): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         try {
+            $boutique = $boutiqueRepository->findInEnvironment($id);
+
+
             if ($boutique != null) {
-                $villeRepository->remove($boutique, true);
+                $boutiqueRepository->remove($boutique, true);
                 $this->setMessage("Operation effectuées avec succès");
                 $response = $this->response($boutique);
             } else {
@@ -525,7 +526,7 @@ class ApiBoutiqueController extends ApiInterface
             $data = json_decode($request->getContent(), true);
 
             foreach ($data['ids'] as $id) {
-                $boutique = $villeRepository->find($id);
+                $boutique = $villeRepository->findInEnvironment($id);
 
                 if ($boutique != null) {
                     $villeRepository->remove($boutique);

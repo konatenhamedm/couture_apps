@@ -4,6 +4,7 @@ namespace App\Service;
 
 use App\Entity\Notification;
 use App\Entity\User;
+use App\Trait\DatabaseEnvironmentTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use Kreait\Firebase\Factory;
 use Kreait\Firebase\Messaging\CloudMessage;
@@ -15,13 +16,14 @@ use Symfony\Component\Security\Core\User\UserInterface;
 
 class SendMailService
 {
+    use DatabaseEnvironmentTrait;
     private $mailer;
     private $tokenStorage;
     private $firebase;
 
     public function __construct(
         MailerInterface $mailer,
-        private EntityManagerInterface $em,
+        private EntityManagerProvider $em,
         TokenStorageInterface $tokenStorage
     ) {
         $this->mailer = $mailer;
@@ -98,8 +100,8 @@ class SendMailService
         $notification->setUpdatedAt(new \DateTime());
         $notification->setCreatedAtValue(new \DateTime());
 
-        $this->em->persist($notification);
-        $this->em->flush();
+        $this->save($notification);
+        
 
         // Envoyer la notification push Firebase
        // $this->sendPushNotification($data, $data['user']); // TO DO pour activer l'envoie des notifications push

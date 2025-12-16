@@ -3,42 +3,34 @@
 namespace App\Repository;
 
 use App\Entity\Operateur;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Service\EntityManagerProvider;
 use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\Constraint\Operator;
 
 /**
- * @extends ServiceEntityRepository<Operateur>
+ * @extends BaseRepository<Operateur>
  */
-class OperateurRepository extends ServiceEntityRepository
+class OperateurRepository extends BaseRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, EntityManagerProvider $entityManagerProvider)
     {
-        parent::__construct($registry, Operateur::class);
+        parent::__construct($registry, Operateur::class, $entityManagerProvider);
     }
     public function add(Operateur $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->saveInEnvironment($entity, $flush);
     }
 
     public function remove(Operateur $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->removeInEnvironment($entity, $flush);
     }
     //    /**
     //     * @return Operateur[] Returns an array of Operateur objects
     //     */
     //    public function findByExampleField($value): array
     //    {
-    //        return $this->createQueryBuilder('o')
+    //        return $this->createQueryBuilderForEnvironment('o')
     //            ->andWhere('o.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->orderBy('o.id', 'ASC')
@@ -50,7 +42,7 @@ class OperateurRepository extends ServiceEntityRepository
 
     //    public function findOneBySomeField($value): ?Operateur
     //    {
-    //        return $this->createQueryBuilder('o')
+    //        return $this->createQueryBuilderForEnvironment('o')
     //            ->andWhere('o.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->getQuery()

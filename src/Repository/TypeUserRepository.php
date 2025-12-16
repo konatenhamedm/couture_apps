@@ -3,29 +3,25 @@
 namespace App\Repository;
 
 use App\Entity\TypeUser;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Service\EntityManagerProvider;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<TypeUser>
+ * @extends BaseRepository<TypeUser>
  */
-class TypeUserRepository extends ServiceEntityRepository
+class TypeUserRepository extends BaseRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, EntityManagerProvider $entityManagerProvider)
     {
-        parent::__construct($registry, TypeUser::class);
+        parent::__construct($registry, TypeUser::class, $entityManagerProvider);
     }
     public function add(TypeUser $entity, bool $flush = false): void
     {   
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->saveInEnvironment($entity, $flush);
     }
 
     public function getTypeWithoutUser(){
-        return $this->createQueryBuilder('t')
+        return $this->createQueryBuilderForEnvironment('t')
             ->where('t.code != :code')
             ->setParameter('code', 'SADM')
             ->getQuery()
@@ -34,18 +30,14 @@ class TypeUserRepository extends ServiceEntityRepository
 
     public function remove(TypeUser $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->removeInEnvironment($entity, $flush);
     }
     //    /**
     //     * @return TypeUser[] Returns an array of TypeUser objects
     //     */
     //    public function findByExampleField($value): array
     //    {
-    //        return $this->createQueryBuilder('t')
+    //        return $this->createQueryBuilderForEnvironment('t')
     //            ->andWhere('t.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->orderBy('t.id', 'ASC')
@@ -57,7 +49,7 @@ class TypeUserRepository extends ServiceEntityRepository
 
     //    public function findOneBySomeField($value): ?TypeUser
     //    {
-    //        return $this->createQueryBuilder('t')
+    //        return $this->createQueryBuilderForEnvironment('t')
     //            ->andWhere('t.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->getQuery()

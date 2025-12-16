@@ -27,7 +27,6 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 #[OA\Tag(name: 'client', description: 'Gestion des clients (boutiques et succursales)')]
 class ApiClientController extends ApiInterface
 {
-   
     /**
      * Liste tous les clients du système
      */

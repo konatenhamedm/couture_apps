@@ -107,7 +107,7 @@ class ApiInterface extends AbstractController
     public function allParametres($type)
     {
         $entreprise = $this->getUser()->getEntreprise();
-        $setting = $this->settingRepository->findOneBy(
+        $setting = $this->settingRepository->findOneByInEnvironment(
             ['entreprise' => $entreprise],
             ['id' => 'DESC']
         );

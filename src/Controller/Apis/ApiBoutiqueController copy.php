@@ -42,11 +42,10 @@ class ApiBoutiqueController extends ApiInterface
     )]
     #[OA\Tag(name: 'boutique')]
     // #[Security(name: 'Bearer')]
-    public function index(BoutiqueRepository $boutiqueRepository): Response
-    {
+    public function index(): Response {
         try {
 
-            $boutiques = $boutiqueRepository->findAll();
+            $boutiques = $this->findAllInEnvironment(ENTITY_TO_FIX::class);
 
             $response =  $this->responseData($boutiques, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -75,16 +74,15 @@ class ApiBoutiqueController extends ApiInterface
     )]
     #[OA\Tag(name: 'boutique')]
     // #[Security(name: 'Bearer')]
-    public function indexAll(BoutiqueRepository $boutiqueRepository, TypeUserRepository $typeUserRepository): Response
-    {
+    public function indexAll(): Response {
         try {
-            if ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'SADM'])) {
-                $boutiques = $boutiqueRepository->findBy(
+            if ($this->getUser()->getType() == $this->getRepository(ENTITY_TO_FIX::class)->findOneByInEnvironment(['code' => 'SADM'])) {
+                $boutiques = $this->findByInEnvironment(ENTITY_TO_FIX::class, 
                     ['entreprise' => $this->getUser()->getEntreprise(), 'active' => true],
                     ['id' => 'ASC']
                 );
             } else {
-                $boutiques = $boutiqueRepository->findBy(
+                $boutiques = $this->findByInEnvironment(ENTITY_TO_FIX::class, 
                     ['surccursale' => $this->getUser()->getSurccursale(), 'active' => true],
                     ['id' => 'ASC']
                 );
@@ -165,8 +163,7 @@ class ApiBoutiqueController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'boutique')]
-    public function create(Request $request, Utils $utils, CaisseBoutiqueRepository $caisseBoutiqueRepository, BoutiqueRepository $boutiqueRepository): Response
-    {
+    public function create(): Response {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
@@ -188,7 +185,8 @@ class ApiBoutiqueController extends ApiInterface
             return $errorResponse;
         } else {
 
-            $boutiqueRepository->add($boutique, true);
+            // Utiliser le trait pour sauvegarder dans le bon environnement
+            $this->save($boutique);
 
             $caisse = new CaisseBoutique();
             $caisse->setMontant("0");
@@ -200,7 +198,8 @@ class ApiBoutiqueController extends ApiInterface
             $caisse->setCreatedBy($this->getUser());
             $caisse->setUpdatedBy($this->getUser());
 
-            $caisseBoutiqueRepository->add($caisse, true);
+            // Utiliser le trait pour sauvegarder dans le bon environnement
+            $this->save($caisse);
         }
 
         return $this->responseData($boutique, 'group1', ['Content-Type' => 'application/json']);
@@ -227,8 +226,7 @@ class ApiBoutiqueController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'boutique')]
-    public function update(Request $request, Boutique $boutique, BoutiqueRepository $boutiqueRepository): Response
-    {
+    public function update(): Response {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
@@ -248,7 +246,8 @@ class ApiBoutiqueController extends ApiInterface
                 if ($errorResponse !== null) {
                     return $errorResponse;
                 } else {
-                    $boutiqueRepository->add($boutique, true);
+                    // Utiliser le trait pour sauvegarder dans le bon environnement
+            $this->save($boutique);
                 }
 
 
@@ -284,8 +283,7 @@ class ApiBoutiqueController extends ApiInterface
     )]
     #[OA\Tag(name: 'boutique')]
     //#[Security(name: 'Bearer')]
-    public function delete(Request $request, Boutique $boutique, BoutiqueRepository $villeRepository): Response
-    {
+    public function delete(): Response {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
@@ -294,7 +292,8 @@ class ApiBoutiqueController extends ApiInterface
 
             if ($boutique != null) {
 
-                $villeRepository->remove($boutique, true);
+                // Utiliser le trait pour supprimer dans le bon environnement
+            $this->remove($boutique);
 
                 // On retourne la confirmation
                 $this->setMessage("Operation effectuées avec success");
@@ -325,8 +324,7 @@ class ApiBoutiqueController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'boutique')]
-    public function deleteAll(Request $request, BoutiqueRepository $villeRepository): Response
-    {
+    public function deleteAll(): Response {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
@@ -335,10 +333,10 @@ class ApiBoutiqueController extends ApiInterface
             $data = json_decode($request->getContent());
 
             foreach ($data->ids as $key => $value) {
-                $boutique = $villeRepository->find($value['id']);
+                $boutique = $this->findInEnvironment(ENTITY_TO_FIX::class, $value['id']);
 
                 if ($boutique != null) {
-                    $villeRepository->remove($boutique);
+                    $this->getRepository(ENTITY_TO_FIX::class)->remove($boutique);
                 }
             }
             $this->setMessage("Operation effectuées avec success");

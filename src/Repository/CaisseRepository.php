@@ -3,41 +3,33 @@
 namespace App\Repository;
 
 use App\Entity\Caisse;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Service\EntityManagerProvider;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<Caisse>
+ * @extends BaseRepository<Caisse>
  */
-class CaisseRepository extends ServiceEntityRepository
+class CaisseRepository extends BaseRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, EntityManagerProvider $entityManagerProvider)
     {
-        parent::__construct($registry, Caisse::class);
+        parent::__construct($registry, Caisse::class, $entityManagerProvider);
     }
     public function add(Caisse $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->saveInEnvironment($entity, $flush);
     }
 
     public function remove(Caisse $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->removeInEnvironment($entity, $flush);
     }
     //    /**
     //     * @return Caisse[] Returns an array of Caisse objects
     //     */
     //    public function findByExampleField($value): array
     //    {
-    //        return $this->createQueryBuilder('c')
+    //        return $this->createQueryBuilderForEnvironment('c')
     //            ->andWhere('c.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->orderBy('c.id', 'ASC')
@@ -49,7 +41,7 @@ class CaisseRepository extends ServiceEntityRepository
 
     //    public function findOneBySomeField($value): ?Caisse
     //    {
-    //        return $this->createQueryBuilder('c')
+    //        return $this->createQueryBuilderForEnvironment('c')
     //            ->andWhere('c.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->getQuery()

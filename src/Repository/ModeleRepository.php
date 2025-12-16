@@ -3,35 +3,27 @@
 namespace App\Repository;
 
 use App\Entity\Modele;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Service\EntityManagerProvider;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<Modele>
+ * @extends BaseRepository<Modele>
  */
-class ModeleRepository extends ServiceEntityRepository
+class ModeleRepository extends BaseRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, EntityManagerProvider $entityManagerProvider)
     {
-        parent::__construct($registry, Modele::class);
+        parent::__construct($registry, Modele::class, $entityManagerProvider);
     }
 
         public function add(Modele $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->saveInEnvironment($entity, $flush);
     }
 
     public function remove(Modele $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->removeInEnvironment($entity, $flush);
     }
 
     //    /**
@@ -39,7 +31,7 @@ class ModeleRepository extends ServiceEntityRepository
     //     */
     //    public function findByExampleField($value): array
     //    {
-    //        return $this->createQueryBuilder('m')
+    //        return $this->createQueryBuilderForEnvironment('m')
     //            ->andWhere('m.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->orderBy('m.id', 'ASC')
@@ -51,7 +43,7 @@ class ModeleRepository extends ServiceEntityRepository
 
     //    public function findOneBySomeField($value): ?Modele
     //    {
-    //        return $this->createQueryBuilder('m')
+    //        return $this->createQueryBuilderForEnvironment('m')
     //            ->andWhere('m.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->getQuery()

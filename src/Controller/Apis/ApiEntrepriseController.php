@@ -16,7 +16,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use App\Service\Utils;
 
-
 /**
  * Contrôleur pour la gestion des informations d'entreprise
  * Fournit des vues consolidées sur les boutiques et succursales de l'entreprise
@@ -25,8 +24,6 @@ use App\Service\Utils;
 #[OA\Tag(name: 'entreprise', description: 'Gestion des informations et structures d\'entreprise')]
 class ApiEntrepriseController extends ApiInterface
 {
-   
-
     /**
      * Récupère toutes les boutiques et succursales de l'entreprise de l'utilisateur
      */

@@ -4,35 +4,27 @@ namespace App\Repository;
 
 use App\Entity\PaiementBoutique;
 use App\Entity\Boutique;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Service\EntityManagerProvider;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<PaiementBoutique>
+ * @extends BaseRepository<PaiementBoutique>
  */
-class PaiementBoutiqueRepository extends ServiceEntityRepository
+class PaiementBoutiqueRepository extends BaseRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, EntityManagerProvider $entityManagerProvider)
     {
-        parent::__construct($registry, PaiementBoutique::class);
+        parent::__construct($registry, PaiementBoutique::class, $entityManagerProvider);
     }
 
      public function add(PaiementBoutique $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->saveInEnvironment($entity, $flush);
     }
 
     public function remove(PaiementBoutique $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->removeInEnvironment($entity, $flush);
     }
 
     /**
@@ -40,7 +32,7 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
      */
     public function findByBoutiqueAndPeriod(Boutique $boutique, \DateTime $dateDebut, \DateTime $dateFin): array
     {
-        return $this->createQueryBuilder('p')
+        return $this->createQueryBuilderForEnvironment('p')
             ->where('p.boutique = :boutique')
             ->andWhere('p.createdAt >= :dateDebut')
             ->andWhere('p.createdAt <= :dateFin')
@@ -57,7 +49,7 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
      */
     public function countByBoutique(Boutique $boutique): int
     {
-        return $this->createQueryBuilder('p')
+        return $this->createQueryBuilderForEnvironment('p')
             ->select('COUNT(p.id)')
             ->where('p.boutique = :boutique')
             ->setParameter('boutique', $boutique)
@@ -70,7 +62,7 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
      */
     public function findAllByBoutiqueWithDates(Boutique $boutique): array
     {
-        return $this->createQueryBuilder('p')
+        return $this->createQueryBuilderForEnvironment('p')
             ->select('p.id', 'p.montant', 'p.reference', 'p.createdAt', 'p.isActive')
             ->where('p.boutique = :boutique')
             ->setParameter('boutique', $boutique)
@@ -84,7 +76,7 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
      */
     public function findAllByBoutique(Boutique $boutique): array
     {
-        return $this->createQueryBuilder('p')
+        return $this->createQueryBuilderForEnvironment('p')
             ->where('p.boutique = :boutique')
             ->setParameter('boutique', $boutique)
             ->orderBy('p.id', 'DESC')
@@ -97,7 +89,7 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
      */
     public function sumByEntrepriseAndPeriod($entreprise, \DateTime $dateDebut, \DateTime $dateFin): float
     {
-        $result = $this->createQueryBuilder('pb')
+        $result = $this->createQueryBuilderForEnvironment('pb')
             ->select('SUM(pb.montant)')
             ->leftJoin('pb.boutique', 'b')
             ->where('b.entreprise = :entreprise')
@@ -117,7 +109,7 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
      */
     public function sumByBoutiqueAndPeriod(Boutique $boutique, \DateTime $dateDebut, \DateTime $dateFin): float
     {
-        $result = $this->createQueryBuilder('pb')
+        $result = $this->createQueryBuilderForEnvironment('pb')
             ->select('SUM(pb.montant)')
             ->where('pb.boutique = :boutique')
             ->andWhere('DATE(pb.createdAt) >= DATE(:dateDebut)')
@@ -136,7 +128,7 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
      */
     public function countByEntrepriseAndDay($entreprise, \DateTime $date): int
     {
-        return $this->createQueryBuilder('pb')
+        return $this->createQueryBuilderForEnvironment('pb')
             ->select('COUNT(pb.id)')
             ->leftJoin('pb.boutique', 'b')
             ->where('b.entreprise = :entreprise')
@@ -152,7 +144,7 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
      */
     public function countByBoutiqueAndDay(Boutique $boutique, \DateTime $date): int
     {
-        return $this->createQueryBuilder('pb')
+        return $this->createQueryBuilderForEnvironment('pb')
             ->select('COUNT(pb.id)')
             ->where('pb.boutique = :boutique')
             ->andWhere('DATE(pb.createdAt) = DATE(:date)')
@@ -167,7 +159,7 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
      */
     public function findLatestByEntreprise($entreprise, int $limit = 5): array
     {
-        return $this->createQueryBuilder('pb')
+        return $this->createQueryBuilderForEnvironment('pb')
             ->leftJoin('pb.boutique', 'b')
             ->where('b.entreprise = :entreprise')
             ->orderBy('pb.createdAt', 'DESC')
@@ -182,7 +174,7 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
      */
     public function findLatestByBoutique(Boutique $boutique, int $limit = 5): array
     {
-        return $this->createQueryBuilder('pb')
+        return $this->createQueryBuilderForEnvironment('pb')
             ->where('pb.boutique = :boutique')
             ->orderBy('pb.createdAt', 'DESC')
             ->setMaxResults($limit)
@@ -195,7 +187,7 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
      */
     public function sumByEntrepriseAndDay($entreprise, \DateTime $date): float
     {
-        $result = $this->createQueryBuilder('pb')
+        $result = $this->createQueryBuilderForEnvironment('pb')
             ->select('SUM(pb.montant)')
             ->leftJoin('pb.boutique', 'b')
             ->where('b.entreprise = :entreprise')
@@ -213,7 +205,7 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
      */
     public function sumByBoutiqueAndDay(Boutique $boutique, \DateTime $date): float
     {
-        $result = $this->createQueryBuilder('pb')
+        $result = $this->createQueryBuilderForEnvironment('pb')
             ->select('SUM(pb.montant)')
             ->where('pb.boutique = :boutique')
             ->andWhere('DATE(pb.createdAt) = DATE(:date)')
@@ -238,7 +230,7 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
         $startDateImmutable = \DateTimeImmutable::createFromMutable($startDate);
         $endDateImmutable = \DateTimeImmutable::createFromMutable($endDate);
 
-        return $this->createQueryBuilder('pb')
+        return $this->createQueryBuilderForEnvironment('pb')
             ->select('
                 IDENTITY(m.modele) as modele_id,
                 mo.libelle as modele_nom,

@@ -3,17 +3,17 @@
 namespace App\Repository;
 
 use App\Entity\ResetPasswordToken;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Service\EntityManagerProvider;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<ResetPasswordToken>
+ * @extends BaseRepository<ResetPasswordToken>
  */
-class ResetPasswordTokenRepository extends ServiceEntityRepository
+class ResetPasswordTokenRepository extends BaseRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, EntityManagerProvider $entityManagerProvider)
     {
-        parent::__construct($registry, ResetPasswordToken::class);
+        parent::__construct($registry, ResetPasswordToken::class, $entityManagerProvider);
     }
 
     //    /**
@@ -21,7 +21,7 @@ class ResetPasswordTokenRepository extends ServiceEntityRepository
     //     */
     //    public function findByExampleField($value): array
     //    {
-    //        return $this->createQueryBuilder('r')
+    //        return $this->createQueryBuilderForEnvironment('r')
     //            ->andWhere('r.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->orderBy('r.id', 'ASC')
@@ -33,7 +33,7 @@ class ResetPasswordTokenRepository extends ServiceEntityRepository
 
     //    public function findOneBySomeField($value): ?ResetPasswordToken
     //    {
-    //        return $this->createQueryBuilder('r')
+    //        return $this->createQueryBuilderForEnvironment('r')
     //            ->andWhere('r.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->getQuery()

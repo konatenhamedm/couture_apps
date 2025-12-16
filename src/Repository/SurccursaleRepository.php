@@ -3,39 +3,31 @@
 namespace App\Repository;
 
 use App\Entity\Surccursale;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Service\EntityManagerProvider;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<Surccursale>
+ * @extends BaseRepository<Surccursale>
  */
-class SurccursaleRepository extends ServiceEntityRepository
+class SurccursaleRepository extends BaseRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, EntityManagerProvider $entityManagerProvider)
     {
-        parent::__construct($registry, Surccursale::class);
+        parent::__construct($registry, Surccursale::class, $entityManagerProvider);
     }
     public function add(Surccursale $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->saveInEnvironment($entity, $flush);
     }
 
     public function remove(Surccursale $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->removeInEnvironment($entity, $flush);
     }
 
     public function countActiveByEntreprise($entreprise): int
     {
-        return $this->createQueryBuilder('s')
+        return $this->createQueryBuilderForEnvironment('s')
             ->select('COUNT(s.id)')
             ->where('s.isActive = :active')
             ->andWhere('s.entreprise = :entreprise')
@@ -49,7 +41,7 @@ class SurccursaleRepository extends ServiceEntityRepository
     //     */
     //    public function findByExampleField($value): array
     //    {
-    //        return $this->createQueryBuilder('s')
+    //        return $this->createQueryBuilderForEnvironment('s')
     //            ->andWhere('s.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->orderBy('s.id', 'ASC')
@@ -61,7 +53,7 @@ class SurccursaleRepository extends ServiceEntityRepository
 
     //    public function findOneBySomeField($value): ?Surccursale
     //    {
-    //        return $this->createQueryBuilder('s')
+    //        return $this->createQueryBuilderForEnvironment('s')
     //            ->andWhere('s.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->getQuery()

@@ -39,7 +39,6 @@ use Nelmio\ApiDocBundle\Annotation\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
-
 /**
  * Contrôleur pour la gestion des paiements
  * Gère les paiements de factures, les ventes en boutique avec mise à jour automatique des caisses et stocks
@@ -48,6 +47,7 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 #[OA\Tag(name: 'paiement', description: 'Gestion des paiements (factures, ventes boutiques) avec mise à jour automatique des caisses et stocks')]
 class ApiPaiementController extends ApiInterface
 {
+
 
     /**
      * Liste tous les paiements du système

@@ -5,6 +5,7 @@ namespace App\Service;
 use App\Entity\Entreprise;
 use App\Entity\Notification;
 use App\Repository\UserRepository;
+use App\Trait\DatabaseEnvironmentTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -15,8 +16,9 @@ use Psr\Log\LoggerInterface;
  */
 class NotificationService
 {
+    use DatabaseEnvironmentTrait;
     public function __construct(
-        private EntityManagerInterface $em,
+        private EntityManagerProvider $em,
         private UserRepository $userRepository,
         private PushNotificationService $pushService,
         private LoggerInterface $logger
@@ -27,7 +29,7 @@ class NotificationService
      */
     public function notify(int $userId, Entreprise $entreprise, string $title, string $message, array $data = []): void
     {
-        $user = $this->userRepository->find($userId);
+        $user = $this->userRepository->findInEnvironment($userId);
         if (!$user) {
             $this->logger->warning("❌ Notification ignorée : utilisateur #$userId introuvable.");
             return;
@@ -51,8 +53,8 @@ class NotificationService
             ->setCreatedBy($user)
             ->setEtat(false);
 
-        $this->em->persist($notification);
-        $this->em->flush();
+        $this->save($notification);
+   
 
         // Envoyer push si un token FCM existe
         $token = $user->getFcmToken();

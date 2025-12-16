@@ -58,7 +58,7 @@ class AuthController extends ApiInterface
         SettingRepository $settingRepository
     ): JsonResponse {
         $data = json_decode($request->getContent(), true);
-        $user = $userRepo->findOneBy(['login' => $data['login']]);
+        $user = $userRepo->findOneByInEnvironment(['login' => $data['login']]);
 
         if(!$user){
             return $this->json(['error' => 'Ce utilisateur n\'existe pas'], Response::HTTP_UNAUTHORIZED);
@@ -96,7 +96,7 @@ class AuthController extends ApiInterface
                 'pays' => $user->getEntreprise()->getPays()->getId(),
                 'boutique' => $user->getBoutique() ? $user->getBoutique()->getId() : null,
                 'succursale' => $user->getSurccursale() ? $user->getSurccursale()->getId() : null,
-                'settings' =>  $settingRepository->findOneBy(['entreprise' => $user->getEntreprise()]),
+                'settings' =>  $settingRepository->findOneByInEnvironment(['entreprise' => $user->getEntreprise()]),
                 'activeSubscriptions' => $activeSubscriptions
             ],
             'token_expires_in' => $jwtService->getTtl()

@@ -3,46 +3,38 @@
 namespace App\Repository;
 
 use App\Entity\Boutique;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Service\EntityManagerProvider;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<Boutique>
+ * @extends BaseRepository<Boutique>
  */
-class BoutiqueRepository extends ServiceEntityRepository
+class BoutiqueRepository extends BaseRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, EntityManagerProvider $entityManagerProvider)
     {
-        parent::__construct($registry, Boutique::class);
+        parent::__construct($registry, Boutique::class, $entityManagerProvider);
     }
     public function add(Boutique $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->saveInEnvironment($entity, $flush);
     }
 
     public function remove(Boutique $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->removeInEnvironment($entity, $flush);
     }
     public function countActiveByEntreprise($entreprise): int
-{
-    return $this->createQueryBuilder('b')
-        ->select('COUNT(b.id)')
-        ->where('b.isActive = :active')
-        ->andWhere('b.entreprise = :entreprise')
-        ->setParameter('active', true)
-        ->setParameter('entreprise', $entreprise)
-        ->getQuery()
-        ->getSingleScalarResult();
-}
+    {
+        return $this->createQueryBuilderForEnvironment('b')
+            ->select('COUNT(b.id)')
+            ->where('b.isActive = :active')
+            ->andWhere('b.entreprise = :entreprise')
+            ->setParameter('active', true)
+            ->setParameter('entreprise', $entreprise)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
     //    /**
     //     * @return Boutique[] Returns an array of Boutique objects
     //     */

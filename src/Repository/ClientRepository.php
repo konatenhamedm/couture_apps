@@ -3,39 +3,31 @@
 namespace App\Repository;
 
 use App\Entity\Client;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Service\EntityManagerProvider;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<Client>
+ * @extends BaseRepository<Client>
  */
-class ClientRepository extends ServiceEntityRepository
+class ClientRepository extends BaseRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, EntityManagerProvider $entityManagerProvider)
     {
-        parent::__construct($registry, Client::class);
+        parent::__construct($registry, Client::class, $entityManagerProvider);
     }
     public function add(Client $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->saveInEnvironment($entity, $flush);
     }
 
     public function remove(Client $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->removeInEnvironment($entity, $flush);
     }
 
     public function countNewClients(\DateTime $debut, \DateTime $fin): int
     {
-        return $this->createQueryBuilder('c')
+        return $this->createQueryBuilderForEnvironment('c')
             ->select('COUNT(c.id)')
             ->where('c.createdAt BETWEEN :debut AND :fin')
             ->setParameter('debut', $debut)
@@ -54,7 +46,7 @@ class ClientRepository extends ServiceEntityRepository
 
        
         
-        return $this->createQueryBuilder('c')
+        return $this->createQueryBuilderForEnvironment('c')
             ->select('COUNT(DISTINCT c.id)')
             ->where('c.createdAt >= :dateDebut')
             ->andWhere('c.createdAt <= :dateFin')
@@ -76,7 +68,7 @@ class ClientRepository extends ServiceEntityRepository
         $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebut);
         $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFin);
         
-        return $this->createQueryBuilder('c')
+        return $this->createQueryBuilderForEnvironment('c')
             ->select('COUNT(DISTINCT c.id)')
             ->leftJoin('c.reservations', 'r')
             ->leftJoin('c.paiementBoutiques', 'pb')
@@ -93,7 +85,7 @@ class ClientRepository extends ServiceEntityRepository
     //     */
     //    public function findByExampleField($value): array
     //    {
-    //        return $this->createQueryBuilder('c')
+    //        return $this->createQueryBuilderForEnvironment('c')
     //            ->andWhere('c.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->orderBy('c.id', 'ASC')
@@ -105,7 +97,7 @@ class ClientRepository extends ServiceEntityRepository
 
     //    public function findOneBySomeField($value): ?Client
     //    {
-    //        return $this->createQueryBuilder('c')
+    //        return $this->createQueryBuilderForEnvironment('c')
     //            ->andWhere('c.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->getQuery()

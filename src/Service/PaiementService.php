@@ -17,6 +17,7 @@ use App\Repository\PaiementAbonnementRepository;
 use App\Repository\PaysRepository;
 use App\Repository\SurccursaleRepository;
 use App\Repository\UserRepository;
+use App\Trait\DatabaseEnvironmentTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -25,7 +26,7 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class PaiementService
 {
-
+ use DatabaseEnvironmentTrait;
     private string $apiKey;
     private string $merchantId;
     private string $paiementUrl;
@@ -36,7 +37,7 @@ class PaiementService
         private ParameterBagInterface $params,
         private UrlGeneratorInterface $urlGenerator,
         private HttpClientInterface $httpClient,
-        private EntityManagerInterface $em,
+        private EntityManagerProvider $em,
         private PaiementAbonnementRepository $paiementAbonnementRepository,
         private ModuleAbonnementRepository $moduleAbonnementRepository,
         private AbonnementRepository $abonnementRepository,
@@ -58,7 +59,7 @@ class PaiementService
 
     public function generateReference(string $code): string
     {
-        $query = $this->em->createQueryBuilder();
+        $query = $this->createQueryBuilder();
         $query->select("count(a.id)")
             ->from(Paiement::class, 'a');
 
@@ -70,7 +71,7 @@ class PaiementService
     {
         $paiement = new PaiementAbonnement();
 
-        $entreprise = $this->entrepriseRepository->find($data['entrepriseId']);
+        $entreprise = $this->entrepriseRepository->findInEnvironment($data['entrepriseId']);
         $paiement->setMontant($moduleAbonnement->getMontant());
         $paiement->setModuleAbonnement($moduleAbonnement);
         $paiement->setEntreprise($entreprise);
@@ -160,7 +161,7 @@ class PaiementService
         fwrite($file, $data); */
 
      
-        $paiement = $this->paiementAbonnementRepository->findOneBy(['reference' => $data['referenceNumber']]);
+        $paiement = $this->paiementAbonnementRepository->findOneByInEnvironment(['reference' => $data['referenceNumber']]);
 
         if ($data['responsecode'] == 0) {
             $paiement->setState(1);
@@ -190,9 +191,9 @@ class PaiementService
         //je dois recuperer les parametres de l'abonnement
         //je dois renseigner setting 
 
-        $paiement = $this->paiementAbonnementRepository->findOneBy(['reference' => $ref]);
+        $paiement = $this->paiementAbonnementRepository->findOneByInEnvironment(['reference' => $ref]);
 
-        $abonnementActif = $this->abonnementRepository->findOneBy(['moduleAbonnement' => $paiement->getModuleAbonnement(), 'entreprise' => $paiement->getEntreprise(), 'etat' => 'actif']);
+        $abonnementActif = $this->abonnementRepository->findOneByInEnvironment(['moduleAbonnement' => $paiement->getModuleAbonnement(), 'entreprise' => $paiement->getEntreprise(), 'etat' => 'actif']);
 
         $abonnement = new Abonnement();
         $abonnement->setModuleAbonnement($paiement->getModuleAbonnement());

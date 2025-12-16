@@ -3,35 +3,42 @@
 namespace App\Repository;
 
 use App\Entity\Pays;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Service\EntityManagerProvider;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<Pays>
+ * @extends BaseRepository<Pays>
  */
-class PaysRepository extends ServiceEntityRepository
+class PaysRepository extends BaseRepository
 {
-   use  DynamicDatabaseTrait;
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, EntityManagerProvider $entityManagerProvider)
     {
-        parent::__construct($registry, Pays::class);
+        parent::__construct($registry, Pays::class, $entityManagerProvider);
     }
     public function add(Pays $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->saveInEnvironment($entity, $flush);
     }
 
     public function remove(Pays $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->remove($entity);
+        $this->removeInEnvironment($entity, $flush);
+    }
 
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+    /**
+     * Trouve tous les pays actifs dans l'environnement actuel
+     */
+    public function findActivePays(): array
+    {
+        return $this->findByInEnvironment(['isActive' => true], ['libelle' => 'ASC']);
+    }
+
+    /**
+     * Trouve un pays par son code dans l'environnement actuel
+     */
+    public function findByCode(string $code): ?Pays
+    {
+        return $this->findOneByInEnvironment(['code' => $code]);
     }
     //    /**
     //     * @return Pays[] Returns an array of Pays objects

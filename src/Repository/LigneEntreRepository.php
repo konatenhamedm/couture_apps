@@ -3,41 +3,33 @@
 namespace App\Repository;
 
 use App\Entity\LigneEntre;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Service\EntityManagerProvider;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<LigneEntre>
+ * @extends BaseRepository<LigneEntre>
  */
-class LigneEntreRepository extends ServiceEntityRepository
+class LigneEntreRepository extends BaseRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, EntityManagerProvider $entityManagerProvider)
     {
-        parent::__construct($registry, LigneEntre::class);
+        parent::__construct($registry, LigneEntre::class, $entityManagerProvider);
     }
     public function add(LigneEntre $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->saveInEnvironment($entity, $flush);
     }
 
     public function remove(LigneEntre $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->removeInEnvironment($entity, $flush);
     }
     //    /**
     //     * @return LigneEntre[] Returns an array of LigneEntre objects
     //     */
     //    public function findByExampleField($value): array
     //    {
-    //        return $this->createQueryBuilder('l')
+    //        return $this->createQueryBuilderForEnvironment('l')
     //            ->andWhere('l.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->orderBy('l.id', 'ASC')
@@ -49,7 +41,7 @@ class LigneEntreRepository extends ServiceEntityRepository
 
     //    public function findOneBySomeField($value): ?LigneEntre
     //    {
-    //        return $this->createQueryBuilder('l')
+    //        return $this->createQueryBuilderForEnvironment('l')
     //            ->andWhere('l.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->getQuery()

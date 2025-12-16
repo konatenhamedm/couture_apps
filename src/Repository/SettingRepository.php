@@ -3,17 +3,17 @@
 namespace App\Repository;
 
 use App\Entity\Setting;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Service\EntityManagerProvider;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<Setting>
+ * @extends BaseRepository<Setting>
  */
-class SettingRepository extends ServiceEntityRepository
+class SettingRepository extends BaseRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, EntityManagerProvider $entityManagerProvider)
     {
-        parent::__construct($registry, Setting::class);
+        parent::__construct($registry, Setting::class, $entityManagerProvider);
     }
 
     //    /**
@@ -21,7 +21,7 @@ class SettingRepository extends ServiceEntityRepository
     //     */
     //    public function findByExampleField($value): array
     //    {
-    //        return $this->createQueryBuilder('s')
+    //        return $this->createQueryBuilderForEnvironment('s')
     //            ->andWhere('s.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->orderBy('s.id', 'ASC')
@@ -33,7 +33,7 @@ class SettingRepository extends ServiceEntityRepository
 
     //    public function findOneBySomeField($value): ?Setting
     //    {
-    //        return $this->createQueryBuilder('s')
+    //        return $this->createQueryBuilderForEnvironment('s')
     //            ->andWhere('s.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->getQuery()

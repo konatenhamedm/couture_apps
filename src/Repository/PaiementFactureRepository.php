@@ -3,35 +3,27 @@
 namespace App\Repository;
 
 use App\Entity\PaiementFacture;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Service\EntityManagerProvider;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<PaiementFacture>
+ * @extends BaseRepository<PaiementFacture>
  */
-class PaiementFactureRepository extends ServiceEntityRepository
+class PaiementFactureRepository extends BaseRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, EntityManagerProvider $entityManagerProvider)
     {
-        parent::__construct($registry, PaiementFacture::class);
+        parent::__construct($registry, PaiementFacture::class, $entityManagerProvider);
     }
 
      public function add(PaiementFacture $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->saveInEnvironment($entity, $flush);
     }
 
     public function remove(PaiementFacture $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->removeInEnvironment($entity, $flush);
     }
 
     /**
@@ -39,7 +31,7 @@ class PaiementFactureRepository extends ServiceEntityRepository
      */
     public function findByBoutique(int $boutiqueId): array
     {
-        return $this->createQueryBuilder('p')
+        return $this->createQueryBuilderForEnvironment('p')
             ->leftJoin('p.facture', 'f')
             ->leftJoin('f.client', 'c')
             ->where('f.boutique = :boutiqueId')
@@ -54,7 +46,7 @@ class PaiementFactureRepository extends ServiceEntityRepository
      */
     public function getStatsByPeriod(\DateTime $dateDebut, \DateTime $dateFin, int $boutiqueId = null): array
     {
-        $qb = $this->createQueryBuilder('p')
+        $qb = $this->createQueryBuilderForEnvironment('p')
             ->select('COUNT(p.id) as nombre, SUM(p.montant) as total')
             ->leftJoin('p.facture', 'f')
             ->where('p.date BETWEEN :dateDebut AND :dateFin')
@@ -74,7 +66,7 @@ class PaiementFactureRepository extends ServiceEntityRepository
      */
     public function getRepartitionModesPaiement( $boutiqueId = null): array
     {
-        $qb = $this->createQueryBuilder('p')
+        $qb = $this->createQueryBuilderForEnvironment('p')
             ->select('p.modePaiement, COUNT(p.id) as nombre, SUM(p.montant) as total')
             ->leftJoin('p.facture', 'f')
             ->groupBy('p.modePaiement')
@@ -93,7 +85,7 @@ class PaiementFactureRepository extends ServiceEntityRepository
      */
     public function findByPeriod(\DateTime $dateDebut, \DateTime $dateFin, $succursaleId): array
     {
-        return $this->createQueryBuilder('p')
+        return $this->createQueryBuilderForEnvironment('p')
             ->innerJoin('b.facture', 'f')
             ->innerJoin('f.succursale', 's')
             ->where('p.createdAt >= :dateDebut')
@@ -112,7 +104,7 @@ class PaiementFactureRepository extends ServiceEntityRepository
      */
     public function countAll(): int
     {
-        return $this->createQueryBuilder('p')
+        return $this->createQueryBuilderForEnvironment('p')
             ->select('COUNT(p.id)')
             ->getQuery()
             ->getSingleScalarResult();
@@ -123,7 +115,7 @@ class PaiementFactureRepository extends ServiceEntityRepository
      */
     public function sumByEntrepriseAndPeriod($entreprise, \DateTime $dateDebut, \DateTime $dateFin): float
     {
-        $result = $this->createQueryBuilder('pf')
+        $result = $this->createQueryBuilderForEnvironment('pf')
             ->select('SUM(pf.montant)')
             ->leftJoin('pf.facture', 'f')
             ->where('f.entreprise = :entreprise')
@@ -142,7 +134,7 @@ class PaiementFactureRepository extends ServiceEntityRepository
      */
     public function sumByEntrepriseAndDay($entreprise, \DateTime $date): float
     {
-        $result = $this->createQueryBuilder('pf')
+        $result = $this->createQueryBuilderForEnvironment('pf')
             ->select('SUM(pf.montant)')
             ->leftJoin('pf.facture', 'f')
             ->where('f.entreprise = :entreprise')

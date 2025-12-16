@@ -3,17 +3,17 @@
 namespace App\Repository;
 
 use App\Entity\LigneReservation;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Service\EntityManagerProvider;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<LigneReservation>
+ * @extends BaseRepository<LigneReservation>
  */
-class LigneReservationRepository extends ServiceEntityRepository
+class LigneReservationRepository extends BaseRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, EntityManagerProvider $entityManagerProvider)
     {
-        parent::__construct($registry, LigneReservation::class);
+        parent::__construct($registry, LigneReservation::class, $entityManagerProvider);
     }
 
     //    /**
@@ -21,7 +21,7 @@ class LigneReservationRepository extends ServiceEntityRepository
     //     */
     //    public function findByExampleField($value): array
     //    {
-    //        return $this->createQueryBuilder('l')
+    //        return $this->createQueryBuilderForEnvironment('l')
     //            ->andWhere('l.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->orderBy('l.id', 'ASC')
@@ -33,7 +33,7 @@ class LigneReservationRepository extends ServiceEntityRepository
 
     //    public function findOneBySomeField($value): ?LigneReservation
     //    {
-    //        return $this->createQueryBuilder('l')
+    //        return $this->createQueryBuilderForEnvironment('l')
     //            ->andWhere('l.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->getQuery()

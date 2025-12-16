@@ -109,6 +109,34 @@ trait DatabaseEnvironmentTrait
     }
 
     /**
+     * Trouve une entité par critères (sans cache) - retourne une seule entité
+     */
+    protected function findOneBy(string $entityClass, array $criteria = [], array $orderBy = [])
+    {
+        $queryBuilder = $this->createQueryBuilder();
+        $queryBuilder->select('e')
+                    ->from($entityClass, 'e');
+
+        // Ajouter les critères WHERE
+        $paramIndex = 1;
+        foreach ($criteria as $field => $value) {
+            $queryBuilder->andWhere("e.{$field} = :param{$paramIndex}")
+                        ->setParameter("param{$paramIndex}", $value);
+            $paramIndex++;
+        }
+
+        // Ajouter l'ORDER BY
+        foreach ($orderBy as $field => $direction) {
+            $queryBuilder->addOrderBy("e.{$field}", $direction);
+        }
+
+        // Limiter à un seul résultat
+        $queryBuilder->setMaxResults(1);
+
+        return $queryBuilder->getQuery()->getOneOrNullResult();
+    }
+
+    /**
      * Compte les entités d'une classe donnée
      */
     protected function count(string $entityClass, array $criteria = []): int

@@ -17,7 +17,6 @@ use Nelmio\ApiDocBundle\Annotation\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
-
 /**
  * Contrôleur pour la gestion des modèles de vêtements
  * Permet de créer, lire, mettre à jour et supprimer des modèles avec photos et gestion des quantités globales
@@ -26,8 +25,6 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 #[OA\Tag(name: 'modele', description: 'Gestion des modèles de vêtements (catalogue produits avec photos)')]
 class ApiModeleController extends ApiInterface
 {
-   
-
     /**
      * Liste tous les modèles de vêtements du système
      */

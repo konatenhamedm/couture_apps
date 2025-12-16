@@ -3,36 +3,28 @@
 namespace App\Repository;
 
 use App\Entity\PaiementBoutiqueLigne;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Service\EntityManagerProvider;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<PaiementBoutiqueLigne>
+ * @extends BaseRepository<PaiementBoutiqueLigne>
  */
-class PaiementBoutiqueLigneRepository extends ServiceEntityRepository
+class PaiementBoutiqueLigneRepository extends BaseRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, EntityManagerProvider $entityManagerProvider)
     {
-        parent::__construct($registry, PaiementBoutiqueLigne::class);
+        parent::__construct($registry, PaiementBoutiqueLigne::class, $entityManagerProvider);
     }
 
 
         public function add(PaiementBoutiqueLigne $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->saveInEnvironment($entity, $flush);
     }
 
     public function remove(PaiementBoutiqueLigne $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->removeInEnvironment($entity, $flush);
     }
 
     //    /**
@@ -40,7 +32,7 @@ class PaiementBoutiqueLigneRepository extends ServiceEntityRepository
     //     */
     //    public function findByExampleField($value): array
     //    {
-    //        return $this->createQueryBuilder('p')
+    //        return $this->createQueryBuilderForEnvironment('p')
     //            ->andWhere('p.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->orderBy('p.id', 'ASC')
@@ -52,7 +44,7 @@ class PaiementBoutiqueLigneRepository extends ServiceEntityRepository
 
     //    public function findOneBySomeField($value): ?PaiementBoutiqueLigne
     //    {
-    //        return $this->createQueryBuilder('p')
+    //        return $this->createQueryBuilderForEnvironment('p')
     //            ->andWhere('p.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->getQuery()

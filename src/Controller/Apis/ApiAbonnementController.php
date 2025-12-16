@@ -21,7 +21,6 @@ use Nelmio\ApiDocBundle\Attribute\Model as AttributeModel;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
-
 /**
  * Contrôleur pour la gestion des abonnements
  * Permet de créer, lister et gérer les abonnements des entreprises
@@ -30,8 +29,6 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 #[OA\Tag(name: 'abonnement', description: 'Gestion des abonnements d\'entreprise')]
 class ApiAbonnementController extends ApiInterface
 {
-
-
     /**
      * Liste tous les abonnements disponibles dans le système
      */
@@ -66,7 +63,7 @@ class ApiAbonnementController extends ApiInterface
     public function index(AbonnementRepository $moduleRepository): Response
     {
         try {
-            $categories = $this->paginationService->paginate($moduleRepository->findAll());
+            $categories = $this->paginationService->paginate($moduleRepository->findAllInEnvironment());
             $response = $this->responseData($categories, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
@@ -179,7 +176,7 @@ class ApiAbonnementController extends ApiInterface
     ): Response {
         $data = json_decode($request->getContent(), true);
 
-        $createTransactionData = $paiementService->traiterPaiement([
+        $createTransactionData = $paiementService->traiterPaiement($this->getUser(), $moduleAbonnement,[
             'dataUser' => $data['dataUser'] ?? [],
             'dataBoutique' => $data['dataBoutique'] ?? [],
             'dataSuccursale' => $data['dataSuccursale'] ?? [],
@@ -187,7 +184,7 @@ class ApiAbonnementController extends ApiInterface
             'entrepriseId' => $data['entrepriseId'],
             'numero' => $data['numero'],
             'operateur' => $data['operateur'],
-        ], $this->getUser(), $moduleAbonnement);
+        ]);
 
         return $this->response($createTransactionData);
     }
@@ -236,7 +233,7 @@ class ApiAbonnementController extends ApiInterface
     {
         try {
             $typeMesures = $this->paginationService->paginate(
-                $abonnementRepository->findBy(
+                $abonnementRepository->findByInEnvironment(
                     ['entreprise' => $this->getUser()->getEntreprise()],
                     ['id' => 'ASC']
                 )
@@ -297,7 +294,7 @@ class ApiAbonnementController extends ApiInterface
     {
         try {
             $typeMesures = $this->paginationService->paginate(
-                $moduleRepository->findBy(
+                $moduleRepository->findByInEnvironment(
                     ['entreprise' => $this->getUser()->getEntreprise(), 'etat' => 'actif'],
                     ['id' => 'ASC']
                 )

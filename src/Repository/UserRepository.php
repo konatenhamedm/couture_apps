@@ -6,35 +6,27 @@
 namespace App\Repository;
 
 use App\Entity\User;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Service\EntityManagerProvider;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
 
-class UserRepository extends ServiceEntityRepository implements PasswordUpgraderInterface
+class UserRepository extends BaseRepository implements PasswordUpgraderInterface
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, EntityManagerProvider $entityManagerProvider)
     {
-        parent::__construct($registry, User::class);
+        parent::__construct($registry, User::class, $entityManagerProvider);
     }
 
     public function add(User $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->saveInEnvironment($entity, $flush);
     }
 
     public function remove(User $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->removeInEnvironment($entity, $flush);
     }
 
     /**
@@ -42,7 +34,7 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
      */
     public function findOneByLogin(string $login): ?User
     {
-        return $this->createQueryBuilder('u')
+        return $this->createQueryBuilderForEnvironment('u')
             ->where('u.login = :login')
             ->setParameter('login', $login)
             ->getQuery()
@@ -50,7 +42,7 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     }
     public function getUserByCodeType($entreprise): ?User
     {
-        return $this->createQueryBuilder('u')
+        return $this->createQueryBuilderForEnvironment('u')
             ->innerJoin('u.type','t')
             ->where('t.code = :code')
             ->andWhere('u.entreprise = :entreprise')
@@ -65,7 +57,7 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
      */
     public function findByActiveStatus(bool $isActive): array
     {
-        return $this->findBy(['isActive' => $isActive]);
+        return $this->findByInEnvironment(['isActive' => $isActive]);
     }
 
     /**
@@ -74,7 +66,7 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     public function updateActiveStatus(User $user, bool $isActive): void
     {
         $user->setIsActive($isActive);
-        $this->getEntityManager()->flush();
+        $this->getEntityManagerForEnvironment()->flush();
     }
 
     /**
@@ -87,12 +79,12 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         }
 
         $user->setPassword($newHashedPassword);
-        $this->getEntityManager()->flush();
+        $this->getEntityManagerForEnvironment()->flush();
     }
 
     public function countActiveByEntreprise($entreprise): int
     {
-        return $this->createQueryBuilder('u')
+        return $this->createQueryBuilderForEnvironment('u')
             ->select('COUNT(u.id)')
             ->where('u.isActive = :active')
             ->andWhere('u.entreprise = :entreprise')

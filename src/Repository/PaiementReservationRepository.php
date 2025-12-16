@@ -4,13 +4,13 @@ namespace App\Repository;
 
 use App\Entity\Boutique;
 use App\Entity\PaiementReservation;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Service\EntityManagerProvider;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<PaiementReservation>
+ * @extends BaseRepository<PaiementReservation>
  */
-class PaiementReservationRepository extends ServiceEntityRepository
+class PaiementReservationRepository extends BaseRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
@@ -19,20 +19,12 @@ class PaiementReservationRepository extends ServiceEntityRepository
 
     public function add(PaiementReservation $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->saveInEnvironment($entity, $flush);
     }
 
     public function remove(PaiementReservation $entity, bool $flush = false): void
     {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->removeInEnvironment($entity, $flush);
     }
 
     /**
@@ -40,7 +32,7 @@ class PaiementReservationRepository extends ServiceEntityRepository
      */
     public function findByPeriod(\DateTime $dateDebut, \DateTime $dateFin): array
     {
-        return $this->createQueryBuilder('p')
+        return $this->createQueryBuilderForEnvironment('p')
             ->where('p.createdAt >= :dateDebut')
             ->andWhere('p.createdAt <= :dateFin')
             ->setParameter('dateDebut', $dateDebut)
@@ -55,7 +47,7 @@ class PaiementReservationRepository extends ServiceEntityRepository
      */
     public function findByBoutiqueAndPeriod($boutique, \DateTime $dateDebut, \DateTime $dateFin): array
     {
-        return $this->createQueryBuilder('p')
+        return $this->createQueryBuilderForEnvironment('p')
             ->leftJoin('p.reservation', 'r')
             ->andWhere('r.boutique = :boutique')
             ->andWhere('p.createdAt >= :dateDebut')
@@ -73,7 +65,7 @@ class PaiementReservationRepository extends ServiceEntityRepository
      */
     public function countAll(): int
     {
-        return $this->createQueryBuilder('p')
+        return $this->createQueryBuilderForEnvironment('p')
             ->select('COUNT(p.id)')
             ->getQuery()
             ->getSingleScalarResult();
@@ -84,7 +76,7 @@ class PaiementReservationRepository extends ServiceEntityRepository
      */
     public function countByBoutique($boutique): int
     {
-        return $this->createQueryBuilder('p')
+        return $this->createQueryBuilderForEnvironment('p')
             ->select('COUNT(p.id)')
             ->leftJoin('p.reservation', 'r')
             ->where('r.boutique = :boutique')
@@ -98,7 +90,7 @@ class PaiementReservationRepository extends ServiceEntityRepository
      */
     public function findAllByBoutiqueWithDates($boutique): array
     {
-        return $this->createQueryBuilder('p')
+        return $this->createQueryBuilderForEnvironment('p')
             ->select('p.id', 'p.montant', 'p.reference', 'p.createdAt', 'p.isActive')
             ->leftJoin('p.reservation', 'r')
             ->where('r.boutique = :boutique')
@@ -113,7 +105,7 @@ class PaiementReservationRepository extends ServiceEntityRepository
      */
     public function findAllByBoutique($boutique): array
     {
-        return $this->createQueryBuilder('p')
+        return $this->createQueryBuilderForEnvironment('p')
             ->leftJoin('p.reservation', 'r')
             ->where('r.boutique = :boutique')
             ->setParameter('boutique', $boutique)
@@ -133,7 +125,7 @@ class PaiementReservationRepository extends ServiceEntityRepository
         $dateFinEnd = clone $dateFin;
         $dateFinEnd->setTime(23, 59, 59);
         
-        $result = $this->createQueryBuilder('pr')
+        $result = $this->createQueryBuilderForEnvironment('pr')
             ->select('SUM(pr.montant)')
             ->leftJoin('pr.reservation', 'r')
             ->where('r.entreprise = :entreprise')
@@ -159,7 +151,7 @@ class PaiementReservationRepository extends ServiceEntityRepository
         $dateFinEnd = clone $dateFin;
         $dateFinEnd->setTime(23, 59, 59);
         
-        $result = $this->createQueryBuilder('pr')
+        $result = $this->createQueryBuilderForEnvironment('pr')
             ->select('SUM(pr.montant)')
             ->leftJoin('pr.reservation', 'r')
             ->where('r.boutique = :boutique')
@@ -183,7 +175,7 @@ class PaiementReservationRepository extends ServiceEntityRepository
         $dateEnd = clone $date;
         $dateEnd->setTime(23, 59, 59);
         
-        $result = $this->createQueryBuilder('pr')
+        $result = $this->createQueryBuilderForEnvironment('pr')
             ->select('SUM(pr.montant)')
             ->leftJoin('pr.reservation', 'r')
             ->where('r.entreprise = :entreprise')
@@ -208,7 +200,7 @@ class PaiementReservationRepository extends ServiceEntityRepository
         $dateEnd = clone $date;
         $dateEnd->setTime(23, 59, 59);
         
-        $result = $this->createQueryBuilder('pr')
+        $result = $this->createQueryBuilderForEnvironment('pr')
             ->select('SUM(pr.montant)')
             ->leftJoin('pr.reservation', 'r')
             ->where('r.boutique = :boutique')
@@ -236,7 +228,7 @@ class PaiementReservationRepository extends ServiceEntityRepository
         $startDateImmutable = \DateTimeImmutable::createFromMutable($startDate);
         $endDateImmutable = \DateTimeImmutable::createFromMutable($endDate);
 
-        return $this->createQueryBuilder('pr')
+        return $this->createQueryBuilderForEnvironment('pr')
             ->select('
                 IDENTITY(m.modele) as modele_id,
                 mo.libelle as modele_nom,
