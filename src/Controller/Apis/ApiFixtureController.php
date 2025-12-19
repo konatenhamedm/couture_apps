@@ -19,7 +19,6 @@ use App\Service\EntityManagerProvider;
 use App\Service\Utils;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use OpenApi\Attributes as OA;
 
@@ -425,7 +424,7 @@ class ApiFixtureController extends ApiInterface
                     $entreStock->setUpdatedAt(new \DateTime());
 
                     // Validate entity before persistence
-                    if (!$this->validateEntityBeforePersist($entreStock, $entityManager)) {
+                    if (!$this->validateEntityBeforePersist($entreStock)) {
                         $entityManager->rollback();
                         continue;
                     }
