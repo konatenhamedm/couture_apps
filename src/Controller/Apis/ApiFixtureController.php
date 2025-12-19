@@ -138,7 +138,7 @@ class ApiFixtureController extends ApiInterface
                             // Get managed user for persistence
                             $managedUser = $this->getUser();
 
-                            dd($managedUser);
+                          //  dd($managedUser);
                             if ($managedUser) {
                                 $modeleBoutique->setCreatedBy($managedUser);
                                 $modeleBoutique->setUpdatedBy($managedUser);
