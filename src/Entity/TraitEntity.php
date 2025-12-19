@@ -29,7 +29,7 @@ trait TraitEntity
 
     #[ORM\Column]
     #[Group(["group1", "group_type","group_modeleBoutique"])]
-    private ?bool $isActive = true; // ✅ Valeur par défaut ajoutée
+    private bool $isActive = true; // ✅ Non-nullable avec valeur par défaut
 
     /* 
     #[ORM\PrePersist] */
@@ -78,7 +78,7 @@ trait TraitEntity
         return $this;
     }
 
-    public function isActive(): ?bool
+    public function isActive(): bool
     {
         return $this->isActive;
     }

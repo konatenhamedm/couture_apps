@@ -260,14 +260,26 @@ class ApiPaysController extends ApiInterface
     {
         $data = json_decode($request->getContent(), true);
 
+        // Vérifier que l'utilisateur est connecté
+        $currentUser = $this->getUser();
+        if (!$currentUser) {
+            return $this->json(['error' => 'User not authenticated'], 401);
+        }
+
+        // Récupérer l'utilisateur depuis la base de données pour éviter les problèmes de proxy
+        $user = $this->getEntityManager()->find(\App\Entity\User::class, $currentUser->getId());
+        if (!$user) {
+            return $this->json(['error' => 'User not found'], 404);
+        }
+
         $pays = new Pays();
         $pays->setLibelle($data['libelle']);
         $pays->setCode($data['code']);
         $pays->setActif(true);
         $pays->setIsActive(true);
         $pays->setIndicatif($data['indicatif']);
-        $pays->setCreatedBy($this->getUser());
-        $pays->setUpdatedBy($this->getUser());
+        $pays->setCreatedBy($user);
+        $pays->setUpdatedBy($user);
         $pays->setCreatedAtValue(new \DateTime());
         $pays->setUpdatedAt(new \DateTime());
 
