@@ -107,13 +107,15 @@ class ApiFixtureController extends ApiInterface
             $createdCount = 0;
             $createdModelesBoutique = [];
 
-            /* dd($modeles);
-            dd($boutiques); */
-
-
+            if (empty($modeles) || empty($boutiques)) {
+                return $this->createCustomErrorResponse("Aucun modèle ou boutique trouvé pour créer les fixtures", 400);
+            }
 
             $tailles = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
             $prixBase = [8000, 12000, 15000, 18000, 22000, 25000, 30000];
+
+            $entityManager = $entityManagerProvider->getEntityManager();
+            $batchSize = 20; // Traiter par batch pour optimiser les performances
 
             foreach ($modeles as $modele) {
                 foreach ($boutiques as $boutique) {
@@ -122,8 +124,6 @@ class ApiFixtureController extends ApiInterface
                         'modele' => $modele,
                         'boutique' => $boutique
                     ]);
-
-              /*       dd($existing); */
 
                     if ($existing == null) {
                         try {
@@ -136,9 +136,7 @@ class ApiFixtureController extends ApiInterface
                             $modeleBoutique->setTaille($tailles[array_rand($tailles)]);
                             
                             // Get managed user for persistence
-                            $managedUser = $this->getUser();
-
-                          //  dd($managedUser);
+                            $managedUser = $this->getManagedUser($entityManager);
                             if ($managedUser) {
                                 $modeleBoutique->setCreatedBy($managedUser);
                                 $modeleBoutique->setUpdatedBy($managedUser);
@@ -148,25 +146,42 @@ class ApiFixtureController extends ApiInterface
                             $modeleBoutique->setUpdatedAt(new \DateTime());
 
                             // Validate entity before persistence
-                            /* if (!$this->validateEntityBeforePersist($modeleBoutique)) {
+                            if (!$this->validateEntityBeforePersist($modeleBoutique)) {
+                                error_log("Validation échouée pour ModeleBoutique");
                                 continue;
-                            } */
+                            }
 
                             // Mise à jour de la quantité globale du modèle
                             $modele->setQuantiteGlobale((int)$modele->getQuantiteGlobale() + (int)$modeleBoutique->getQuantite());
-                            $modeleRepository->saveInEnvironment($modele);
-
-                            $modeleBoutiqueRepository->saveInEnvironment($modeleBoutique);
+                            
+                            // Utiliser saveInEnvironment qui prend en compte l'environnement dev/prod
+                            // Sauvegarder sans flush pour optimiser les performances
+                            $modeleRepository->saveInEnvironment($modele, false);
+                            $modeleBoutiqueRepository->saveInEnvironment($modeleBoutique, false);
 
                             $createdModelesBoutique[] = $modeleBoutique;
                             $createdCount++;
                             
+                            // Flush par batch pour optimiser les performances
+                            if ($createdCount % $batchSize === 0) {
+                                $entityManager->flush();
+                                error_log("Batch de $batchSize ModeleBoutique sauvegardés (total: $createdCount)");
+                            }
+                            
                         } catch (\Exception $e) {
-                            // Log the error but continue with next iteration
+                            // Log the error for debugging
+                            error_log("Erreur lors de la création du ModeleBoutique: " . $e->getMessage());
+                            error_log("Stack trace: " . $e->getTraceAsString());
                             continue;
                         }
                     }
                 }
+            }
+
+            // Flush final pour sauvegarder les entités restantes
+            if ($createdCount % $batchSize !== 0) {
+                $entityManager->flush();
+                error_log("Flush final - Total ModeleBoutique créés: $createdCount");
             }
 
             return $this->responseData([
@@ -176,6 +191,7 @@ class ApiFixtureController extends ApiInterface
             ], 'group1', ['Content-Type' => 'application/json']);
 
         } catch (\Exception $e) {
+            error_log("Erreur générale dans createModeleBoutiqueFixtures: " . $e->getMessage());
             return $this->createCustomErrorResponse("Erreur lors de la création des fixtures: " . $e->getMessage(), 500);
         }
     }
