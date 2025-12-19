@@ -133,7 +133,7 @@ class ApiFixtureController extends ApiInterface
                             $modeleBoutique->setTaille($tailles[array_rand($tailles)]);
                             
                             // Get managed user for persistence
-                            $managedUser = $this->getManagedUser($entityManager);
+                            $managedUser = $this->getUser();
                             if ($managedUser) {
                                 $modeleBoutique->setCreatedBy($managedUser);
                                 $modeleBoutique->setUpdatedBy($managedUser);
@@ -143,16 +143,16 @@ class ApiFixtureController extends ApiInterface
                             $modeleBoutique->setUpdatedAt(new \DateTime());
 
                             // Validate entity before persistence
-                            if (!$this->validateEntityBeforePersist($modeleBoutique, $entityManager)) {
+                        /*     if (!$this->validateEntityBeforePersist($modeleBoutique, $entityManager)) {
                                 $entityManager->rollback();
                                 continue;
-                            }
+                            } */
 
-                            $entityManager->persist($modeleBoutique);
+                           /*  $entityManager->persist($modeleBoutique); */
 
                             // Mise à jour de la quantité globale du modèle
                             $modele->setQuantiteGlobale($modele->getQuantiteGlobale() + $modeleBoutique->getQuantite());
-                            $entityManager->persist($modele);
+                            $modeleRepository->saveInEnvironment($modele);
 
                             $modeleBoutiqueRepository->saveInEnvironment($modeleBoutique);
 
