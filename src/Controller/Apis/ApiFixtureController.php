@@ -135,6 +135,7 @@ class ApiFixtureController extends ApiInterface
                             $modeleBoutique->setQuantite(rand(10, 100));
                             $modeleBoutique->setBoutique($boutique);
                             $modeleBoutique->setModele($modele);
+                            $modeleBoutique->setIsActive(true);
                             $modeleBoutique->setTaille($tailles[array_rand($tailles)]);
                             
                             // Get managed user for persistence
