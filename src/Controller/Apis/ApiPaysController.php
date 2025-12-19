@@ -259,6 +259,8 @@ class ApiPaysController extends ApiInterface
     {
         $data = json_decode($request->getContent(), true);
 
+        dd($this->getUser());
+
         $pays = new Pays();
         $pays->setLibelle($data['libelle']);
         $pays->setCode($data['code']);
