@@ -108,8 +108,8 @@ class ApiFixtureController extends ApiInterface
             $createdCount = 0;
             $createdModelesBoutique = [];
 
-            dd($modeles);
-            dd($boutiques);
+            /* dd($modeles);
+            dd($boutiques); */
 
 
 
@@ -123,6 +123,8 @@ class ApiFixtureController extends ApiInterface
                         'modele' => $modele,
                         'boutique' => $boutique
                     ]);
+
+                    dd($existing);
 
                     if (!$existing) {
                         $entityManager->beginTransaction();
