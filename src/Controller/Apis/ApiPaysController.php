@@ -268,6 +268,7 @@ class ApiPaysController extends ApiInterface
         $pays->setIndicatif($data['indicatif']);
         $pays->setCreatedBy($this->getUser());
         $pays->setUpdatedBy($this->getUser());
+        $pays->setIsActive(true);
         $pays->setCreatedAtValue(new \DateTime());
         $pays->setUpdatedAt(new \DateTime());
 
