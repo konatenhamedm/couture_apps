@@ -3,11 +3,6 @@
 namespace App\Controller\Apis;
 
 use App\Controller\Apis\Config\ApiInterface;
-use App\Service\StatistiquesService;
-use App\Service\Utils;
-use App\Service\PaginationService;
-use App\Service\SendMailService;
-use App\Service\SubscriptionChecker;
 use App\Repository\ClientRepository;
 use App\Repository\ReservationRepository;
 use App\Repository\PaiementReservationRepository;
@@ -18,25 +13,8 @@ use App\Repository\FactureRepository;
 use App\Repository\PaiementBoutiqueRepository;
 use App\Repository\PaiementFactureRepository;
 use App\Repository\MesureRepository;
-use App\Repository\SurccursaleRepository;
-use App\Repository\SettingRepository;
-use App\Entity\Boutique;
-use App\Entity\Reservation;
-use App\Entity\Client;
-use App\Entity\Facture;
-use App\Entity\PaiementReservation;
-use App\Entity\PaiementBoutique;
-use App\Entity\PaiementFacture;
-use App\Entity\Mesure;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\String\Slugger\SluggerInterface;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
-use Symfony\Component\Serializer\SerializerInterface;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Request;
 use DateTime;
@@ -44,51 +22,38 @@ use DateTime;
 #[Route('/api')]
 class ApiStatistiqueController extends ApiInterface
 {
+    private ReservationRepository $reservationRepository;
+    private PaiementReservationRepository $paiementReservationRepository;
+    private PaiementBoutiqueRepository $paiementBoutiqueRepository;
+    private PaiementFactureRepository $paiementFactureRepository;
+    private ClientRepository $clientRepository;
+    private FactureRepository $factureRepository;
+    private MesureRepository $mesureRepository;
+
     public function __construct(
-        EntityManagerInterface $em,
-        SluggerInterface $slugger,
-        SendMailService $sendMailService,
-        SubscriptionChecker $subscriptionChecker,
-        Utils $utils,
-        UserPasswordHasherInterface $hasher,
-        BoutiqueRepository $boutiqueRepository,
-        SurccursaleRepository $surccursaleRepository,
-        SettingRepository $settingRepository,
-        HttpClientInterface $client,
-        SerializerInterface $serializer,
-        ValidatorInterface $validator,
-        UserRepository $userRepository,
-        StatistiquesService $statistiquesService,
-        PaginationService $paginationService,
-        private ReservationRepository $reservationRepository,
-        private PaiementReservationRepository $paiementReservationRepository,
-        private PaiementBoutiqueRepository $paiementBoutiqueRepository,
-        private PaiementFactureRepository $paiementFactureRepository,
-        private ClientRepository $clientRepository,
-        private FactureRepository $factureRepository,
-        private MesureRepository $mesureRepository,
-        #[Autowire(param: 'SEND_MAIL')] string $sendMail,
-        #[Autowire(param: 'SUPER_ADMIN')] string $superAdmin
+        ReservationRepository $reservationRepository,
+        PaiementReservationRepository $paiementReservationRepository,
+        PaiementBoutiqueRepository $paiementBoutiqueRepository,
+        PaiementFactureRepository $paiementFactureRepository,
+        ClientRepository $clientRepository,
+        FactureRepository $factureRepository,
+        MesureRepository $mesureRepository
     ) {
-        parent::__construct(
-            $em,
-            $slugger,
-            $sendMailService,
-            $subscriptionChecker,
-            $utils,
-            $hasher,
-            $boutiqueRepository,
-            $surccursaleRepository,
-            $settingRepository,
-            $client,
-            $serializer,
-            $validator,
-            $userRepository,
-            $statistiquesService,
-            $paginationService,
-            $sendMail,
-            $superAdmin
-        );
+        $this->reservationRepository = $reservationRepository;
+        $this->paiementReservationRepository = $paiementReservationRepository;
+        $this->paiementBoutiqueRepository = $paiementBoutiqueRepository;
+        $this->paiementFactureRepository = $paiementFactureRepository;
+        $this->clientRepository = $clientRepository;
+        $this->factureRepository = $factureRepository;
+        $this->mesureRepository = $mesureRepository;
+    }
+
+    /**
+     * Retourne l'EntityManager pour l'environnement actuel
+     */
+    private function getEntityManagerForEnvironment()
+    {
+        return $this->getEntityManagerProvider()->getEntityManager();
     }
   
 
@@ -413,9 +378,12 @@ class ApiStatistiqueController extends ApiInterface
     
     private function getDebugDates($entreprise): array
     {
+        $entityManager = $this->getEntityManagerForEnvironment();
+        
         // Vérifier les dates des paiements réservation
-        $paiementsReservation = $this->paiementReservationRepository->createQueryBuilder('pr')
+        $paiementsReservation = $entityManager->createQueryBuilder()
             ->select('pr.id', 'pr.montant', 'pr.createdAt')
+            ->from('App\Entity\PaiementReservation', 'pr')
             ->leftJoin('pr.reservation', 'r')
             ->where('r.entreprise = :entreprise')
             ->setParameter('entreprise', $entreprise)
@@ -425,8 +393,9 @@ class ApiStatistiqueController extends ApiInterface
             ->getResult();
         
         // Vérifier les dates des paiements boutique
-        $paiementsBoutique = $this->paiementBoutiqueRepository->createQueryBuilder('pb')
+        $paiementsBoutique = $entityManager->createQueryBuilder()
             ->select('pb.id', 'pb.montant', 'pb.createdAt')
+            ->from('App\Entity\PaiementBoutique', 'pb')
             ->leftJoin('pb.boutique', 'b')
             ->where('b.entreprise = :entreprise')
             ->setParameter('entreprise', $entreprise)
@@ -436,8 +405,9 @@ class ApiStatistiqueController extends ApiInterface
             ->getResult();
         
         // Vérifier les dates des réservations
-        $reservations = $this->reservationRepository->createQueryBuilder('r')
+        $reservations = $entityManager->createQueryBuilder()
             ->select('r.id', 'r.montant', 'r.createdAt')
+            ->from('App\Entity\Reservation', 'r')
             ->where('r.entreprise = :entreprise')
             ->setParameter('entreprise', $entreprise)
             ->setMaxResults(5)
@@ -1325,9 +1295,12 @@ class ApiStatistiqueController extends ApiInterface
     // Méthodes pour récupérer les données réelles
     private function getClientsKpis($clientRepository, $reservationRepository, $entreprise, $periode): array
     {
-        $totalClients = $clientRepository->count(['entreprise' => $entreprise]);
-        $nouveauxCeMois = $clientRepository->createQueryBuilder('c')
+        $totalClients = $clientRepository->countInEnvironment(['entreprise' => $entreprise]);
+        $entityManager = $this->getEntityManagerForEnvironment();
+        
+        $nouveauxCeMois = $entityManager->createQueryBuilder()
             ->select('COUNT(c.id)')
+            ->from('App\Entity\Client', 'c')
             ->where('c.entreprise = :entreprise')
             ->andWhere('c.createdAt >= :debut')
             ->setParameter('entreprise', $entreprise)
@@ -1344,8 +1317,11 @@ class ApiStatistiqueController extends ApiInterface
 
     private function getTopClients($clientRepository, $paiementRepository, $entreprise): array
     {
-        return $clientRepository->createQueryBuilder('c')
+        $entityManager = $this->getEntityManagerForEnvironment();
+        
+        return $entityManager->createQueryBuilder()
             ->select('c.nom, c.prenom, COUNT(r.id) as commandes, SUM(p.montant) as montant')
+            ->from('App\Entity\Client', 'c')
             ->leftJoin('c.reservations', 'r')
             ->leftJoin('r.paiementReservations', 'p')
             ->where('c.entreprise = :entreprise')
@@ -1360,13 +1336,15 @@ class ApiStatistiqueController extends ApiInterface
     {
         $evolution = [];
         $mois = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin'];
+        $entityManager = $this->getEntityManagerForEnvironment();
         
         for ($i = 5; $i >= 0; $i--) {
             $debut = new \DateTime("first day of -{$i} month");
             $fin = new \DateTime("last day of -{$i} month");
             
-            $nouveaux = $clientRepository->createQueryBuilder('c')
+            $nouveaux = $entityManager->createQueryBuilder()
                 ->select('COUNT(c.id)')
+                ->from('App\Entity\Client', 'c')
                 ->where('c.entreprise = :entreprise')
                 ->andWhere('c.createdAt BETWEEN :debut AND :fin')
                 ->setParameter('entreprise', $entreprise)
@@ -1386,7 +1364,7 @@ class ApiStatistiqueController extends ApiInterface
 
     private function getRepartitionClients($clientRepository, $entreprise): array
     {
-        $total = $clientRepository->count(['entreprise' => $entreprise]);
+        $total = $clientRepository->countInEnvironment(['entreprise' => $entreprise]);
         
         return [
             ['type' => 'VIP', 'nombre' => (int)($total * 0.1), 'couleur' => '#53B0B7'],
@@ -1408,15 +1386,18 @@ class ApiStatistiqueController extends ApiInterface
 
     private function getDashboardKpis($reservationRepository, $paiementRepository, $clientRepository, $entreprise, $periode): array
     {
-        $totalRevenus = $paiementRepository->createQueryBuilder('p')
+        $entityManager = $this->getEntityManagerForEnvironment();
+        
+        $totalRevenus = $entityManager->createQueryBuilder()
             ->select('SUM(p.montant)')
+            ->from('App\Entity\PaiementReservation', 'p')
             ->innerJoin('p.reservation', 'r')
             ->where('r.entreprise = :entreprise')
             ->setParameter('entreprise', $entreprise)
             ->getQuery()->getSingleScalarResult() ?? 0;
             
-        $totalCommandes = $reservationRepository->count(['entreprise' => $entreprise]);
-        $totalClients = $clientRepository->count(['entreprise' => $entreprise]);
+        $totalCommandes = $reservationRepository->countInEnvironment(['entreprise' => $entreprise]);
+        $totalClients = $clientRepository->countInEnvironment(['entreprise' => $entreprise]);
         
         return [
             ['title' => 'Revenus totaux', 'value' => number_format($totalRevenus/1000000, 1) . 'M FCFA', 'change' => '+12.5%', 'up' => true],
@@ -1430,13 +1411,15 @@ class ApiStatistiqueController extends ApiInterface
     {
         $tendances = [];
         $mois = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin'];
+        $entityManager = $this->getEntityManagerForEnvironment();
         
         for ($i = 5; $i >= 0; $i--) {
             $debut = new \DateTime("first day of -{$i} month");
             $fin = new \DateTime("last day of -{$i} month");
             
-            $revenus = $paiementRepository->createQueryBuilder('p')
+            $revenus = $entityManager->createQueryBuilder()
                 ->select('SUM(p.montant)')
+                ->from('App\Entity\PaiementReservation', 'p')
                 ->innerJoin('p.reservation', 'r')
                 ->where('r.entreprise = :entreprise')
                 ->andWhere('p.createdAt BETWEEN :debut AND :fin')
@@ -1458,8 +1441,11 @@ class ApiStatistiqueController extends ApiInterface
 
     private function getTopModelesReels($modeleRepository, $reservationRepository, $entreprise): array
     {
-        return $modeleRepository->createQueryBuilder('m')
+        $entityManager = $this->getEntityManagerForEnvironment();
+        
+        return $entityManager->createQueryBuilder()
             ->select('m.libelle as nom, COUNT(lr.id) as ventes, SUM(mb.prix * lr.quantite) as revenus')
+            ->from('App\Entity\Modele', 'm')
             ->innerJoin('m.modeleBoutiques', 'mb')
             ->innerJoin('mb.ligneReservations', 'lr')
             ->innerJoin('lr.reservation', 'r')
@@ -1473,8 +1459,11 @@ class ApiStatistiqueController extends ApiInterface
 
     private function getBoutiquesStatsReelles($boutiqueRepository, $paiementRepository, $entreprise): array
     {
-        return $boutiqueRepository->createQueryBuilder('b')
+        $entityManager = $this->getEntityManagerForEnvironment();
+        
+        return $entityManager->createQueryBuilder()
             ->select('b.libelle as nom, SUM(p.montant) as revenus')
+            ->from('App\Entity\Boutique', 'b')
             ->innerJoin('b.reservations', 'r')
             ->innerJoin('r.paiementReservations', 'p')
             ->where('b.entreprise = :entreprise')
@@ -1486,8 +1475,11 @@ class ApiStatistiqueController extends ApiInterface
 
     private function getComparaisonPeriodes($paiementRepository, $entreprise): array
     {
-        $moisActuel = $paiementRepository->createQueryBuilder('p')
+        $entityManager = $this->getEntityManagerForEnvironment();
+        
+        $moisActuel = $entityManager->createQueryBuilder()
             ->select('SUM(p.montant), COUNT(p.id)')
+            ->from('App\Entity\PaiementReservation', 'p')
             ->innerJoin('p.reservation', 'r')
             ->where('r.entreprise = :entreprise')
             ->andWhere('p.createdAt >= :debut')
@@ -1504,8 +1496,8 @@ class ApiStatistiqueController extends ApiInterface
 
     private function getPerformanceKpis($boutiqueRepository, $reservationRepository, $entreprise): array
     {
-        $totalBoutiques = $boutiqueRepository->count(['entreprise' => $entreprise]);
-        $totalReservations = $reservationRepository->count(['entreprise' => $entreprise]);
+        $totalBoutiques = $boutiqueRepository->countInEnvironment(['entreprise' => $entreprise]);
+        $totalReservations = $reservationRepository->countInEnvironment(['entreprise' => $entreprise]);
         
         return [
             'objectifGlobal' => 86,
@@ -1517,8 +1509,11 @@ class ApiStatistiqueController extends ApiInterface
 
     private function getPerformanceBoutiquesReelles($boutiqueRepository, $paiementRepository, $entreprise): array
     {
-        return $boutiqueRepository->createQueryBuilder('b')
+        $entityManager = $this->getEntityManagerForEnvironment();
+        
+        return $entityManager->createQueryBuilder()
             ->select('b.libelle as boutique, SUM(p.montant) as revenus, COUNT(r.id) as commandes')
+            ->from('App\Entity\Boutique', 'b')
             ->innerJoin('b.reservations', 'r')
             ->innerJoin('r.paiementReservations', 'p')
             ->where('b.entreprise = :entreprise')
@@ -1529,8 +1524,11 @@ class ApiStatistiqueController extends ApiInterface
 
     private function getPerformanceEmployesReels($userRepository, $reservationRepository, $entreprise): array
     {
-        return $reservationRepository->createQueryBuilder('r')
+        $entityManager = $this->getEntityManagerForEnvironment();
+        
+        return $entityManager->createQueryBuilder()
             ->select('u.nom, u.prenoms, COUNT(r.id) as commandes, SUM(r.montant) as revenus')
+            ->from('App\Entity\Reservation', 'r')
             ->innerJoin('r.createdBy', 'u')
             ->where('r.entreprise = :entreprise')
             ->setParameter('entreprise', $entreprise)
@@ -1564,8 +1562,11 @@ class ApiStatistiqueController extends ApiInterface
     // Méthodes pour l'API revenus avec données réelles
     private function getRevenusKpis($paiementRepository, $entreprise, $periode): array
     {
-        $totalRevenus = $paiementRepository->createQueryBuilder('p')
+        $entityManager = $this->getEntityManagerForEnvironment();
+        
+        $totalRevenus = $entityManager->createQueryBuilder()
             ->select('SUM(p.montant)')
+            ->from('App\Entity\PaiementReservation', 'p')
             ->innerJoin('p.reservation', 'r')
             ->where('r.entreprise = :entreprise')
             ->setParameter('entreprise', $entreprise)
