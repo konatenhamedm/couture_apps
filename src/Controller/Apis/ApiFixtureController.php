@@ -127,7 +127,7 @@ class ApiFixtureController extends ApiInterface
               /*       dd($existing); */
 
                     if (!$existing) {
-                        $entityManager->beginTransaction();
+                        //$entityManager->beginTransaction();
                         
                         try {
                             $modeleBoutique = new ModeleBoutique();
