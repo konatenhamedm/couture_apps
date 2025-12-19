@@ -88,11 +88,11 @@ class ApiFixtureController extends ApiInterface
                         $modeleBoutique->setCreatedAtValue(new \DateTime());
                         $modeleBoutique->setUpdatedAt(new \DateTime());
 
-                        $modeleBoutiqueRepository->add($modeleBoutique, true);
+                        $modeleBoutiqueRepository->saveInEnvironment($modeleBoutique, true);
 
                         // Mise à jour de la quantité globale du modèle
                         $modele->setQuantiteGlobale($modele->getQuantiteGlobale() + $modeleBoutique->getQuantite());
-                        $modeleRepository->add($modele, true);
+                        $modeleRepository->saveInEnvironment($modele, true);
 
                         $createdModelesBoutique[] = $modeleBoutique;
                         $createdCount++;
