@@ -125,8 +125,8 @@ class ApiFixtureController extends ApiInterface
 
               /*       dd($existing); */
 
-                   /*  if ($existing != null) {
-                        try { */
+                    if ($existing == null) {
+                        try {
                             $modeleBoutique = new ModeleBoutique();
                             $modeleBoutique->setPrix($prixBase[array_rand($prixBase)]);
                             $modeleBoutique->setQuantite(rand(10, 100));
@@ -161,11 +161,11 @@ class ApiFixtureController extends ApiInterface
                             $createdModelesBoutique[] = $modeleBoutique;
                             $createdCount++;
                             
-                       /*  } catch (\Exception $e) {
+                        } catch (\Exception $e) {
                             // Log the error but continue with next iteration
                             continue;
-                        } */
-                    /* } */
+                        }
+                    }
                 }
             }
 
