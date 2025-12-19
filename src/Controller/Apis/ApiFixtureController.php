@@ -9,19 +9,19 @@ use App\Entity\LigneReservation;
 use App\Entity\PaiementReservation;
 use App\Entity\EntreStock;
 use App\Entity\LigneEntre;
+use App\Entity\User;
 use App\Repository\ModeleRepository;
 use App\Repository\BoutiqueRepository;
 use App\Repository\ModeleBoutiqueRepository;
 use App\Repository\ClientRepository;
 use App\Repository\CaisseBoutiqueRepository;
-use App\Repository\EntreStockRepository;
-use App\Repository\LigneEntreRepository;
 use App\Service\Utils;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use OpenApi\Attributes as OA;
-use Symfony\Component\HttpFoundation\Request;
+
 
 /**
  * Contrôleur pour les fixtures de données de test
@@ -30,6 +30,17 @@ use Symfony\Component\HttpFoundation\Request;
 #[OA\Tag(name: 'fixture', description: 'Génération de données de test pour le développement')]
 class ApiFixtureController extends ApiInterface
 {
+    /**
+     * Create a custom error response without entity validation
+     */
+    private function createCustomErrorResponse(string $message, int $statusCode = 400): JsonResponse
+    {
+        return new JsonResponse([
+            'code' => $statusCode,
+            'message' => $message,
+            'errors' => [$message]
+        ], $statusCode);
+    }
     /**
      * Génère des modèles de boutique de test
      */
@@ -107,7 +118,7 @@ class ApiFixtureController extends ApiInterface
             ], 'group1', ['Content-Type' => 'application/json']);
 
         } catch (\Exception $e) {
-            return $this->errorResponse(null, "Erreur lors de la création des fixtures: " . $e->getMessage(), 500);
+            return $this->createCustomErrorResponse("Erreur lors de la création des fixtures: " . $e->getMessage(), 500);
         }
     }
 
@@ -150,7 +161,7 @@ class ApiFixtureController extends ApiInterface
             $createdReservations = [];
 
             if (empty($clients) || empty($boutiques)) {
-                return $this->errorResponse(null, "Aucun client ou boutique trouvé pour créer les fixtures", 400);
+                return $this->createCustomErrorResponse("Aucun client ou boutique trouvé pour créer les fixtures", 400);
             }
 
             // Créer 10 réservations de test
@@ -180,7 +191,11 @@ class ApiFixtureController extends ApiInterface
                     $reservation->setDateRetrait($dateRetrait);
                     $reservation->setClient($client);
                     $reservation->setBoutique($boutique);
-                    $reservation->setEntreprise($this->getUser()->getEntreprise());
+                    /** @var User $user */
+                    $user = $this->getUser();
+                    if ($user && $user->getEntreprise()) {
+                        $reservation->setEntreprise($user->getEntreprise());
+                    }
                     $reservation->setMontant($montant);
                     $reservation->setReste($reste);
                     $reservation->setCreatedAtValue(new \DateTime());
@@ -261,7 +276,7 @@ class ApiFixtureController extends ApiInterface
             ], 'group1', ['Content-Type' => 'application/json']);
 
         } catch (\Exception $e) {
-            return $this->errorResponse(null, "Erreur lors de la création des fixtures: " . $e->getMessage(), 500);
+            return $this->createCustomErrorResponse("Erreur lors de la création des fixtures: " . $e->getMessage(), 500);
         }
     }
 
@@ -292,9 +307,6 @@ class ApiFixtureController extends ApiInterface
     public function createEntreeStockFixtures(
         BoutiqueRepository $boutiqueRepository,
         ModeleBoutiqueRepository $modeleBoutiqueRepository,
-        ModeleRepository $modeleRepository,
-        EntreStockRepository $entreStockRepository,
-        LigneEntreRepository $ligneEntreRepository,
         EntityManagerInterface $entityManager
     ): Response {
         try {
@@ -303,7 +315,7 @@ class ApiFixtureController extends ApiInterface
             $createdEntrees = [];
 
             if (empty($boutiques)) {
-                return $this->errorResponse(null, "Aucune boutique trouvée pour créer les fixtures", 400);
+                return $this->createCustomErrorResponse("Aucune boutique trouvée pour créer les fixtures", 400);
             }
 
             // Créer 8 entrées de stock de test
@@ -321,7 +333,11 @@ class ApiFixtureController extends ApiInterface
                     $entreStock = new EntreStock();
                     $entreStock->setBoutique($boutique);
                     $entreStock->setType('Entree');
-                    $entreStock->setEntreprise($this->getUser()->getEntreprise());
+                    /** @var User $user */
+                    $user = $this->getUser();
+                    if ($user && $user->getEntreprise()) {
+                        $entreStock->setEntreprise($user->getEntreprise());
+                    }
                     $entreStock->setCreatedBy($this->getUser());
                     $entreStock->setUpdatedBy($this->getUser());
                     $entreStock->setCreatedAtValue(new \DateTime());
@@ -373,7 +389,7 @@ class ApiFixtureController extends ApiInterface
             ], 'group1', ['Content-Type' => 'application/json']);
 
         } catch (\Exception $e) {
-            return $this->errorResponse(null, "Erreur lors de la création des fixtures: " . $e->getMessage(), 500);
+            return $this->createCustomErrorResponse("Erreur lors de la création des fixtures: " . $e->getMessage(), 500);
         }
     }
 }
