@@ -76,6 +76,8 @@ class ApiFixtureController extends ApiInterface
             $createdCount = 0;
             $createdModelesBoutique = [];
 
+            dd($this->getUser());
+
             $tailles = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
             $prixBase = [8000, 12000, 15000, 18000, 22000, 25000, 30000];
 
