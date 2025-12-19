@@ -56,11 +56,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?\DateTimeImmutable $createdAt;
 
 
-    #[ORM\ManyToOne(inversedBy: 'users')]
+    #[ORM\ManyToOne(inversedBy: 'users', cascade: ['persist'])]
     #[Groups(["group1"])]
     private ?Surccursale $surccursale = null;
 
-    #[ORM\ManyToOne(inversedBy: 'users')]
+    #[ORM\ManyToOne(inversedBy: 'users', cascade: ['persist'])]
     private ?Entreprise $entreprise = null;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -77,7 +77,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: Notification::class, mappedBy: 'user')]
     private Collection $notifications;
 
-    #[ORM\ManyToOne(inversedBy: 'users')]
+    #[ORM\ManyToOne(inversedBy: 'users', cascade: ['persist'])]
     #[Groups(["group1"])]
     private ?TypeUser $type = null;
 
@@ -87,7 +87,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(["fichier", "group_pro", "group1", "group_modeleBoutique"])]
     private ?Fichier $logo = null;
 
-    #[ORM\ManyToOne(inversedBy: 'users')]
+    #[ORM\ManyToOne(inversedBy: 'users', cascade: ['persist'])]
     #[Groups(["group1"])]
     private ?Boutique $boutique = null;
 
