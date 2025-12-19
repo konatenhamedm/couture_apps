@@ -36,7 +36,7 @@ class ApiFixtureController extends ApiInterface
     /**
      * Validate and prepare entity before persistence
      */
-    private function validateEntityBeforePersist($entity, EntityManagerInterface $entityManager = null): bool
+    private function validateEntityBeforePersist($entity): bool
     {
         // Validate the entity using Symfony validator
         $errors = $this->validator->validate($entity);
@@ -100,7 +100,7 @@ class ApiFixtureController extends ApiInterface
         ModeleRepository $modeleRepository,
         BoutiqueRepository $boutiqueRepository,
         ModeleBoutiqueRepository $modeleBoutiqueRepository,
-        EntityManagerProvider $entityManager
+        EntityManagerProvider $entityManagerProvider
     ): Response {
         try {
             $modeles = $modeleRepository->findAllInEnvironment();
@@ -127,8 +127,6 @@ class ApiFixtureController extends ApiInterface
               /*       dd($existing); */
 
                     if (!$existing) {
-                        //$entityManager->beginTransaction();
-                        
                         try {
                             $modeleBoutique = new ModeleBoutique();
                             $modeleBoutique->setPrix($prixBase[array_rand($prixBase)]);
@@ -149,12 +147,9 @@ class ApiFixtureController extends ApiInterface
                             $modeleBoutique->setUpdatedAt(new \DateTime());
 
                             // Validate entity before persistence
-                        /*     if (!$this->validateEntityBeforePersist($modeleBoutique, $entityManager)) {
-                                $entityManager->rollback();
+                            if (!$this->validateEntityBeforePersist($modeleBoutique)) {
                                 continue;
-                            } */
-
-                           /*  $entityManager->persist($modeleBoutique); */
+                            }
 
                             // Mise à jour de la quantité globale du modèle
                             $modele->setQuantiteGlobale($modele->getQuantiteGlobale() + $modeleBoutique->getQuantite());
@@ -166,7 +161,6 @@ class ApiFixtureController extends ApiInterface
                             $createdCount++;
                             
                         } catch (\Exception $e) {
-                            $entityManager->rollback();
                             // Log the error but continue with next iteration
                             continue;
                         }
@@ -215,7 +209,7 @@ class ApiFixtureController extends ApiInterface
         ModeleBoutiqueRepository $modeleBoutiqueRepository,
         CaisseBoutiqueRepository $caisseBoutiqueRepository,
         Utils $utils,
-        EntityManagerInterface $entityManager
+        EntityManagerProvider $entityManagerProvider
     ): Response {
         try {
             $clients = $clientRepository->findAllInEnvironment();
@@ -236,6 +230,7 @@ class ApiFixtureController extends ApiInterface
                 $modeleBoutiques = $modeleBoutiqueRepository->findByInEnvironment(['boutique' => $boutique]);
                 if (empty($modeleBoutiques)) continue;
 
+                $entityManager = $entityManagerProvider->getEntityManager();
                 $entityManager->beginTransaction();
 
                 try {
@@ -271,7 +266,7 @@ class ApiFixtureController extends ApiInterface
                     }
 
                     // Validate entity before persistence
-                    if (!$this->validateEntityBeforePersist($reservation, $entityManager)) {
+                    if (!$this->validateEntityBeforePersist($reservation)) {
                         $entityManager->rollback();
                         continue;
                     }
@@ -388,7 +383,7 @@ class ApiFixtureController extends ApiInterface
     public function createEntreeStockFixtures(
         BoutiqueRepository $boutiqueRepository,
         ModeleBoutiqueRepository $modeleBoutiqueRepository,
-        EntityManagerInterface $entityManager
+        EntityManagerProvider $entityManagerProvider
     ): Response {
         try {
             $boutiques = $boutiqueRepository->findAllInEnvironment();
@@ -407,6 +402,7 @@ class ApiFixtureController extends ApiInterface
                 $modeleBoutiques = $modeleBoutiqueRepository->findByInEnvironment(['boutique' => $boutique]);
                 if (empty($modeleBoutiques)) continue;
 
+                $entityManager = $entityManagerProvider->getEntityManager();
                 $entityManager->beginTransaction();
 
                 try {
