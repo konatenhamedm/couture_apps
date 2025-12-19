@@ -111,4 +111,73 @@ class EntityManagerProvider
         $this->currentEnv = null;
         $this->entityManagers = [];
     }
+
+    /**
+     * Démarre une transaction sur l'EntityManager actuel
+     */
+    public function beginTransaction(): void
+    {
+        $this->getEntityManager()->beginTransaction();
+    }
+
+    /**
+     * Valide (commit) la transaction en cours
+     */
+    public function commit(): void
+    {
+        $this->getEntityManager()->commit();
+    }
+
+    /**
+     * Annule (rollback) la transaction en cours
+     */
+    public function rollback(): void
+    {
+        $this->getEntityManager()->rollback();
+    }
+
+    /**
+     * Persiste une entité dans l'EntityManager actuel
+     */
+    public function persist(object $entity): void
+    {
+        $this->getEntityManager()->persist($entity);
+    }
+
+    /**
+     * Flush les changements vers la base de données
+     */
+    public function flush(): void
+    {
+        $this->getEntityManager()->flush();
+    }
+
+    /**
+     * Exécute une opération dans une transaction avec gestion automatique des erreurs
+     * 
+     * @param callable $operation La fonction à exécuter dans la transaction
+     * @return mixed Le résultat de l'opération
+     * @throws \Exception Si l'opération échoue
+     */
+    public function executeInTransaction(callable $operation)
+    {
+        $this->beginTransaction();
+        
+        try {
+            $result = $operation($this->getEntityManager());
+            $this->commit();
+            return $result;
+        } catch (\Exception $e) {
+            $this->rollback();
+            throw $e;
+        }
+    }
+
+    /**
+     * Vérifie si une transaction est active
+     */
+    public function isTransactionActive(): bool
+    {
+        return $this->getEntityManager()->getConnection()->isTransactionActive();
+    }
 }

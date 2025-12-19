@@ -181,4 +181,68 @@ trait DatabaseEnvironmentTrait
             $em->flush();
         }
     }
+
+    /**
+     * Démarre une transaction
+     */
+    protected function beginTransaction(): void
+    {
+        if (!$this->entityManagerProvider) {
+            throw new \RuntimeException('EntityManagerProvider not injected.');
+        }
+        
+        $this->entityManagerProvider->beginTransaction();
+    }
+
+    /**
+     * Valide (commit) la transaction en cours
+     */
+    protected function commit(): void
+    {
+        if (!$this->entityManagerProvider) {
+            throw new \RuntimeException('EntityManagerProvider not injected.');
+        }
+        
+        $this->entityManagerProvider->commit();
+    }
+
+    /**
+     * Annule (rollback) la transaction en cours
+     */
+    protected function rollback(): void
+    {
+        if (!$this->entityManagerProvider) {
+            throw new \RuntimeException('EntityManagerProvider not injected.');
+        }
+        
+        $this->entityManagerProvider->rollback();
+    }
+
+    /**
+     * Exécute une opération dans une transaction avec gestion automatique des erreurs
+     * 
+     * @param callable $operation La fonction à exécuter dans la transaction
+     * @return mixed Le résultat de l'opération
+     * @throws \Exception Si l'opération échoue
+     */
+    protected function executeInTransaction(callable $operation)
+    {
+        if (!$this->entityManagerProvider) {
+            throw new \RuntimeException('EntityManagerProvider not injected.');
+        }
+        
+        return $this->entityManagerProvider->executeInTransaction($operation);
+    }
+
+    /**
+     * Vérifie si une transaction est active
+     */
+    protected function isTransactionActive(): bool
+    {
+        if (!$this->entityManagerProvider) {
+            throw new \RuntimeException('EntityManagerProvider not injected.');
+        }
+        
+        return $this->entityManagerProvider->isTransactionActive();
+    }
 }

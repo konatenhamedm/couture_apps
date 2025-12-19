@@ -15,6 +15,7 @@ use App\Repository\BoutiqueRepository;
 use App\Repository\ModeleBoutiqueRepository;
 use App\Repository\ClientRepository;
 use App\Repository\CaisseBoutiqueRepository;
+use App\Service\EntityManagerProvider;
 use App\Service\Utils;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Response;
@@ -99,7 +100,7 @@ class ApiFixtureController extends ApiInterface
         ModeleRepository $modeleRepository,
         BoutiqueRepository $boutiqueRepository,
         ModeleBoutiqueRepository $modeleBoutiqueRepository,
-        EntityManagerInterface $entityManager
+        EntityManagerProvider $entityManager
     ): Response {
         try {
             $modeles = $modeleRepository->findAllInEnvironment();
@@ -153,8 +154,7 @@ class ApiFixtureController extends ApiInterface
                             $modele->setQuantiteGlobale($modele->getQuantiteGlobale() + $modeleBoutique->getQuantite());
                             $entityManager->persist($modele);
 
-                            $entityManager->flush();
-                            $entityManager->commit();
+                            $modeleBoutiqueRepository->saveInEnvironment($modeleBoutique);
 
                             $createdModelesBoutique[] = $modeleBoutique;
                             $createdCount++;
