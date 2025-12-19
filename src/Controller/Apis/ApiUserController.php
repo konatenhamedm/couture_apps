@@ -49,6 +49,7 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 class ApiUserController extends ApiInterface
 {
 
+
     /**
      * Liste tous les utilisateurs du système
      */
@@ -141,8 +142,10 @@ class ApiUserController extends ApiInterface
     public function indexEntrepriseActive(UserRepository $userRepository): Response
     {
         try {
+            /** @var User $user */
+            $user = $this->getUser();
             $users = $this->paginationService->paginate($userRepository->findByInEnvironment(
-                ['entreprise' => $this->getUser()->getEntreprise(), 'setsetIsActive' => true],
+                ['entreprise' => $user->getEntreprise(), 'setsetIsActive' => true],
                 ['nom' => 'ASC']
             ));
 
@@ -235,8 +238,10 @@ class ApiUserController extends ApiInterface
     public function indexEntreprise(UserRepository $userRepository): Response
     {
         try {
+            /** @var User $user */
+            $user = $this->getUser();
             $users = $this->paginationService->paginate($userRepository->findByInEnvironment(
-                ['entreprise' => $this->getUser()->getEntreprise()],
+                ['entreprise' => $user->getEntreprise()],
                 ['id' => 'DESC']
             ));
 
@@ -375,7 +380,7 @@ class ApiUserController extends ApiInterface
 
             // Vérification unicité email
             if ($userRepository->findOneByInEnvironment(['login' => $data['email']])) {
-                return $this->errorResponse(null, "Cet email existe déjà, veuillez utiliser un autre");
+                return $this->createCustomErrorResponse("Cet email existe déjà, veuillez utiliser un autre", 400);
             }
 
             // Création de l'entreprise
@@ -387,7 +392,7 @@ class ApiUserController extends ApiInterface
 
             $pays = $paysRepository->findInEnvironment($data['pays']);
             if (!$pays) {
-                return $this->errorResponse(null, "Pays non trouvé", 404);
+                return $this->createCustomErrorResponse("Pays non trouvé", 404);
             }
             $entreprise->setPays($pays);
             $entreprise->setCreatedAtValue(new \DateTime());
@@ -407,7 +412,7 @@ class ApiUserController extends ApiInterface
             // Récupération du plan gratuit FREE
             $module = $moduleAbonnementRepository->findOneByInEnvironment(['code' => 'FREE']);
             if (!$module) {
-                return $this->errorResponse(null, "Plan d'abonnement FREE non trouvé", 500);
+                return $this->createCustomErrorResponse("Plan d'abonnement FREE non trouvé", 500);
             }
 
             $nombreSms = 0;
@@ -653,7 +658,9 @@ class ApiUserController extends ApiInterface
         EntrepriseRepository $entrepriseRepository,
         SendMailService $sendMailService
     ): Response {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        /** @var User $currentUser */
+        $currentUser = $this->getUser();
+        if ($this->subscriptionChecker->getActiveSubscription($currentUser->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -662,7 +669,7 @@ class ApiUserController extends ApiInterface
 
             // Vérification unicité email
             if ($userRepository->findOneByInEnvironment(['login' => $data['login']])) {
-                return $this->errorResponse(null, "Cet email existe déjà, veuillez utiliser un autre");
+                return $this->createCustomErrorResponse("Cet email existe déjà, veuillez utiliser un autre", 400);
             }
 
             // Création de l'utilisateur membre
@@ -688,16 +695,16 @@ class ApiUserController extends ApiInterface
                 }
             }
 
-            $user->setIsActive($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "user"));
+            $user->setIsActive($subscriptionChecker->getSettingByUser($currentUser->getEntreprise(), "user"));
             $user->setPassword($this->hasher->hashPassword($user, $data['password']));
             $user->setRoles(['ROLE_MEMBRE']);
 
             $typeUser = $typeUserRepository->findInEnvironment($data['type']);
             if (!$typeUser) {
-                return $this->errorResponse(null, "Type d'utilisateur non trouvé", 404);
+                return $this->createCustomErrorResponse("Type d'utilisateur non trouvé", 404);
             }
             $user->setType($typeUser);
-            $user->setEntreprise($this->getUser()->getEntreprise());
+            $user->setEntreprise($currentUser->getEntreprise());
             //$user->setCreatedAtValue(new \DateTime());
             //$user->setUpdatedAt(new \DateTime());
 
@@ -716,7 +723,7 @@ class ApiUserController extends ApiInterface
                 $sendMailService->sendNotification([
                     'libelle' => "Bienvenue dans notre application",
                     'titre' => "Bienvenue",
-                    'entreprise' => $this->getUser()->getEntreprise(),
+                    'entreprise' => $currentUser->getEntreprise(),
                     'user' => $user,
                     'userUpdate' => $user
                 ]);
@@ -784,7 +791,7 @@ class ApiUserController extends ApiInterface
               $data = json_decode($request->getContent(), true);
 
             if (!$user) {
-                return $this->errorResponse(null, "Membre non trouvé", 404);
+                return $this->createCustomErrorResponse("Membre non trouvé", 404);
             }
 
             // Mise à jour des champs
@@ -810,7 +817,7 @@ class ApiUserController extends ApiInterface
             if ($data['type'] != null) {
                 $typeUser = $typeUserRepository->findInEnvironment($data['type']);
                 if (!$typeUser) {
-                    return $this->errorResponse(null, "Type d'utilisateur non trouvé", 404);
+                    return $this->createCustomErrorResponse("Type d'utilisateur non trouvé", 404);
                 }
                 $user->setType($typeUser);
             }
@@ -825,12 +832,14 @@ class ApiUserController extends ApiInterface
             $userRepository->add($user, true);
 
             // Notification optionnelle
+            /** @var User $notificationUser */
+            $notificationUser = $this->getUser();
             $sendMailService->sendNotification([
                 'libelle' => "Mise à jour de votre profil utilisateur",
                 'titre' => "Profil modifié",
-                'entreprise' => $this->getUser()->getEntreprise(),
+                'entreprise' => $notificationUser->getEntreprise(),
                 'user' => $user,
-                'userUpdate' => $this->getUser()
+                'userUpdate' => $notificationUser
             ]);
 
             return $this->responseData($user, 'group1', ['Content-Type' => 'application/json']);

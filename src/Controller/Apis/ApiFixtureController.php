@@ -30,17 +30,7 @@ use OpenApi\Attributes as OA;
 #[OA\Tag(name: 'fixture', description: 'Génération de données de test pour le développement')]
 class ApiFixtureController extends ApiInterface
 {
-    /**
-     * Create a custom error response without entity validation
-     */
-    private function createCustomErrorResponse(string $message, int $statusCode = 400): JsonResponse
-    {
-        return new JsonResponse([
-            'code' => $statusCode,
-            'message' => $message,
-            'errors' => [$message]
-        ], $statusCode);
-    }
+
 
     /**
      * Validate and prepare entity before persistence

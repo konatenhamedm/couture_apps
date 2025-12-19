@@ -455,4 +455,18 @@ $this->setStatusCode(500);
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
     }
+
+    /**
+     * Create a custom error response without entity validation
+     * This method should be used instead of errorResponse(null, message) to avoid
+     * "Cannot validate values of type 'null' automatically" errors
+     */
+    protected function createCustomErrorResponse(string $message, int $statusCode = 400): JsonResponse
+    {
+        return new JsonResponse([
+            'code' => $statusCode,
+            'message' => $message,
+            'errors' => [$message]
+        ], $statusCode);
+    }
 }
