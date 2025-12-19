@@ -109,7 +109,7 @@ class ApiClientController extends ApiInterface
     public function indexAll(ClientRepository $clientRepository, TypeUserRepository $typeUserRepository): Response
     {
 
-        dd($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()),$this->getUser()->getEntreprise());
+       // dd($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()),$this->getUser()->getEntreprise());
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
