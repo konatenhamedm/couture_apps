@@ -225,6 +225,7 @@ class ApiFixtureController extends ApiInterface
         BoutiqueRepository $boutiqueRepository,
         ModeleBoutiqueRepository $modeleBoutiqueRepository,
         CaisseBoutiqueRepository $caisseBoutiqueRepository,
+        \App\Repository\ReservationRepository $reservationRepository,
         Utils $utils,
         EntityManagerProvider $entityManagerProvider
     ): Response {
@@ -289,8 +290,7 @@ class ApiFixtureController extends ApiInterface
                     }
 
                     // Utiliser saveInEnvironment pour la réservation (sans flush)
-                    // Note: Nous devons utiliser un repository pour Reservation
-                    $entityManager->persist($reservation);
+                    $reservationRepository->saveInEnvironment($reservation, false);
 
                     // Ajouter 1-3 lignes de réservation
                     $nbLignes = rand(1, 3);
