@@ -165,7 +165,7 @@ class ApiFixtureController extends ApiInterface
                             // Log the error but continue with next iteration
                             continue;
                         } */
-                    }
+                    /* } */
                 }
             }
 
