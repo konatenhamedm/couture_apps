@@ -108,6 +108,9 @@ class ApiFixtureController extends ApiInterface
             $createdCount = 0;
             $createdModelesBoutique = [];
 
+            dd($modeles);
+            dd($boutiques);
+
 
 
             $tailles = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
