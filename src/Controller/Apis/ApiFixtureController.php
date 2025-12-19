@@ -235,7 +235,13 @@ class ApiFixtureController extends ApiInterface
             $createdCount = 0;
             $createdReservations = [];
 
+            // Debug: Vérifier les données de base
+            error_log("=== DEBUG createReservationFixtures ===");
+            error_log("Nombre de clients trouvés: " . count($clients));
+            error_log("Nombre de boutiques trouvées: " . count($boutiques));
+
             if (empty($clients) || empty($boutiques)) {
+                error_log("ERREUR: Pas assez de données de base - Clients: " . count($clients) . ", Boutiques: " . count($boutiques));
                 return $this->createCustomErrorResponse("Aucun client ou boutique trouvé pour créer les fixtures", 400);
             }
 
@@ -248,7 +254,13 @@ class ApiFixtureController extends ApiInterface
 
                 // Récupérer des modèles disponibles pour cette boutique
                 $modeleBoutiques = $modeleBoutiqueRepository->findByInEnvironment(['boutique' => $boutique]);
-                if (empty($modeleBoutiques)) continue;
+                
+                error_log("Tentative $i - Boutique ID: " . $boutique->getId() . ", Modèles trouvés: " . count($modeleBoutiques));
+                
+                if (empty($modeleBoutiques)) {
+                    error_log("Aucun modèle trouvé pour la boutique ID: " . $boutique->getId());
+                    continue;
+                }
 
                 try {
                     // Montants aléatoires
@@ -270,6 +282,9 @@ class ApiFixtureController extends ApiInterface
                     $user = $this->getUser();
                     if ($user && $user->getEntreprise()) {
                         $reservation->setEntreprise($user->getEntreprise());
+                        error_log("Entreprise assignée: " . $user->getEntreprise()->getId());
+                    } else {
+                        error_log("ATTENTION: Pas d'entreprise pour l'utilisateur");
                     }
                     $reservation->setMontant($montant);
                     $reservation->setReste($reste);
@@ -281,22 +296,37 @@ class ApiFixtureController extends ApiInterface
                     if ($managedUser) {
                         $reservation->setCreatedBy($managedUser);
                         $reservation->setUpdatedBy($managedUser);
+                        error_log("Utilisateur géré assigné: " . $managedUser->getId());
+                    } else {
+                        error_log("ERREUR: Pas d'utilisateur géré trouvé");
                     }
 
                     // Validate entity before persistence
                     if (!$this->validateEntityBeforePersist($reservation)) {
-                        error_log("Validation échouée pour Reservation");
+                        error_log("ERREUR: Validation échouée pour Reservation");
+                        $errors = $this->validator->validate($reservation);
+                        foreach ($errors as $error) {
+                            error_log("Erreur de validation: " . $error->getPropertyPath() . " - " . $error->getMessage());
+                        }
                         continue;
                     }
 
+                    error_log("Validation réussie pour la réservation");
+
                     // Utiliser saveInEnvironment pour la réservation (sans flush)
                     $reservationRepository->saveInEnvironment($reservation, false);
+                    error_log("Réservation sauvegardée (sans flush)");
 
                     // Ajouter 1-3 lignes de réservation
                     $nbLignes = rand(1, 3);
+                    $lignesCreees = 0;
+                    
                     for ($j = 0; $j < $nbLignes; $j++) {
                         $modeleBoutique = $modeleBoutiques[array_rand($modeleBoutiques)];
-                        if ($modeleBoutique->getQuantite() <= 0) continue;
+                        if ($modeleBoutique->getQuantite() <= 0) {
+                            error_log("Modèle sans stock: " . $modeleBoutique->getId());
+                            continue;
+                        }
 
                         $quantite = rand(1, min(3, $modeleBoutique->getQuantite()));
                         $avanceModele = rand(2000, 8000);
@@ -304,6 +334,7 @@ class ApiFixtureController extends ApiInterface
                         $ligne = new LigneReservation();
                         $ligne->setQuantite($quantite);
                         $ligne->setModele($modeleBoutique);
+                        $ligne->setIsActive(true);
                         $ligne->setAvanceModele($avanceModele);
                         $ligne->setCreatedAtValue(new \DateTime());
                         $ligne->setUpdatedAt(new \DateTime());
@@ -326,7 +357,10 @@ class ApiFixtureController extends ApiInterface
 
                         // Sauvegarder les modifications de stock (sans flush)
                         $modeleBoutiqueRepository->saveInEnvironment($modeleBoutique, false);
+                        $lignesCreees++;
                     }
+
+                    error_log("Lignes de réservation créées: $lignesCreees");
 
                     // Créer le paiement si avance > 0
                     if ($avance > 0) {
@@ -334,6 +368,7 @@ class ApiFixtureController extends ApiInterface
                         $paiementReservation->setReservation($reservation);
                         $paiementReservation->setType('paiementReservation');
                         $paiementReservation->setMontant($avance);
+                                $paiementReservation->setIsActive(true);
                         $paiementReservation->setReference($utils->generateReference('PMT'));
                         $paiementReservation->setCreatedAtValue(new \DateTime());
                         $paiementReservation->setUpdatedAt(new \DateTime());
@@ -345,6 +380,7 @@ class ApiFixtureController extends ApiInterface
                         }
 
                         $entityManager->persist($paiementReservation);
+                        error_log("Paiement créé: " . $paiementReservation->getReference());
 
                         // Mettre à jour la caisse - utiliser saveInEnvironment
                         $caisseBoutique = $caisseBoutiqueRepository->findOneByInEnvironment(['boutique' => $boutique]);
@@ -357,22 +393,28 @@ class ApiFixtureController extends ApiInterface
 
                             // Sauvegarder la caisse (sans flush)
                             $caisseBoutiqueRepository->saveInEnvironment($caisseBoutique, false);
+                            error_log("Caisse mise à jour");
+                        } else {
+                            error_log("ATTENTION: Pas de caisse trouvée pour la boutique ID: " . $boutique->getId());
                         }
                     }
 
                     // Flush final pour cette réservation
                     $entityManager->flush();
+                    error_log("Flush effectué pour la réservation");
 
                     $createdReservations[] = $reservation;
                     $createdCount++;
 
-                    error_log("Réservation $createdCount créée avec succès");
+                    error_log("✅ Réservation $createdCount créée avec succès (ID: " . $reservation->getId() . ")");
                 } catch (\Exception $e) {
-                    error_log("Erreur lors de la création de la réservation: " . $e->getMessage());
+                    error_log("❌ Erreur lors de la création de la réservation $i: " . $e->getMessage());
                     error_log("Stack trace: " . $e->getTraceAsString());
                     continue;
                 }
             }
+
+            error_log("=== FIN DEBUG - Total créé: $createdCount ===");
 
             return $this->responseData([
                 'message' => "$createdCount réservations créées avec succès",
@@ -380,7 +422,8 @@ class ApiFixtureController extends ApiInterface
                 'reservations' => $createdReservations
             ], 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $e) {
-            error_log("Erreur générale dans createReservationFixtures: " . $e->getMessage());
+            error_log("❌ Erreur générale dans createReservationFixtures: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
             return $this->createCustomErrorResponse("Erreur lors de la création des fixtures: " . $e->getMessage(), 500);
         }
     }
@@ -513,6 +556,62 @@ class ApiFixtureController extends ApiInterface
         } catch (\Exception $e) {
             error_log("Erreur générale dans createEntreeStockFixtures: " . $e->getMessage());
             return $this->createCustomErrorResponse("Erreur lors de la création des fixtures: " . $e->getMessage(), 500);
+        }
+}
+
+    /**
+     * Vérifie les données de base nécessaires pour les fixtures
+     */
+    #[Route('/check-data', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/fixture/check-data",
+        summary: "Vérifier les données de base",
+        description: "Vérifie la présence des données nécessaires pour créer les fixtures (clients, boutiques, modèles, etc.)",
+        tags: ['fixture']
+    )]
+    public function checkData(
+        ClientRepository $clientRepository,
+        BoutiqueRepository $boutiqueRepository,
+        ModeleBoutiqueRepository $modeleBoutiqueRepository,
+        \App\Repository\ModeleRepository $modeleRepository
+    ): Response {
+        try {
+            $clients = $clientRepository->findAllInEnvironment();
+            $boutiques = $boutiqueRepository->findAllInEnvironment();
+            $modeles = $modeleRepository->findAllInEnvironment();
+            $modeleBoutiques = $modeleBoutiqueRepository->findAllInEnvironment();
+
+            $data = [
+                'clients' => [
+                    'count' => count($clients),
+                    'sample' => array_slice($clients, 0, 3)
+                ],
+                'boutiques' => [
+                    'count' => count($boutiques),
+                    'sample' => array_slice($boutiques, 0, 3)
+                ],
+                'modeles' => [
+                    'count' => count($modeles),
+                    'sample' => array_slice($modeles, 0, 3)
+                ],
+                'modele_boutiques' => [
+                    'count' => count($modeleBoutiques),
+                    'sample' => array_slice($modeleBoutiques, 0, 3)
+                ]
+            ];
+
+            // Vérifier les modèles par boutique
+            $modelesParBoutique = [];
+            foreach ($boutiques as $boutique) {
+                $modelesForBoutique = $modeleBoutiqueRepository->findByInEnvironment(['boutique' => $boutique]);
+                $modelesParBoutique[$boutique->getId()] = count($modelesForBoutique);
+            }
+            $data['modeles_par_boutique'] = $modelesParBoutique;
+
+            return $this->responseData($data, 'group1', ['Content-Type' => 'application/json']);
+
+        } catch (\Exception $e) {
+            return $this->createCustomErrorResponse("Erreur lors de la vérification: " . $e->getMessage(), 500);
         }
     }
 }
