@@ -31,10 +31,10 @@ class AbonnementRepository extends BaseRepository
     {
         return $this->createQueryBuilderForEnvironment('a')
             ->andWhere('a.entreprise = :entreprise')
-         /*    ->andWhere('a.etat = :etat') */
+            ->andWhere('a.etat = :etat')
             ->andWhere('a.dateFin >= :now')
             ->setParameter('entreprise', $entreprise)
-            /* ->setParameter('etat', 1) */
+            ->setParameter('etat', true)
             ->setParameter('now', new \DateTime())
             ->orderBy('a.dateFin', 'DESC')
             ->setMaxResults(1)
@@ -62,7 +62,7 @@ class AbonnementRepository extends BaseRepository
             ->andWhere('a.etat = :etat')
             ->andWhere('a.dateFin >= :now')
             ->setParameter('entreprise', $entreprise)
-            ->setParameter('etat', 0)
+            ->setParameter('etat', true)
             ->setParameter('now', new \DateTime())
             ->orderBy('a.dateFin', 'DESC')
             ->setMaxResults(1)
