@@ -39,7 +39,7 @@ class ApiInterface extends AbstractController
 {
     use FileTrait;
     use DatabaseEnvironmentTrait;
-    
+
 
     protected const UPLOAD_PATH = 'media_deeps';
     protected $security;
@@ -60,8 +60,8 @@ class ApiInterface extends AbstractController
 
     protected $serializer;
 
-    protected $sendMail ;
-    protected $superAdmin ;
+    protected $sendMail;
+    protected $superAdmin;
 
     public function __construct(
         EntityManagerInterface $em,
@@ -80,7 +80,7 @@ class ApiInterface extends AbstractController
         protected StatistiquesService $statistiquesService,
         protected PaginationService $paginationService,
         EntityManagerProvider $entityManagerProvider,
-       #[Autowire(param: 'SEND_MAIL')] string $sendMail,
+        #[Autowire(param: 'SEND_MAIL')] string $sendMail,
         #[Autowire(param: 'SUPER_ADMIN')] string $superAdmin
     ) {
 
@@ -98,10 +98,9 @@ class ApiInterface extends AbstractController
         $this->settingRepository = $settingRepository;
         $this->sendMail = $sendMail;
         $this->superAdmin = $superAdmin;
-        
+
         // Injecter l'EntityManagerProvider dans le trait
         $this->setEntityManagerProvider($entityManagerProvider);
-
     }
 
     public function allParametres($type)
@@ -219,17 +218,17 @@ class ApiInterface extends AbstractController
 
             ]);
             // On instancie la réponse
-            $response = new Response($jsonContent,$this->getStatusCode());
+            $response = new Response($jsonContent, $this->getStatusCode());
             //$response->headers->set('Content-Type', 'application/json');
             $response->headers->set('Access-Control-Allow-Origin', '*');
         }
-       
+
         return $response;
         //return new JsonResponse($response, $this->getStatusCode(), $headers);
     }
     public function responseTrue($data, $headers = [])
     {
-      
+
         $encoders = [new JsonEncoder()];
         $normalizers = [new ObjectNormalizer()];
         $serializer = new Serializer($normalizers, $encoders);
@@ -359,7 +358,7 @@ $this->setStatusCode(500);
 
             $response->headers->set('Access-Control-Allow-Origin', '*');
         } catch (\Exception $e) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $response = new JsonResponse([
                 'code' => 500,
                 'message' => $e->getMessage(),
@@ -395,7 +394,7 @@ $this->setStatusCode(500);
                 $response->headers->set('Access-Control-Allow-Origin', '*');
             }
         } catch (\Exception $e) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $response = new JsonResponse([
                 'code' => 500,
                 'message' => $e->getMessage(),

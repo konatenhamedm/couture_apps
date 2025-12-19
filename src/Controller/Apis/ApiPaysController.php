@@ -255,7 +255,7 @@ class ApiPaysController extends ApiInterface
     )]
     #[OA\Response(response: 400, description: "Données invalides ou code pays déjà existant")]
     #[OA\Response(response: 401, description: "Non authentifié")]
-    public function create(Request $request): Response
+    public function create(Request $request,PaysRepository $paysRepository): Response
     {
         $data = json_decode($request->getContent(), true);
 
@@ -275,7 +275,7 @@ class ApiPaysController extends ApiInterface
             return $errorResponse;
         } else {
             // Utiliser le trait pour sauvegarder dans le bon environnement
-            $this->save($pays);
+            $paysRepository->saveInEnvironment($pays);
         }
 
         return $this->responseData($pays, 'group1', ['Content-Type' => 'application/json']);
