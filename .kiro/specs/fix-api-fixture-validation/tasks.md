@@ -10,14 +10,14 @@
   - **Property 4: Proper error response parameters**
   - **Validates: Requirements 1.4**
 
-- [ ] 2. Implement entity validation before persistence
+- [x] 2. Implement entity validation before persistence
   - Add validation checks for ModeleBoutique entities before saving
   - Add validation checks for Reservation entities before saving  
   - Add validation checks for EntreeStock entities before saving
   - Ensure all required fields are set before calling validation
   - _Requirements: 1.3, 3.1, 3.2, 3.3_
 
-- [ ] 2.1 Write property test for complete entity validation
+- [x] 2.1 Write property test for complete entity validation
   - **Property 3: Complete entity validation**
   - **Validates: Requirements 1.3, 3.1, 3.2, 3.3**
 

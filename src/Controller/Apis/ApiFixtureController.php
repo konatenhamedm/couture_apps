@@ -41,6 +41,46 @@ class ApiFixtureController extends ApiInterface
             'errors' => [$message]
         ], $statusCode);
     }
+
+    /**
+     * Validate and prepare entity before persistence
+     */
+    private function validateEntityBeforePersist($entity, EntityManagerInterface $entityManager = null): bool
+    {
+        // Validate the entity using Symfony validator
+        $errors = $this->validator->validate($entity);
+        
+        if (count($errors) > 0) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Get a managed user entity for persistence
+     */
+    private function getManagedUser(EntityManagerInterface $entityManager): ?User
+    {
+        /** @var User|null $currentUser */
+        $currentUser = $this->getUser();
+        if (!$currentUser) {
+            return null;
+        }
+
+        // If the user is already managed by the EntityManager, return it
+        if ($entityManager->contains($currentUser)) {
+            return $currentUser;
+        }
+
+        // Otherwise, fetch the user from the database to get a managed instance
+        $userId = $currentUser->getId();
+        if ($userId) {
+            return $entityManager->find(User::class, $userId);
+        }
+
+        return null;
+    }
     /**
      * Génère des modèles de boutique de test
      */
@@ -68,7 +108,8 @@ class ApiFixtureController extends ApiInterface
     public function createModeleBoutiqueFixtures(
         ModeleRepository $modeleRepository,
         BoutiqueRepository $boutiqueRepository,
-        ModeleBoutiqueRepository $modeleBoutiqueRepository
+        ModeleBoutiqueRepository $modeleBoutiqueRepository,
+        EntityManagerInterface $entityManager
     ): Response {
         try {
             $modeles = $modeleRepository->findAllInEnvironment();
@@ -76,7 +117,7 @@ class ApiFixtureController extends ApiInterface
             $createdCount = 0;
             $createdModelesBoutique = [];
 
-            dd($this->getUser());
+
 
             $tailles = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
             $prixBase = [8000, 12000, 15000, 18000, 22000, 25000, 30000];
@@ -90,25 +131,49 @@ class ApiFixtureController extends ApiInterface
                     ]);
 
                     if (!$existing) {
-                        $modeleBoutique = new ModeleBoutique();
-                        $modeleBoutique->setPrix($prixBase[array_rand($prixBase)]);
-                        $modeleBoutique->setQuantite(rand(10, 100));
-                        $modeleBoutique->setBoutique($boutique);
-                        $modeleBoutique->setModele($modele);
-                        $modeleBoutique->setTaille($tailles[array_rand($tailles)]);
-                        $modeleBoutique->setCreatedBy($this->getUser());
-                        $modeleBoutique->setUpdatedBy($this->getUser());
-                        $modeleBoutique->setCreatedAtValue(new \DateTime());
-                        $modeleBoutique->setUpdatedAt(new \DateTime());
+                        $entityManager->beginTransaction();
+                        
+                        try {
+                            $modeleBoutique = new ModeleBoutique();
+                            $modeleBoutique->setPrix($prixBase[array_rand($prixBase)]);
+                            $modeleBoutique->setQuantite(rand(10, 100));
+                            $modeleBoutique->setBoutique($boutique);
+                            $modeleBoutique->setModele($modele);
+                            $modeleBoutique->setTaille($tailles[array_rand($tailles)]);
+                            
+                            // Get managed user for persistence
+                            $managedUser = $this->getManagedUser($entityManager);
+                            if ($managedUser) {
+                                $modeleBoutique->setCreatedBy($managedUser);
+                                $modeleBoutique->setUpdatedBy($managedUser);
+                            }
+                            
+                            $modeleBoutique->setCreatedAtValue(new \DateTime());
+                            $modeleBoutique->setUpdatedAt(new \DateTime());
 
-                        $modeleBoutiqueRepository->saveInEnvironment($modeleBoutique, true);
+                            // Validate entity before persistence
+                            if (!$this->validateEntityBeforePersist($modeleBoutique, $entityManager)) {
+                                $entityManager->rollback();
+                                continue;
+                            }
 
-                        // Mise à jour de la quantité globale du modèle
-                        $modele->setQuantiteGlobale($modele->getQuantiteGlobale() + $modeleBoutique->getQuantite());
-                        $modeleRepository->saveInEnvironment($modele, true);
+                            $entityManager->persist($modeleBoutique);
 
-                        $createdModelesBoutique[] = $modeleBoutique;
-                        $createdCount++;
+                            // Mise à jour de la quantité globale du modèle
+                            $modele->setQuantiteGlobale($modele->getQuantiteGlobale() + $modeleBoutique->getQuantite());
+                            $entityManager->persist($modele);
+
+                            $entityManager->flush();
+                            $entityManager->commit();
+
+                            $createdModelesBoutique[] = $modeleBoutique;
+                            $createdCount++;
+                            
+                        } catch (\Exception $e) {
+                            $entityManager->rollback();
+                            // Log the error but continue with next iteration
+                            continue;
+                        }
                     }
                 }
             }
@@ -202,8 +267,18 @@ class ApiFixtureController extends ApiInterface
                     $reservation->setReste($reste);
                     $reservation->setCreatedAtValue(new \DateTime());
                     $reservation->setUpdatedAt(new \DateTime());
-                    $reservation->setCreatedBy($this->getUser());
-                    $reservation->setUpdatedBy($this->getUser());
+                    // Get managed user for persistence
+                    $managedUser = $this->getManagedUser($entityManager);
+                    if ($managedUser) {
+                        $reservation->setCreatedBy($managedUser);
+                        $reservation->setUpdatedBy($managedUser);
+                    }
+
+                    // Validate entity before persistence
+                    if (!$this->validateEntityBeforePersist($reservation, $entityManager)) {
+                        $entityManager->rollback();
+                        continue;
+                    }
 
                     $entityManager->persist($reservation);
 
@@ -222,8 +297,11 @@ class ApiFixtureController extends ApiInterface
                         $ligne->setAvanceModele($avanceModele);
                         $ligne->setCreatedAtValue(new \DateTime());
                         $ligne->setUpdatedAt(new \DateTime());
-                        $ligne->setCreatedBy($this->getUser());
-                        $ligne->setUpdatedBy($this->getUser());
+                        // Use the same managed user for ligne entities
+                        if ($managedUser) {
+                            $ligne->setCreatedBy($managedUser);
+                            $ligne->setUpdatedBy($managedUser);
+                        }
 
                         $reservation->addLigneReservation($ligne);
                         $entityManager->persist($ligne);
@@ -245,8 +323,11 @@ class ApiFixtureController extends ApiInterface
                         $paiementReservation->setReference($utils->generateReference('PMT'));
                         $paiementReservation->setCreatedAtValue(new \DateTime());
                         $paiementReservation->setUpdatedAt(new \DateTime());
-                        $paiementReservation->setCreatedBy($this->getUser());
-                        $paiementReservation->setUpdatedBy($this->getUser());
+                        // Use the same managed user for paiement entities
+                        if ($managedUser) {
+                            $paiementReservation->setCreatedBy($managedUser);
+                            $paiementReservation->setUpdatedBy($managedUser);
+                        }
 
                         $entityManager->persist($paiementReservation);
 
@@ -254,7 +335,9 @@ class ApiFixtureController extends ApiInterface
                         $caisseBoutique = $caisseBoutiqueRepository->findOneByInEnvironment(['boutique' => $boutique]);
                         if ($caisseBoutique) {
                             $caisseBoutique->setMontant($caisseBoutique->getMontant() + $avance);
-                            $caisseBoutique->setUpdatedBy($this->getUser());
+                            if ($managedUser) {
+                                $caisseBoutique->setUpdatedBy($managedUser);
+                            }
                             $caisseBoutique->setUpdatedAt(new \DateTime());
                         }
                     }
@@ -340,10 +423,20 @@ class ApiFixtureController extends ApiInterface
                     if ($user && $user->getEntreprise()) {
                         $entreStock->setEntreprise($user->getEntreprise());
                     }
-                    $entreStock->setCreatedBy($this->getUser());
-                    $entreStock->setUpdatedBy($this->getUser());
+                    // Get managed user for persistence
+                    $managedUser = $this->getManagedUser($entityManager);
+                    if ($managedUser) {
+                        $entreStock->setCreatedBy($managedUser);
+                        $entreStock->setUpdatedBy($managedUser);
+                    }
                     $entreStock->setCreatedAtValue(new \DateTime());
                     $entreStock->setUpdatedAt(new \DateTime());
+
+                    // Validate entity before persistence
+                    if (!$this->validateEntityBeforePersist($entreStock, $entityManager)) {
+                        $entityManager->rollback();
+                        continue;
+                    }
 
                     $entityManager->persist($entreStock);
 
