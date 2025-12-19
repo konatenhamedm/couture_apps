@@ -125,7 +125,7 @@ class ApiFixtureController extends ApiInterface
 
               /*       dd($existing); */
 
-                    if (!$existing) {
+                    if ($existing != null) {
                         try {
                             $modeleBoutique = new ModeleBoutique();
                             $modeleBoutique->setPrix($prixBase[array_rand($prixBase)]);
@@ -137,6 +137,8 @@ class ApiFixtureController extends ApiInterface
                             
                             // Get managed user for persistence
                             $managedUser = $this->getUser();
+
+                            dd($managedUser);
                             if ($managedUser) {
                                 $modeleBoutique->setCreatedBy($managedUser);
                                 $modeleBoutique->setUpdatedBy($managedUser);
@@ -151,7 +153,7 @@ class ApiFixtureController extends ApiInterface
                             } */
 
                             // Mise à jour de la quantité globale du modèle
-                            $modele->setQuantiteGlobale($modele->getQuantiteGlobale() + $modeleBoutique->getQuantite());
+                            $modele->setQuantiteGlobale((int)$modele->getQuantiteGlobale() + (int)$modeleBoutique->getQuantite());
                             $modeleRepository->saveInEnvironment($modele);
 
                             $modeleBoutiqueRepository->saveInEnvironment($modeleBoutique);
