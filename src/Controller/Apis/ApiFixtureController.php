@@ -238,6 +238,8 @@ class ApiFixtureController extends ApiInterface
                 return $this->createCustomErrorResponse("Aucun client ou boutique trouvé pour créer les fixtures", 400);
             }
 
+            $entityManager = $entityManagerProvider->getEntityManager();
+
             // Créer 10 réservations de test
             for ($i = 0; $i < 10; $i++) {
                 $client = $clients[array_rand($clients)];
@@ -246,9 +248,6 @@ class ApiFixtureController extends ApiInterface
                 // Récupérer des modèles disponibles pour cette boutique
                 $modeleBoutiques = $modeleBoutiqueRepository->findByInEnvironment(['boutique' => $boutique]);
                 if (empty($modeleBoutiques)) continue;
-
-                $entityManager = $entityManagerProvider->getEntityManager();
-                $entityManager->beginTransaction();
 
                 try {
                     // Montants aléatoires
@@ -275,6 +274,7 @@ class ApiFixtureController extends ApiInterface
                     $reservation->setReste($reste);
                     $reservation->setCreatedAtValue(new \DateTime());
                     $reservation->setUpdatedAt(new \DateTime());
+                    
                     // Get managed user for persistence
                     $managedUser = $this->getManagedUser($entityManager);
                     if ($managedUser) {
@@ -284,10 +284,12 @@ class ApiFixtureController extends ApiInterface
 
                     // Validate entity before persistence
                     if (!$this->validateEntityBeforePersist($reservation)) {
-                        $entityManager->rollback();
+                        error_log("Validation échouée pour Reservation");
                         continue;
                     }
 
+                    // Utiliser saveInEnvironment pour la réservation (sans flush)
+                    // Note: Nous devons utiliser un repository pour Reservation
                     $entityManager->persist($reservation);
 
                     // Ajouter 1-3 lignes de réservation
@@ -305,6 +307,7 @@ class ApiFixtureController extends ApiInterface
                         $ligne->setAvanceModele($avanceModele);
                         $ligne->setCreatedAtValue(new \DateTime());
                         $ligne->setUpdatedAt(new \DateTime());
+                        
                         // Use the same managed user for ligne entities
                         if ($managedUser) {
                             $ligne->setCreatedBy($managedUser);
@@ -314,12 +317,15 @@ class ApiFixtureController extends ApiInterface
                         $reservation->addLigneReservation($ligne);
                         $entityManager->persist($ligne);
 
-                        // Réduire le stock
+                        // Réduire le stock - utiliser saveInEnvironment
                         $modeleBoutique->setQuantite($modeleBoutique->getQuantite() - $quantite);
                         $modele = $modeleBoutique->getModele();
                         if ($modele && $modele->getQuantiteGlobale() >= $quantite) {
                             $modele->setQuantiteGlobale($modele->getQuantiteGlobale() - $quantite);
                         }
+                        
+                        // Sauvegarder les modifications de stock (sans flush)
+                        $modeleBoutiqueRepository->saveInEnvironment($modeleBoutique, false);
                     }
 
                     // Créer le paiement si avance > 0
@@ -331,6 +337,7 @@ class ApiFixtureController extends ApiInterface
                         $paiementReservation->setReference($utils->generateReference('PMT'));
                         $paiementReservation->setCreatedAtValue(new \DateTime());
                         $paiementReservation->setUpdatedAt(new \DateTime());
+                        
                         // Use the same managed user for paiement entities
                         if ($managedUser) {
                             $paiementReservation->setCreatedBy($managedUser);
@@ -339,7 +346,7 @@ class ApiFixtureController extends ApiInterface
 
                         $entityManager->persist($paiementReservation);
 
-                        // Mettre à jour la caisse
+                        // Mettre à jour la caisse - utiliser saveInEnvironment
                         $caisseBoutique = $caisseBoutiqueRepository->findOneByInEnvironment(['boutique' => $boutique]);
                         if ($caisseBoutique) {
                             $caisseBoutique->setMontant($caisseBoutique->getMontant() + $avance);
@@ -347,17 +354,23 @@ class ApiFixtureController extends ApiInterface
                                 $caisseBoutique->setUpdatedBy($managedUser);
                             }
                             $caisseBoutique->setUpdatedAt(new \DateTime());
+                            
+                            // Sauvegarder la caisse (sans flush)
+                            $caisseBoutiqueRepository->saveInEnvironment($caisseBoutique, false);
                         }
                     }
 
+                    // Flush final pour cette réservation
                     $entityManager->flush();
-                    $entityManager->commit();
 
                     $createdReservations[] = $reservation;
                     $createdCount++;
+                    
+                    error_log("Réservation $createdCount créée avec succès");
 
                 } catch (\Exception $e) {
-                    $entityManager->rollback();
+                    error_log("Erreur lors de la création de la réservation: " . $e->getMessage());
+                    error_log("Stack trace: " . $e->getTraceAsString());
                     continue;
                 }
             }
@@ -369,6 +382,7 @@ class ApiFixtureController extends ApiInterface
             ], 'group1', ['Content-Type' => 'application/json']);
 
         } catch (\Exception $e) {
+            error_log("Erreur générale dans createReservationFixtures: " . $e->getMessage());
             return $this->createCustomErrorResponse("Erreur lors de la création des fixtures: " . $e->getMessage(), 500);
         }
     }
@@ -411,6 +425,8 @@ class ApiFixtureController extends ApiInterface
                 return $this->createCustomErrorResponse("Aucune boutique trouvée pour créer les fixtures", 400);
             }
 
+            $entityManager = $entityManagerProvider->getEntityManager();
+
             // Créer 8 entrées de stock de test
             for ($i = 0; $i < 8; $i++) {
                 $boutique = $boutiques[array_rand($boutiques)];
@@ -418,9 +434,6 @@ class ApiFixtureController extends ApiInterface
                 // Récupérer des modèles disponibles pour cette boutique
                 $modeleBoutiques = $modeleBoutiqueRepository->findByInEnvironment(['boutique' => $boutique]);
                 if (empty($modeleBoutiques)) continue;
-
-                $entityManager = $entityManagerProvider->getEntityManager();
-                $entityManager->beginTransaction();
 
                 try {
                     // Créer l'entrée de stock
@@ -432,6 +445,7 @@ class ApiFixtureController extends ApiInterface
                     if ($user && $user->getEntreprise()) {
                         $entreStock->setEntreprise($user->getEntreprise());
                     }
+                    
                     // Get managed user for persistence
                     $managedUser = $this->getManagedUser($entityManager);
                     if ($managedUser) {
@@ -443,10 +457,11 @@ class ApiFixtureController extends ApiInterface
 
                     // Validate entity before persistence
                     if (!$this->validateEntityBeforePersist($entreStock)) {
-                        $entityManager->rollback();
+                        error_log("Validation échouée pour EntreStock");
                         continue;
                     }
 
+                    // Persister l'entrée de stock
                     $entityManager->persist($entreStock);
 
                     // Ajouter 2-5 lignes d'entrée
@@ -466,22 +481,28 @@ class ApiFixtureController extends ApiInterface
                         $entityManager->persist($ligneEntre);
                         $entreStock->addLigneEntre($ligneEntre);
 
-                        // Mettre à jour les stocks
+                        // Mettre à jour les stocks - utiliser saveInEnvironment
                         $modeleBoutique->setQuantite($modeleBoutique->getQuantite() + $quantite);
                         $modele = $modeleBoutique->getModele();
                         $modele->setQuantiteGlobale($modele->getQuantiteGlobale() + $quantite);
+                        
+                        // Sauvegarder les modifications de stock (sans flush)
+                        $modeleBoutiqueRepository->saveInEnvironment($modeleBoutique, false);
                     }
 
                     $entreStock->setQuantite($totalQuantite);
 
+                    // Flush final pour cette entrée de stock
                     $entityManager->flush();
-                    $entityManager->commit();
 
                     $createdEntrees[] = $entreStock;
                     $createdCount++;
+                    
+                    error_log("EntreStock $createdCount créée avec succès (quantité: $totalQuantite)");
 
                 } catch (\Exception $e) {
-                    $entityManager->rollback();
+                    error_log("Erreur lors de la création de l'EntreStock: " . $e->getMessage());
+                    error_log("Stack trace: " . $e->getTraceAsString());
                     continue;
                 }
             }
@@ -493,6 +514,7 @@ class ApiFixtureController extends ApiInterface
             ], 'group1', ['Content-Type' => 'application/json']);
 
         } catch (\Exception $e) {
+            error_log("Erreur générale dans createEntreeStockFixtures: " . $e->getMessage());
             return $this->createCustomErrorResponse("Erreur lors de la création des fixtures: " . $e->getMessage(), 500);
         }
     }
