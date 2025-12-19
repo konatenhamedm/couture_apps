@@ -108,6 +108,8 @@ class ApiClientController extends ApiInterface
     #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
     public function indexAll(ClientRepository $clientRepository, TypeUserRepository $typeUserRepository): Response
     {
+
+        dd($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()),$this->getUser()->getEntreprise());
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
