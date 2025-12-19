@@ -393,7 +393,7 @@ class ApiPaysController extends ApiInterface
                     return $errorResponse;
                 } else {
                     // Utiliser le trait pour sauvegarder dans le bon environnement
-                    $this->save($pays);
+                    $paysRepository->saveInEnvironment($pays);
                 }
 
                 $response = $this->responseData($pays, 'group1', ['Content-Type' => 'application/json']);
@@ -448,7 +448,7 @@ class ApiPaysController extends ApiInterface
           $pays = $paysRepository->findInEnvironment($id);
             if ($pays != null) {
                 // Utiliser le trait pour supprimer dans le bon environnement
-                $this->remove($pays);
+                $paysRepository->removeInEnvironment($pays);
                 $this->setMessage("Operation effectuées avec succès");
                 $response = $this->response($pays);
             } else {
@@ -517,7 +517,7 @@ class ApiPaysController extends ApiInterface
 
                 if ($pays != null) {
                     // Utiliser le trait pour supprimer dans le bon environnement
-                    $this->remove($pays, false); // Ne pas flush à chaque suppression
+                    $paysRepository->removeInEnvironment($pays, false); // Ne pas flush à chaque suppression
                     $count++;
                 }
             }
@@ -570,7 +570,7 @@ class ApiPaysController extends ApiInterface
     {
         try {
             // Utilisation du repository adapté qui utilise automatiquement le bon environnement
-            $pays = $paysRepository->findOneBy(["code"=>$code]);
+            $pays = $paysRepository->findOneByInEnvironment(["code"=>$code]);
             
             if ($pays) {
                 $response = $this->responseData($pays, 'group1', ['Content-Type' => 'application/json']);
