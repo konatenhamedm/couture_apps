@@ -146,9 +146,9 @@ class ApiFixtureController extends ApiInterface
                             $modeleBoutique->setUpdatedAt(new \DateTime());
 
                             // Validate entity before persistence
-                            if (!$this->validateEntityBeforePersist($modeleBoutique)) {
+                            /* if (!$this->validateEntityBeforePersist($modeleBoutique)) {
                                 continue;
-                            }
+                            } */
 
                             // Mise à jour de la quantité globale du modèle
                             $modele->setQuantiteGlobale($modele->getQuantiteGlobale() + $modeleBoutique->getQuantite());
