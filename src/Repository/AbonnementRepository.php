@@ -30,11 +30,11 @@ class AbonnementRepository extends BaseRepository
     public function findActiveForEntreprise(Entreprise $entreprise): ?Abonnement
     {
         return $this->createQueryBuilderForEnvironment('a')
-            ->andWhere('a.entreprise.id = :entreprise')
+            ->andWhere('a.entreprise = :entreprise')
             ->andWhere('a.etat = :etat')
             ->andWhere('a.dateFin >= :now')
-            ->setParameter('entreprise', 2)
-            ->setParameter('etat', 'actif')
+            ->setParameter('entreprise', $entreprise)
+            ->setParameter('etat', 1)
             ->setParameter('now', new \DateTime())
             ->orderBy('a.dateFin', 'DESC')
             ->setMaxResults(1)
@@ -62,7 +62,7 @@ class AbonnementRepository extends BaseRepository
             ->andWhere('a.etat = :etat')
             ->andWhere('a.dateFin >= :now')
             ->setParameter('entreprise', $entreprise)
-            ->setParameter('etat', 'inactif')
+            ->setParameter('etat', 0)
             ->setParameter('now', new \DateTime())
             ->orderBy('a.dateFin', 'DESC')
             ->setMaxResults(1)
