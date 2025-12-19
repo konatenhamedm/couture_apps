@@ -6,6 +6,7 @@ use App\Controller\Apis\Config\ApiInterface;
 use App\DTO\PaysDTO;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use App\Entity\Pays;
+use App\Entity\User;
 use App\Repository\PaysRepository;
 use App\Repository\UserRepository;
 use Symfony\Component\HttpFoundation\Response;
@@ -258,8 +259,6 @@ class ApiPaysController extends ApiInterface
     public function create(Request $request,PaysRepository $paysRepository): Response
     {
         $data = json_decode($request->getContent(), true);
-
-        dd($this->getUser());
 
         $pays = new Pays();
         $pays->setLibelle($data['libelle']);
