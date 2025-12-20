@@ -325,7 +325,7 @@ class ApiClientController extends ApiInterface
         if ($errorResponse !== null) {
             return $errorResponse;
         } else {
-            $clientRepository->add($client);
+            $clientRepository->add($client,true);
         }
 
         return $this->responseData($client, 'group1', ['Content-Type' => 'application/json']);
