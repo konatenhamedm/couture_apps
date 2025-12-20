@@ -449,7 +449,7 @@ class ApiClientController extends ApiInterface
         if ($errorResponse !== null) {
             return $errorResponse;
         } else {
-            $clientRepository->saveInEnvironment($client, true);
+            $clientRepository->saveInEnvironment($client);
         }
 
         return $this->responseData($client, 'group1', ['Content-Type' => 'application/json']);
@@ -581,7 +581,7 @@ class ApiClientController extends ApiInterface
                 if ($errorResponse !== null) {
                     return $errorResponse;
                 } else {
-                    $clientRepository->saveInEnvironment($client, true);
+                    $clientRepository->saveInEnvironment($client);
                 }
 
                 $response = $this->responseData($client, 'group1', ['Content-Type' => 'application/json']);
@@ -639,7 +639,7 @@ class ApiClientController extends ApiInterface
         try {
             $client = $villeRepository->findInEnvironment($id);
             if ($client != null) {
-                $villeRepository->removeInEnvironment($client, true);
+                $villeRepository->removeInEnvironment($client);
                 $this->setMessage("Operation effectuées avec succès");
                 $response = $this->response($client);
             } else {
@@ -704,7 +704,7 @@ class ApiClientController extends ApiInterface
         }
 
         try {
-            $data = json_decode($request->getContent(), true);
+            $data = json_decode($request->getContent());
 
             foreach ($data['ids'] as $id) {
                 $client = $villeRepository->findInEnvironment($id);
