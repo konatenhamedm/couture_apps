@@ -471,20 +471,27 @@ class ApiStatistiqueController extends ApiInterface
     }
 
     /**
-     * Dashboard Ateliya pour une boutique spécifique
+     * Dashboard Ateliya unifié pour boutique ou succursale
      */
-    #[Route('/statistique/ateliya/boutique/{id}', methods: ['POST'])]
+    #[Route('/statistique/ateliya/{type}/{id}', methods: ['POST'])]
     #[OA\Post(
-        path: "/api/statistique/ateliya/boutique/{id}",
-        summary: "Dashboard Ateliya pour boutique",
-        description: "Retourne toutes les statistiques nécessaires pour le dashboard Ateliya d'une boutique spécifique avec filtres avancés.",
+        path: "/api/statistique/ateliya/{type}/{id}",
+        summary: "Dashboard Ateliya unifié",
+        description: "Retourne toutes les statistiques nécessaires pour le dashboard Ateliya d'une boutique ou succursale spécifique avec filtres avancés.",
         tags: ['Statistiques']
+    )]
+    #[OA\Parameter(
+        name: 'type',
+        in: 'path',
+        required: true,
+        description: "Type d'entité (boutique ou succursale)",
+        schema: new OA\Schema(type: 'string', enum: ['boutique', 'succursale'], example: 'boutique')
     )]
     #[OA\Parameter(
         name: 'id',
         in: 'path',
         required: true,
-        description: "ID de la boutique",
+        description: "ID de la boutique ou succursale",
         schema: new OA\Schema(type: 'integer', example: 1)
     )]
     #[OA\RequestBody(
@@ -500,14 +507,126 @@ class ApiStatistiqueController extends ApiInterface
             ]
         )
     )]
-    public function ateliyaBoutiqueDashboard(int $id, Request $request): Response
+    #[OA\Response(
+        response: 200,
+        description: "Statistiques récupérées avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "success", type: "boolean", example: true),
+                new OA\Property(
+                    property: "data",
+                    type: "object",
+                    properties: [
+                        new OA\Property(property: "entity_type", type: "string", example: "boutique"),
+                        new OA\Property(property: "entity_id", type: "integer", example: 1),
+                        new OA\Property(property: "entity_nom", type: "string", example: "Boutique Centre-ville"),
+                        new OA\Property(
+                            property: "periode",
+                            type: "object",
+                            properties: [
+                                new OA\Property(property: "debut", type: "string", example: "2025-01-01"),
+                                new OA\Property(property: "fin", type: "string", example: "2025-01-31"),
+                                new OA\Property(property: "nbJours", type: "integer", example: 31)
+                            ]
+                        ),
+                        new OA\Property(
+                            property: "kpis",
+                            type: "object",
+                            properties: [
+                                new OA\Property(property: "chiffreAffaires", type: "integer", example: 1850000),
+                                new OA\Property(property: "reservationsActives", type: "integer", example: 24, description: "Pour boutique: réservations actives, pour succursale: factures actives"),
+                                new OA\Property(property: "clientsActifs", type: "integer", example: 89),
+                                new OA\Property(property: "commandesEnCours", type: "integer", example: 12, description: "Pour boutique: commandes en cours, pour succursale: mesures en cours")
+                            ]
+                        ),
+                        new OA\Property(
+                            property: "revenusQuotidiens",
+                            type: "array",
+                            items: new OA\Items(
+                                type: "object",
+                                properties: [
+                                    new OA\Property(property: "jour", type: "string", example: "Lun 15"),
+                                    new OA\Property(property: "revenus", type: "integer", example: 185000)
+                                ]
+                            )
+                        ),
+                        new OA\Property(
+                            property: "revenusParType",
+                            type: "array",
+                            items: new OA\Items(
+                                type: "object",
+                                properties: [
+                                    new OA\Property(property: "type", type: "string", example: "Réservations"),
+                                    new OA\Property(property: "revenus", type: "integer", example: 1200000)
+                                ]
+                            )
+                        ),
+                        new OA\Property(
+                            property: "activites",
+                            type: "array",
+                            items: new OA\Items(
+                                type: "object",
+                                properties: [
+                                    new OA\Property(property: "activite", type: "string", example: "Réservations"),
+                                    new OA\Property(property: "nombre", type: "integer", example: 18),
+                                    new OA\Property(property: "revenus", type: "integer", example: 1200000),
+                                    new OA\Property(property: "progression", type: "integer", example: 125)
+                                ]
+                            )
+                        ),
+                        new OA\Property(
+                            property: "dernieresTransactions",
+                            type: "array",
+                            items: new OA\Items(
+                                type: "object",
+                                properties: [
+                                    new OA\Property(property: "id", type: "string", example: "RES-20250130-001"),
+                                    new OA\Property(property: "type", type: "string", example: "Réservation"),
+                                    new OA\Property(property: "client", type: "string", example: "Marie Kouassi"),
+                                    new OA\Property(property: "montant", type: "integer", example: 45000),
+                                    new OA\Property(property: "statut", type: "string", example: "confirmée")
+                                ]
+                            )
+                        )
+                    ]
+                )
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 400,
+        description: "Type d'entité invalide ou entité non trouvée",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "success", type: "boolean", example: false),
+                new OA\Property(property: "message", type: "string", example: "Type d'entité invalide. Utilisez 'boutique' ou 'succursale'")
+            ]
+        )
+    )]
+    public function ateliyaUnifiedDashboard(string $type, int $id, Request $request): Response
     {
         try {
+            // Valider le type
+            if (!in_array($type, ['boutique', 'succursale'])) {
+                return $this->json([
+                    'success' => false, 
+                    'message' => "Type d'entité invalide. Utilisez 'boutique' ou 'succursale'"
+                ], 400);
+            }
+
             $data = json_decode($request->getContent(), true) ?? [];
             [$dateDebut, $dateFin] = $this->parseAteliyaFilters($data);
             
-            // Récupérer les statistiques pour la boutique
-            $stats = $this->getAteliyaBoutiqueStats($id, $dateDebut, $dateFin);
+            // Récupérer les statistiques selon le type
+            if ($type === 'boutique') {
+                $stats = $this->getAteliyaBoutiqueStats($id, $dateDebut, $dateFin);
+                $stats['entity_type'] = 'boutique';
+            } else {
+                $stats = $this->getAteliyaSuccursaleStats($id, $dateDebut, $dateFin);
+                $stats['entity_type'] = 'succursale';
+            }
             
             return $this->json(['success' => true, 'data' => $stats]);
         } catch (\Exception $e) {
@@ -592,142 +711,11 @@ class ApiStatistiqueController extends ApiInterface
         ];
     }
 
-    /**
-     * Dashboard Ateliya pour une succursale spécifique
-     */
-    #[Route('/statistique/ateliya/succursale/{id}', methods: ['POST'])]
-    #[OA\Post(
-        path: "/api/statistique/ateliya/succursale/{id}",
-        summary: "Dashboard Ateliya pour succursale",
-        description: "Retourne toutes les statistiques nécessaires pour le dashboard Ateliya d'une succursale spécifique avec filtres avancés.",
-        tags: ['Statistiques']
-    )]
-    #[OA\Parameter(
-        name: 'id',
-        in: 'path',
-        required: true,
-        description: "ID de la succursale",
-        schema: new OA\Schema(type: 'integer', example: 1)
-    )]
-    #[OA\RequestBody(
-        required: false,
-        description: "Filtres optionnels pour les statistiques",
-        content: new OA\JsonContent(
-            type: "object",
-            properties: [
-                new OA\Property(property: "dateDebut", type: "string", format: "date", example: "2025-01-01"),
-                new OA\Property(property: "dateFin", type: "string", format: "date", example: "2025-01-31"),
-                new OA\Property(property: "filtre", type: "string", enum: ["jour", "mois", "annee", "periode"], example: "mois"),
-                new OA\Property(property: "valeur", type: "string", example: "2025-01")
-            ]
-        )
-    )]
-    #[OA\Response(
-        response: 200,
-        description: "Statistiques de la succursale récupérées avec succès",
-        content: new OA\JsonContent(
-            type: "object",
-            properties: [
-                new OA\Property(property: "success", type: "boolean", example: true),
-                new OA\Property(
-                    property: "data",
-                    type: "object",
-                    properties: [
-                        new OA\Property(property: "succursale_id", type: "integer", example: 1),
-                        new OA\Property(
-                            property: "periode",
-                            type: "object",
-                            properties: [
-                                new OA\Property(property: "debut", type: "string", example: "2025-01-01"),
-                                new OA\Property(property: "fin", type: "string", example: "2025-01-31"),
-                                new OA\Property(property: "nbJours", type: "integer", example: 31)
-                            ]
-                        ),
-                        new OA\Property(
-                            property: "kpis",
-                            type: "object",
-                            properties: [
-                                new OA\Property(property: "chiffreAffaires", type: "integer", example: 1850000),
-                                new OA\Property(property: "facturesActives", type: "integer", example: 18),
-                                new OA\Property(property: "clientsActifs", type: "integer", example: 89),
-                                new OA\Property(property: "mesuresEnCours", type: "integer", example: 12)
-                            ]
-                        ),
-                        new OA\Property(
-                            property: "revenusQuotidiens",
-                            type: "array",
-                            items: new OA\Items(
-                                type: "object",
-                                properties: [
-                                    new OA\Property(property: "jour", type: "string", example: "Lun 15"),
-                                    new OA\Property(property: "factures", type: "integer", example: 3),
-                                    new OA\Property(property: "mesures", type: "integer", example: 5),
-                                    new OA\Property(property: "paiements", type: "integer", example: 2),
-                                    new OA\Property(property: "revenus", type: "integer", example: 185000)
-                                ]
-                            )
-                        ),
-                        new OA\Property(
-                            property: "revenusParType",
-                            type: "array",
-                            items: new OA\Items(
-                                type: "object",
-                                properties: [
-                                    new OA\Property(property: "type", type: "string", example: "Factures"),
-                                    new OA\Property(property: "revenus", type: "integer", example: 1200000)
-                                ]
-                            )
-                        ),
-                        new OA\Property(
-                            property: "activitesSuccursale",
-                            type: "array",
-                            items: new OA\Items(
-                                type: "object",
-                                properties: [
-                                    new OA\Property(property: "activite", type: "string", example: "Factures"),
-                                    new OA\Property(property: "nombre", type: "integer", example: 18),
-                                    new OA\Property(property: "revenus", type: "integer", example: 1200000),
-                                    new OA\Property(property: "progression", type: "integer", example: 125)
-                                ]
-                            )
-                        ),
-                        new OA\Property(
-                            property: "dernieresTransactions",
-                            type: "array",
-                            items: new OA\Items(
-                                type: "object",
-                                properties: [
-                                    new OA\Property(property: "id", type: "string", example: "FAC-20250130-001"),
-                                    new OA\Property(property: "type", type: "string", example: "Facture"),
-                                    new OA\Property(property: "client", type: "string", example: "Jean Kouame"),
-                                    new OA\Property(property: "montant", type: "integer", example: 75000),
-                                    new OA\Property(property: "statut", type: "string", example: "payée")
-                                ]
-                            )
-                        )
-                    ]
-                )
-            ]
-        )
-    )]
-    public function ateliyaSuccursaleDashboard(int $id, Request $request): Response
-    {
-        try {
-            $data = json_decode($request->getContent(), true) ?? [];
-            [$dateDebut, $dateFin] = $this->parseAteliyaFilters($data);
-            
-            // Récupérer les statistiques pour la succursale
-            $stats = $this->getAteliyaSuccursaleStats($id, $dateDebut, $dateFin);
-            
-            return $this->json(['success' => true, 'data' => $stats]);
-        } catch (\Exception $e) {
-            return $this->json(['success' => false, 'message' => $e->getMessage()], 400);
-        }
-    }
+
 
     private function getAteliyaSuccursaleStats(int $succursaleId, DateTime $dateDebut, DateTime $dateFin): array
     {
-        $succursale = $this->succursaleRe->find($succursaleId);
+        $succursale = $this->surccursaleRepository->find($succursaleId);
         if (!$succursale) {
             throw new \Exception("Succursale non trouvée");
         }
@@ -761,8 +749,8 @@ class ApiStatistiqueController extends ApiInterface
         }
         
         return [
-            'succursale_id' => $succursaleId,
-            'succursale_nom' => $succursale->getLibelle(),
+            'entity_id' => $succursaleId,
+            'entity_nom' => $succursale->getLibelle(),
             'periode' => [
                 'debut' => $dateDebut->format('Y-m-d'),
                 'fin' => $dateFin->format('Y-m-d'),
@@ -776,7 +764,7 @@ class ApiStatistiqueController extends ApiInterface
             ],
             'revenusQuotidiens' => $this->getRevenusQuotidiensSuccursaleReels($succursale, $dateDebutRevenus, $dateFinRevenus),
             'revenusParType' => $this->getRevenusParTypeSuccursaleReels($succursale, $dateDebut, $dateFin),
-            'activitesSuccursale' => $this->getActivitesSuccursaleReelles($succursale, $dateDebut, $dateFin),
+            'activites' => $this->getActivitesSuccursaleReelles($succursale, $dateDebut, $dateFin),
             'dernieresTransactions' => $this->getDernieresTransactionsSuccursaleReelles($succursale, $dateFin)
         ];
     }
@@ -932,7 +920,8 @@ class ApiStatistiqueController extends ApiInterface
         }
         
         return [
-            'boutique_id' => $boutiqueId,
+            'entity_id' => $boutiqueId,
+            'entity_nom' => $boutique->getLibelle(),
             'periode' => [
                 'debut' => $dateDebut->format('Y-m-d'),
                 'fin' => $dateFin->format('Y-m-d'),
@@ -946,7 +935,7 @@ class ApiStatistiqueController extends ApiInterface
             ],
             'revenusQuotidiens' => $this->getRevenusQuotidiensBoutiqueReels($boutique, $dateDebutRevenus, $dateFinRevenus),
             'revenusParType' => $this->getRevenusParTypeBoutiqueReels($boutique, $dateDebut, $dateFin),
-            'activitesBoutique' => $this->getActivitesBoutiqueSpecifiqueReelles($boutique, $dateDebut, $dateFin),
+            'activites' => $this->getActivitesBoutiqueSpecifiqueReelles($boutique, $dateDebut, $dateFin),
             'dernieresTransactions' => $this->getDernieresTransactionsBoutiqueReelles($boutique, $dateFin)
         ];
     }
