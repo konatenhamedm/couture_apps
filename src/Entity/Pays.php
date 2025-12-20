@@ -50,7 +50,9 @@ class Pays
     {
         $this->operateurs = new ArrayCollection();
         $this->entreprises = new ArrayCollection();
-    }
+    
+        // Initialiser les valeurs par défaut du trait
+        $this->initializeTraitDefaults();}
 
     public function getId(): ?int
     {

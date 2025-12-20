@@ -395,7 +395,7 @@ class ApiUserController extends ApiInterface
                 return $this->createCustomErrorResponse("Pays non trouvé", 404);
             }
             // Utiliser une entité gérée pour éviter les problèmes de cascade persist
-            $managedPays = $this->getManagedEntity($pays);
+            $managedPays = $this->getManagedPays($pays);
             $entreprise->setPays($managedPays);
             $entreprise->setCreatedAtValue();
             $entreprise->setUpdatedAt();
@@ -790,7 +790,7 @@ class ApiUserController extends ApiInterface
         User $user
     ): Response {
         // Vérifie abonnement actif
-       /*  if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+       /*  if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         } */
 
@@ -809,14 +809,14 @@ class ApiUserController extends ApiInterface
             // Affectation succursale
             if ($data['succursale'] != null) {
                 $succursale = $surccursaleRepository->findInEnvironment($data['succursale']);
-               $user->setSurccursale($succursale);
+               $user->setSurccursale($this->getManagedEntityFromEnvironment($succursale));
             } else {
                 $user->setSurccursale(null);
             }
 
             if ($data['boutique'] != null) {
                 $boutique = $boutiqueRepository->findInEnvironment($data['boutique']);
-              $user->setBoutique($boutique);
+              $user->setBoutique($this->getManagedEntityFromEnvironment($boutique));
             } else {
                 $user->setBoutique(null);
             }

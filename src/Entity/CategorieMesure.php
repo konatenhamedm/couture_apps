@@ -43,7 +43,9 @@ class CategorieMesure
     {
         $this->ligneMesures = new ArrayCollection();
         $this->categorieTypeMesures = new ArrayCollection();
-    }
+    
+        // Initialiser les valeurs par défaut du trait
+        $this->initializeTraitDefaults();}
 
     public function getId(): ?int
     {

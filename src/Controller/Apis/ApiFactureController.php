@@ -126,7 +126,7 @@ class ApiFactureController extends ApiInterface
     #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
     public function indexAll(FactureRepository $factureRepository, TypeUserRepository $typeUserRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -134,7 +134,7 @@ class ApiFactureController extends ApiInterface
 
             if ($this->getUser()->getType() == $typeUserRepository->findOneByInEnvironment(['code' => 'SADM'])) {
                 $factures = $this->paginationService->paginate($factureRepository->findByInEnvironment(
-                    ['entreprise' => $this->getUser()->getEntreprise()],
+                    ['entreprise' => $this->getManagedEntreprise()],
                     ['id' => 'DESC']
                 ));
             } else {
@@ -209,7 +209,7 @@ class ApiFactureController extends ApiInterface
     {
         
         $facture = $factureRepository->findInEnvironment($id);
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -387,7 +387,7 @@ class ApiFactureController extends ApiInterface
         EntityManagerInterface $entityManager,
         SurccursaleRepository $surccursaleRepository
     ): Response {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -396,7 +396,7 @@ class ApiFactureController extends ApiInterface
         $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
         $facture = new Facture();
         $facture->setEntreprise($this->getManagedEntreprise());
-        $admin = $userRepository->getUserByCodeType($this->getUser()->getEntreprise());
+        $admin = $userRepository->getUserByCodeType($this->getManagedEntreprise());
 
         // Récupérer l'entité et s'assurer qu'elle est gérée
             $foundClient = $clientRepository->findInEnvironment($request->get('clientId'));
@@ -519,7 +519,7 @@ class ApiFactureController extends ApiInterface
             // Envoi de notifications
             if ($admin) {
                 $this->sendMailService->sendNotification([
-                    'entreprise' => $this->getUser()->getEntreprise(),
+                    'entreprise' => $this->getManagedEntreprise(),
                     "user" => $admin,
                     "libelle" => sprintf(
                         "Bonjour %s,\n\n" .
@@ -543,10 +543,10 @@ class ApiFactureController extends ApiInterface
             $this->sendMailService->send(
                 $this->sendMail,
                 $this->superAdmin,
-                "Paiement facture - " . $this->getUser()->getEntreprise()->getLibelle(),
+                "Paiement facture - " . $this->getManagedEntreprise()->getLibelle(),
                 "paiement_email",
                 [
-                    "boutique_libelle" => $this->getUser()->getEntreprise()->getLibelle(),
+                    "boutique_libelle" => $this->getManagedEntreprise()->getLibelle(),
                     "montant" => number_format($request->get('avance'), 0, ',', ' ') . " FCFA",
                     "date" => (new \DateTime())->format('d/m/Y H:i'),
                 ]
@@ -642,7 +642,7 @@ class ApiFactureController extends ApiInterface
         Utils $utils,
         EntityManagerInterface $entityManager
     ): Response {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -837,10 +837,10 @@ class ApiFactureController extends ApiInterface
                     }
 
                     // Envoi de notifications
-                    $admin = $userRepository->getUserByCodeType($this->getUser()->getEntreprise());
+                    $admin = $userRepository->getUserByCodeType($this->getManagedEntreprise());
                     if ($admin) {
                         $this->sendMailService->sendNotification([
-                            'entreprise' => $this->getUser()->getEntreprise(),
+                            'entreprise' => $this->getManagedEntreprise(),
                             "user" => $admin,
                             "libelle" => sprintf(
                                 "Bonjour %s,\n\n" .
@@ -865,10 +865,10 @@ class ApiFactureController extends ApiInterface
                     $this->sendMailService->send(
                         $this->sendMail,
                         $this->superAdmin,
-                        "Paiement supplémentaire facture - " . $this->getUser()->getEntreprise()->getLibelle(),
+                        "Paiement supplémentaire facture - " . $this->getManagedEntreprise()->getLibelle(),
                         "paiement_email",
                         [
-                            "boutique_libelle" => $this->getUser()->getEntreprise()->getLibelle(),
+                            "boutique_libelle" => $this->getManagedEntreprise()->getLibelle(),
                             "montant" => number_format($differenceAvance, 0, ',', ' ') . " FCFA",
                             "date" => (new \DateTime())->format('d/m/Y H:i'),
                         ]
@@ -919,7 +919,7 @@ class ApiFactureController extends ApiInterface
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
     public function delete(Request $request, int $id, FactureRepository $factureRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -986,7 +986,7 @@ class ApiFactureController extends ApiInterface
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
     public function deleteAll(Request $request, FactureRepository $factureRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 

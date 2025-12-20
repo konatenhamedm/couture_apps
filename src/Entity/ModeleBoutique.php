@@ -68,7 +68,9 @@ class ModeleBoutique
         $this->ligneEntres = new ArrayCollection();
         $this->ligneReservations = new ArrayCollection();
         $this->paiementBoutiqueLignes = new ArrayCollection();
-    }
+    
+        // Initialiser les valeurs par défaut du trait
+        $this->initializeTraitDefaults();}
 
     public function getId(): ?int
     {

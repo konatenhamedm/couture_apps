@@ -645,4 +645,34 @@ $this->setStatusCode(500);
             return $entity;
         }
     }
+
+    /**
+     * Méthode spécialisée pour gérer les entités Pays qui causent souvent des problèmes
+     */
+    protected function getManagedPays($pays)
+    {
+        if (!$pays) {
+            return null;
+        }
+
+        try {
+            // Forcer la récupération d'une nouvelle instance depuis la base
+            if (method_exists($pays, 'getId') && $pays->getId()) {
+                // Utiliser l'EntityManager de l'environnement si disponible
+                try {
+                    $currentEM = $this->entityManagerProvider->getEntityManager();
+                    $managedPays = $currentEM->find('App\\Entity\\Pays', $pays->getId());
+                    return $managedPays ?: $pays;
+                } catch (\Exception $e) {
+                    // Fallback vers l'EM principal
+                    $managedPays = $this->em->find('App\\Entity\\Pays', $pays->getId());
+                    return $managedPays ?: $pays;
+                }
+            }
+            
+            return $pays;
+        } catch (\Exception $e) {
+            return $pays;
+        }
+    }
 }

@@ -106,7 +106,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
-    }
+    
+        // Initialiser les valeurs par défaut du trait
+        $this->initializeTraitDefaults();}
 
     // ... Getters and setters (pas besoin de toucher ici)
     // Tu peux garder ceux que tu as déjà.

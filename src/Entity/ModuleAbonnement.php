@@ -70,7 +70,9 @@ class ModuleAbonnement
         $this->ligneModules = new ArrayCollection();
         $this->abonnements = new ArrayCollection();
         $this->paiementAbonnements = new ArrayCollection();
-    }
+    
+        // Initialiser les valeurs par défaut du trait
+        $this->initializeTraitDefaults();}
 
     public function getId(): ?int
     {

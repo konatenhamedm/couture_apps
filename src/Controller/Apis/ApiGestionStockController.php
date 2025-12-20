@@ -71,7 +71,7 @@ class ApiGestionStockController extends ApiInterface
     #[OA\Response(response: 404, description: "Boutique non trouvée")]
     public function indexByBoutique(EntreStockRepository $entreStockRepository, Boutique $boutique): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -268,7 +268,7 @@ class ApiGestionStockController extends ApiInterface
     )]
     public function index(ModeleRepository $modeleRepository, EntreStockRepository $entreStockRepository, Boutique $boutique): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -444,7 +444,7 @@ class ApiGestionStockController extends ApiInterface
     )]
     public function indexModeleBoutique(ModeleRepository $modeleRepository, LigneEntreRepository $ligneEntreRepository, ModeleBoutique $modeleBoutique): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -548,7 +548,7 @@ class ApiGestionStockController extends ApiInterface
         ModeleBoutiqueRepository $modeleBoutiqueRepository,
         EntityManagerInterface $entityManager
     ): Response {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -713,7 +713,7 @@ class ApiGestionStockController extends ApiInterface
         EntreStockRepository $entreStockRepository,
         ModeleBoutiqueRepository $modeleBoutiqueRepository
     ): Response {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -882,7 +882,7 @@ class ApiGestionStockController extends ApiInterface
         ModeleBoutiqueRepository $modeleBoutiqueRepository,
         EntityManagerInterface $entityManager
     ): Response {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -1090,7 +1090,7 @@ class ApiGestionStockController extends ApiInterface
         EntreStockRepository $entreStockRepository,
         EntityManagerInterface $entityManager
     ): Response {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -1189,7 +1189,7 @@ class ApiGestionStockController extends ApiInterface
         EntreStockRepository $entreStockRepository,
         EntityManagerInterface $entityManager
     ): Response {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 

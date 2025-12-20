@@ -50,7 +50,9 @@ class Modele
         $this->modeleBoutiques = new ArrayCollection();
        
 
-    }
+    
+        // Initialiser les valeurs par défaut du trait
+        $this->initializeTraitDefaults();}
 
 
 

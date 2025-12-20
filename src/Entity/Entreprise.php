@@ -87,7 +87,7 @@ class Entreprise
     #[ORM\OneToMany(targetEntity: Boutique::class, mappedBy: 'entreprise')]
     private Collection $boutiques;
 
-    #[ORM\ManyToOne(inversedBy: 'entreprises')]
+    #[ORM\ManyToOne(inversedBy: 'entreprises', cascade: ['persist'])]
     #[ORM\JoinColumn(nullable: false)]
     private ?Pays $pays = null;
 
@@ -157,7 +157,9 @@ class Entreprise
         $this->categorieTypeMesures = new ArrayCollection();
         $this->factures = new ArrayCollection();
         $this->clients = new ArrayCollection();
-    }
+    
+        // Initialiser les valeurs par défaut du trait
+        $this->initializeTraitDefaults();}
 
     public function getId(): ?int
     {

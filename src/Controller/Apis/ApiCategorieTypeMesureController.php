@@ -56,7 +56,7 @@ class ApiCategorieTypeMesureController extends ApiInterface
     {
         try {
             
-            $categories = $this->paginationService->paginate($categorieTypeMesureRepository->findByInEnvironment(['typeMesure' => $typeMesure,'entreprise'=> $this->getUser()->getEntreprise() ,'isActive' => true],['id' => 'ASC']));
+            $categories = $this->paginationService->paginate($categorieTypeMesureRepository->findByInEnvironment(['typeMesure' => $typeMesure,'entreprise'=> $this->getManagedEntreprise() ,'isActive' => true],['id' => 'ASC']));
             $response = $this->responseData($categories, 'group1', ['Content-Type' => 'application/json'], true);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);

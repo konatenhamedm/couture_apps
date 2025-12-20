@@ -127,7 +127,7 @@ class ApiSurccursaleController extends ApiInterface
     {
         try {
             $surccursales = $this->paginationService->paginate($surccursaleRepository->findByInEnvironment(
-                ['entreprise' => $this->getUser()->getEntreprise(), 'setIsActive' => true],
+                ['entreprise' => $this->getManagedEntreprise(), 'setIsActive' => true],
                 ['libelle' => 'ASC']
             ));
 
@@ -176,7 +176,7 @@ class ApiSurccursaleController extends ApiInterface
     {
         try {
             $surccursales = $this->paginationService->paginate($surccursaleRepository->findByInEnvironment(
-                ['entreprise' => $this->getUser()->getEntreprise()],
+                ['entreprise' => $this->getManagedEntreprise()],
                 ['id' => 'DESC']
             ));
 
@@ -315,7 +315,7 @@ class ApiSurccursaleController extends ApiInterface
         SurccursaleRepository $surccursaleRepository,
         EntrepriseRepository $entrepriseRepository
     ): Response {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -325,7 +325,7 @@ class ApiSurccursaleController extends ApiInterface
         $surccursale = new Surccursale();
         $surccursale->setLibelle($data['libelle']);
         $surccursale->setContact($data['contact']);
-        $surccursale->setIsActive($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "succursale"));
+        $surccursale->setIsActive($subscriptionChecker->getSettingByUser($this->getManagedEntreprise(), "succursale"));
         $surccursale->setEntreprise($this->getManagedEntreprise());
         $surccursale->setCreatedBy($this->getManagedUser());
         $surccursale->setUpdatedBy($this->getManagedUser());
@@ -418,7 +418,7 @@ class ApiSurccursaleController extends ApiInterface
         SurccursaleRepository $surccursaleRepository,
         EntrepriseRepository $entrepriseRepository
     ): Response {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -492,7 +492,7 @@ class ApiSurccursaleController extends ApiInterface
     #[OA\Response(response: 500, description: "Erreur lors de la suppression (peut-être des dépendances)")]
     public function delete(Request $request, int $id, SurccursaleRepository $villeRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -559,7 +559,7 @@ class ApiSurccursaleController extends ApiInterface
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
     public function deleteAll(Request $request, SurccursaleRepository $villeRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 

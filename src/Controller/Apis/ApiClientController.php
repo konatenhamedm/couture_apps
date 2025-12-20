@@ -110,8 +110,8 @@ class ApiClientController extends ApiInterface
     public function indexAll(ClientRepository $clientRepository, TypeUserRepository $typeUserRepository): Response
     {
 
-       // dd($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()),$this->getUser()->getEntreprise());
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+       // dd($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()),$this->getManagedEntreprise());
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -188,7 +188,7 @@ class ApiClientController extends ApiInterface
     #[OA\Response(response: 404, description: "Client non trouvé")]
     public function getOne(int $id, ClientRepository $clientRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -290,7 +290,7 @@ class ApiClientController extends ApiInterface
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     public function create(Request $request, ClientRepository $clientRepository, SurccursaleRepository $surccursaleRepository, BoutiqueRepository $boutiqueRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -422,7 +422,7 @@ class ApiClientController extends ApiInterface
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     public function createBoutique(Request $request, ClientRepository $clientRepository, BoutiqueRepository $boutiqueRepository, SurccursaleRepository $surccursaleRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -558,7 +558,7 @@ class ApiClientController extends ApiInterface
     #[OA\Response(response: 404, description: "Client non trouvé")]
     public function update(Request $request, int $id, ClientRepository $clientRepository, BoutiqueRepository $boutiqueRepository, SurccursaleRepository $surccursaleRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -658,16 +658,16 @@ class ApiClientController extends ApiInterface
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 404, description: "Client non trouvé")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
-    public function delete(Request $request, int $id, ClientRepository $villeRepository): Response
+    public function delete(Request $request, int $id, ClientRepository $clientRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         try {
-            $client = $villeRepository->findInEnvironment($id);
+            $client = $clientRepository->findInEnvironment($id);
             if ($client != null) {
-                $villeRepository->removeInEnvironment($client);
+                $clientRepository->removeInEnvironment($client);
                 $this->setMessage("Operation effectuées avec succès");
                 $response = $this->response($client);
             } else {
@@ -725,9 +725,9 @@ class ApiClientController extends ApiInterface
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
-    public function deleteAll(Request $request, ClientRepository $villeRepository): Response
+    public function deleteAll(Request $request, ClientRepository $clientRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -735,10 +735,10 @@ class ApiClientController extends ApiInterface
             $data = json_decode($request->getContent());
 
             foreach ($data['ids'] as $id) {
-                $client = $villeRepository->findInEnvironment($id);
+                $client = $clientRepository->findInEnvironment($id);
 
                 if ($client != null) {
-                    $villeRepository->removeInEnvironment($client);
+                    $clientRepository->removeInEnvironment($client);
                 }
             }
             $this->setMessage("Operation effectuées avec succès");

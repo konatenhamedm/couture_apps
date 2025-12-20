@@ -36,7 +36,9 @@ class TypeUser
     public function __construct()
     {
         $this->users = new ArrayCollection();
-    }
+    
+        // Initialiser les valeurs par défaut du trait
+        $this->initializeTraitDefaults();}
 
     public function getId(): ?int
     {

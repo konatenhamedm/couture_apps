@@ -39,7 +39,9 @@ class Notification
     public function __construct()
     {
         $this->etat = true; // Par défaut, la notification est active
-    }
+    
+        // Initialiser les valeurs par défaut du trait
+        $this->initializeTraitDefaults();}
 
     public function getId(): ?int
     {

@@ -105,14 +105,14 @@ class ApiModeleController extends ApiInterface
     #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
     public function indexAll(ModeleRepository $modeleRepository, TypeUserRepository $typeUserRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         try {
             if ($this->getUser()->getType() == $typeUserRepository->findOneByInEnvironment(['code' => 'SADM'])) {
                 $modeles = $this->paginationService->paginate($modeleRepository->findByInEnvironment(
-                    ['entreprise' => $this->getUser()->getEntreprise()],
+                    ['entreprise' => $this->getManagedEntreprise()],
                     ['id' => 'DESC']
                 ));
             } else {
@@ -176,7 +176,7 @@ class ApiModeleController extends ApiInterface
     {
         
         $modele = $modeleRepository->findInEnvironment($id);
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -258,7 +258,7 @@ class ApiModeleController extends ApiInterface
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     public function create(Request $request, ModeleRepository $modeleRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -361,7 +361,7 @@ class ApiModeleController extends ApiInterface
     #[OA\Response(response: 404, description: "Modèle non trouvé")]
     public function update(Request $request, Modele $modele, ModeleRepository $modeleRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -445,7 +445,7 @@ class ApiModeleController extends ApiInterface
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
     public function delete(Request $request, int $id, ModeleRepository $villeRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -512,7 +512,7 @@ class ApiModeleController extends ApiInterface
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
     public function deleteAll(Request $request, ModeleRepository $villeRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 

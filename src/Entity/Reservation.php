@@ -60,7 +60,9 @@ class Reservation
     {
         $this->ligneReservations = new ArrayCollection();
         $this->paiementReservations = new ArrayCollection();
-    }
+    
+        // Initialiser les valeurs par défaut du trait
+        $this->initializeTraitDefaults();}
 
     public function getId(): ?int
     {

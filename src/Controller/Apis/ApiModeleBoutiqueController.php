@@ -147,7 +147,7 @@ class ApiModeleBoutiqueController extends ApiInterface
         int $id,
         ModeleBoutiqueRepository $modeleBoutiqueRepository
     ): Response {
-       /*  if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+       /*  if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         } */
 
@@ -297,7 +297,7 @@ class ApiModeleBoutiqueController extends ApiInterface
     {
         try {
             $modeleBoutiques = $this->paginationService->paginate($modeleBoutiqueRepository->findByInEnvironment(
-                ['entreprise' => $this->getUser()->getEntreprise()],
+                ['entreprise' => $this->getManagedEntreprise()],
                 ['id' => 'DESC']
             ));
             $response = $this->responseData($modeleBoutiques, "group_modeleBoutique", ['Content-Type' => 'application/json']);
@@ -349,7 +349,7 @@ class ApiModeleBoutiqueController extends ApiInterface
     #[OA\Response(response: 404, description: "Boutique non trouvée")]
     public function indexByBoutique(ModeleBoutiqueRepository $modeleBoutiqueRepository, Boutique $boutique, BoutiqueRepository $boutiqueRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -407,7 +407,7 @@ class ApiModeleBoutiqueController extends ApiInterface
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     public function indexAll(ModeleBoutiqueRepository $modeleBoutiqueRepository, TypeUserRepository $typeUserRepository, $boutique): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -485,7 +485,7 @@ class ApiModeleBoutiqueController extends ApiInterface
     {
         
         $modeleBoutique = $modeleBoutiqueRepository->findInEnvironment($id);
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -578,7 +578,7 @@ class ApiModeleBoutiqueController extends ApiInterface
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     public function create(Request $request, ModeleRepository $modeleRepository, BoutiqueRepository $boutiqueRepository, ModeleBoutiqueRepository $modeleBoutiqueRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -694,7 +694,7 @@ class ApiModeleBoutiqueController extends ApiInterface
     #[OA\Response(response: 404, description: "Modèle de boutique non trouvé")]
     public function update(Request $request, ModeleBoutique $modeleBoutique, ModeleRepository $modeleRepository, BoutiqueRepository $boutiqueRepository, ModeleBoutiqueRepository $modeleBoutiqueRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -786,7 +786,7 @@ class ApiModeleBoutiqueController extends ApiInterface
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
     public function delete(Request $request, int $id, ModeleBoutiqueRepository $villeRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -853,7 +853,7 @@ class ApiModeleBoutiqueController extends ApiInterface
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
     public function deleteAll(Request $request, ModeleBoutiqueRepository $villeRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 

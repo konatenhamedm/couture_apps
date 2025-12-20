@@ -664,7 +664,7 @@ class ApiVenteController extends ApiInterface
 
             if (isset($data['boutiqueId'])) {
                 $boutique = $boutiqueRepository->findInEnvironment($data['boutiqueId']);
-                $paiement->setBoutique($boutique);
+                $paiement->setBoutique($this->getManagedEntityFromEnvironment($boutique));
             }
 
             $em->persist($paiement);

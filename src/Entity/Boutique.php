@@ -88,7 +88,9 @@ class Boutique
         $this->reservations = new ArrayCollection();
         $this->entreStocks = new ArrayCollection();
         $this->clients = new ArrayCollection();
-    }
+    
+        // Initialiser les valeurs par défaut du trait
+        $this->initializeTraitDefaults();}
 
     public function getId(): ?int
     {

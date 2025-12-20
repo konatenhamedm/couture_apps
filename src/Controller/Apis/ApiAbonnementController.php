@@ -244,7 +244,7 @@ class ApiAbonnementController extends ApiInterface
         try {
             $typeMesures = $this->paginationService->paginate(
                 $abonnementRepository->findByInEnvironment(
-                    ['entreprise' => $this->getUser()->getEntreprise()],
+                    ['entreprise' => $this->getManagedEntreprise()],
                     ['id' => 'ASC']
                 )
             );
@@ -305,7 +305,7 @@ class ApiAbonnementController extends ApiInterface
         try {
             $typeMesures = $this->paginationService->paginate(
                 $moduleRepository->findByInEnvironment(
-                    ['entreprise' => $this->getUser()->getEntreprise(), 'etat' => 'actif'],
+                    ['entreprise' => $this->getManagedEntreprise(), 'etat' => 'actif'],
                     ['id' => 'ASC']
                 )
             );

@@ -64,7 +64,7 @@ class ApiAccueilController extends ApiInterface
     ): JsonResponse {
 
         $abonnements = $abonnementRepository->findByInEnvironment(["etat" => 'actif'], ['numero' => 'ASC']);
-        $settings = $settingRepository->findOneByInEnvironment(['entreprise' => $this->getUser()->getEntreprise()]);
+        $settings = $settingRepository->findOneByInEnvironment(['entreprise' => $this->getManagedEntreprise()]);
         $facturesProches = $factureRepository->findUpcomingUnpaidInvoices($id, 10);
         $ventesBoutique = $paiementBoutiqueRepository->findTopSellingModelsOfWeek($id, 10);
         $ventesReservation = $paiementReservationRepository->findTopReservedModelsOfWeek($id, 10);

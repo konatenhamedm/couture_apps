@@ -81,7 +81,9 @@ class Facture
     {
         $this->mesures = new ArrayCollection();
         $this->paiementFactures = new ArrayCollection();
-    }
+    
+        // Initialiser les valeurs par défaut du trait
+        $this->initializeTraitDefaults();}
 
     public function getId(): ?int
     {

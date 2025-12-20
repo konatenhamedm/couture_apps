@@ -57,7 +57,9 @@ class EntreStock
     {
         $this->ligneEntres = new ArrayCollection();
         $this->date = new \DateTime();
-    }
+    
+        // Initialiser les valeurs par défaut du trait
+        $this->initializeTraitDefaults();}
 
     public function getId(): ?int
     {

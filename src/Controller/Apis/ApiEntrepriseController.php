@@ -93,21 +93,21 @@ class ApiEntrepriseController extends ApiInterface
     #[OA\Response(response: 500, description: "Erreur serveur lors de la récupération des données")]
     public function index(SurccursaleRepository $surccursaleRepository, BoutiqueRepository $boutiqueRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         try {
             $surccursales = $this->paginationService->paginate(
                 $surccursaleRepository->findByInEnvironment(
-                    ['entreprise' => $this->getUser()->getEntreprise()],
+                    ['entreprise' => $this->getManagedEntreprise()],
                     ['id' => 'ASC']
                 )
             );
 
             $boutiques = $this->paginationService->paginate(
                 $boutiqueRepository->findByInEnvironment(
-                    ['entreprise' => $this->getUser()->getEntreprise()],
+                    ['entreprise' => $this->getManagedEntreprise()],
                     ['id' => 'ASC']
                 )
             );
@@ -183,12 +183,12 @@ class ApiEntrepriseController extends ApiInterface
     #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
     public function getEntrepriseInfo(EntrepriseRepository $entrepriseRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         try {
-            $entreprise = $this->getUser()->getEntreprise();
+            $entreprise = $this->getManagedEntreprise();
 
             if (!$entreprise) {
                 $this->setMessage("Aucune entreprise associée à cet utilisateur");
@@ -238,14 +238,14 @@ class ApiEntrepriseController extends ApiInterface
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     public function getSurccursales(SurccursaleRepository $surccursaleRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         try {
             $surccursales = $this->paginationService->paginate(
                 $surccursaleRepository->findByInEnvironment(
-                    ['entreprise' => $this->getUser()->getEntreprise()],
+                    ['entreprise' => $this->getManagedEntreprise()],
                     ['id' => 'ASC']
                 )
             );
@@ -293,14 +293,14 @@ class ApiEntrepriseController extends ApiInterface
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     public function getBoutiques(BoutiqueRepository $boutiqueRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         try {
             $boutiques = $this->paginationService->paginate(
                 $boutiqueRepository->findByInEnvironment(
-                    ['entreprise' => $this->getUser()->getEntreprise()],
+                    ['entreprise' => $this->getManagedEntreprise()],
                     ['id' => 'ASC']
                 )
             );
@@ -396,12 +396,12 @@ class ApiEntrepriseController extends ApiInterface
         EntrepriseRepository $entrepriseRepository,
         Utils $utils
     ): Response {
-        /* if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        /* if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         } */
 
         try {
-            $entreprise = $this->getUser()->getEntreprise();
+            $entreprise = $this->getManagedEntreprise();
 
             if (!$entreprise) {
                 $this->setMessage("Aucune entreprise associée à cet utilisateur");

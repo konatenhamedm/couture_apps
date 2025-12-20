@@ -51,7 +51,7 @@ class ApiRapportController extends ApiInterface
             $data = json_decode($request->getContent(), true) ?? [];
             $periode = $data['periode'] ?? 'mois';
             $typeRapport = $data['typeRapport'] ?? 'complet';
-            $entreprise = $this->getUser()->getEntreprise();
+            $entreprise = $this->getManagedEntreprise();
 
             // Calcul des dates selon la période
             $dates = $this->calculatePeriodDates($periode, $data);

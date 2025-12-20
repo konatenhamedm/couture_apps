@@ -25,7 +25,7 @@ class Operateur
     #[Groups(["group1"])]
     private ?string $libelle = null;
 
-    #[ORM\ManyToOne(inversedBy: 'operateurs')]
+    #[ORM\ManyToOne(inversedBy: 'operateurs', cascade: ['persist'])]
     private ?Pays $pays = null;
 
     #[ORM\Column]
@@ -98,5 +98,11 @@ class Operateur
         $this->photo = $photo;
 
         return $this;
+    }
+
+    public function __construct()
+    {
+        // Initialiser les valeurs par défaut du trait
+        $this->initializeTraitDefaults();
     }
 }

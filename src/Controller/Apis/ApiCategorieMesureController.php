@@ -108,7 +108,7 @@ class ApiCategorieMesureController extends ApiInterface
     #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
     public function indexAll(CategorieMesureRepository $moduleRepository): Response
     {
-        /* if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        /* if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
  */
@@ -170,7 +170,7 @@ class ApiCategorieMesureController extends ApiInterface
     #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
     public function getOne($id,CategorieMesureRepository $categorieMesureRepository): Response
     {
-        /* if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        /* if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         } */
 
@@ -244,7 +244,7 @@ class ApiCategorieMesureController extends ApiInterface
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     public function create(Request $request, CategorieMesureRepository $moduleRepository): Response
     {
-       /*  if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+       /*  if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         } */
 
@@ -324,7 +324,7 @@ class ApiCategorieMesureController extends ApiInterface
     #[OA\Response(response: 404, description: "Catégorie de mesure non trouvée")]
     public function update(Request $request, int $id, CategorieMesureRepository $moduleRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -392,7 +392,7 @@ class ApiCategorieMesureController extends ApiInterface
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
     public function delete(Request $request, $id, CategorieMesureRepository $categorieMesureRepository): Response
     {
-       /*  if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+       /*  if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         } */
 
@@ -463,7 +463,7 @@ class ApiCategorieMesureController extends ApiInterface
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
     public function deleteAll(Request $request, CategorieMesureRepository $villeRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 

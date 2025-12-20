@@ -129,14 +129,14 @@ class ApiPaiementController extends ApiInterface
     #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
     public function indexAll(PaiementFactureRepository $paiementRepository, TypeUserRepository $typeUserRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         try {
             if ($this->getUser()->getType() == $typeUserRepository->findOneByInEnvironment(['code' => 'SADM'])) {
                 $paiements = $this->paginationService->paginate($paiementRepository->findByInEnvironment(
-                    ['entreprise' => $this->getUser()->getEntreprise()],
+                    ['entreprise' => $this->getManagedEntreprise()],
                     ['id' => 'DESC']
                 ));
             } else {
@@ -200,7 +200,7 @@ class ApiPaiementController extends ApiInterface
     {
         
         $paiement = $paiementFactureRepository->findInEnvironment($id);
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -296,12 +296,12 @@ class ApiPaiementController extends ApiInterface
         FactureRepository $factureRepository,
         PaiementFactureRepository $paiementRepository
     ): Response {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         $data = json_decode($request->getContent(), true);
-        $admin = $userRepository->getUserByCodeType($this->getUser()->getEntreprise());
+        $admin = $userRepository->getUserByCodeType($this->getManagedEntreprise());
 
         // Création du paiement
         $paiement = new PaiementFacture();
@@ -335,7 +335,7 @@ class ApiPaiementController extends ApiInterface
             // Envoi des notifications
             if ($admin) {
                 $this->sendMailService->sendNotification([
-                    'entreprise' => $this->getUser()->getEntreprise(),
+                    'entreprise' => $this->getManagedEntreprise(),
                     "user" => $admin,
                     "libelle" => sprintf(
                         "Bonjour %s,\n\n" .
@@ -358,10 +358,10 @@ class ApiPaiementController extends ApiInterface
                 $this->sendMailService->send(
                     $this->sendMail,
                     $this->superAdmin,
-                    "Paiement facture - " . $this->getUser()->getEntreprise()->getLibelle(),
+                    "Paiement facture - " . $this->getManagedEntreprise()->getLibelle(),
                     "paiement_email",
                     [
-                        "boutique_libelle" => $this->getUser()->getEntreprise()->getLibelle(),
+                        "boutique_libelle" => $this->getManagedEntreprise()->getLibelle(),
                         "montant" => number_format($data['montant'], 0, ',', ' ') . " FCFA",
                         "date" => (new \DateTime())->format('d/m/Y H:i'),
                     ]
@@ -468,11 +468,11 @@ class ApiPaiementController extends ApiInterface
         PaiementFactureRepository $paiementRepository,
         EntityManagerInterface $entityManager
     ): Response {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
-        $admin = $userRepository->getUserByCodeType($this->getUser()->getEntreprise());
+        $admin = $userRepository->getUserByCodeType($this->getManagedEntreprise());
         $data = json_decode($request->getContent(), true);
 
         // ✅ Validation des données
@@ -595,7 +595,7 @@ class ApiPaiementController extends ApiInterface
             if ($admin) {
                 try {
                     $this->sendMailService->sendNotification([
-                        'entreprise' => $this->getUser()->getEntreprise(),
+                        'entreprise' => $this->getManagedEntreprise(),
                         "user" => $admin,
                         "libelle" => sprintf(
                             "Bonjour %s,\n\n" .
@@ -618,10 +618,10 @@ class ApiPaiementController extends ApiInterface
                     $this->sendMailService->send(
                         $this->sendMail,
                         $this->superAdmin,
-                        "Vente - " . $this->getUser()->getEntreprise()->getLibelle(),
+                        "Vente - " . $this->getManagedEntreprise()->getLibelle(),
                         "vente_email",
                         [
-                            "boutique_libelle" => $this->getUser()->getEntreprise()->getLibelle(),
+                            "boutique_libelle" => $this->getManagedEntreprise()->getLibelle(),
                             "montant" => number_format($montant, 0, ',', ' ') . " FCFA",
                             "date" => (new \DateTime())->format('d/m/Y H:i'),
                         ]
@@ -755,7 +755,7 @@ class ApiPaiementController extends ApiInterface
         PaiementFactureRepository $paiementRepository,
         EntityManagerInterface $entityManager
     ): Response {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -857,7 +857,7 @@ class ApiPaiementController extends ApiInterface
         }
 
         // Récupérer l'admin pour les notifications
-        $admin = $userRepository->getUserByCodeType($this->getUser()->getEntreprise());
+        $admin = $userRepository->getUserByCodeType($this->getManagedEntreprise());
 
         // Créer le paiement boutique
         $paiement = new PaiementBoutique();
@@ -931,7 +931,7 @@ class ApiPaiementController extends ApiInterface
             if ($admin) {
                 try {
                     $this->sendMailService->sendNotification([
-                        'entreprise' => $this->getUser()->getEntreprise(),
+                        'entreprise' => $this->getManagedEntreprise(),
                         "user" => $admin,
                         "libelle" => sprintf(
                             "Bonjour %s,\n\n" .
@@ -961,10 +961,10 @@ class ApiPaiementController extends ApiInterface
             $this->sendMailService->send(
                 $this->sendMail,
                 $this->superAdmin,
-                "Vente - " . $this->getUser()->getEntreprise()->getLibelle(),
+                "Vente - " . $this->getManagedEntreprise()->getLibelle(),
                 "vente_email",
                 [
-                    "boutique_libelle" => $this->getUser()->getEntreprise()->getLibelle(),
+                    "boutique_libelle" => $this->getManagedEntreprise()->getLibelle(),
                     "montant" => number_format($sommeMontant, 0, ',', ' ') . " FCFA",
                     "date" => (new \DateTime())->format('d/m/Y H:i'),
                 ]
@@ -1066,7 +1066,7 @@ class ApiPaiementController extends ApiInterface
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
     public function delete(Request $request, int $id, PaiementFactureRepository $villeRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -1133,7 +1133,7 @@ class ApiPaiementController extends ApiInterface
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
     public function deleteAll(Request $request, PaiementFactureRepository $paiementRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 

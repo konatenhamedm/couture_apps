@@ -358,7 +358,7 @@ class ApiStatistiqueController extends ApiInterface
             [$dateDebut, $dateFin] = $this->parseAteliyaFilters($data);
             
             // Récupérer les statistiques pour l'entreprise
-            $entreprise = $this->getUser()->getEntreprise();
+            $entreprise = $this->getManagedEntreprise();
             
             // Debug: Vérifier les dates des paiements
             $debugInfo = $this->getDebugDates($entreprise);
@@ -898,7 +898,7 @@ class ApiStatistiqueController extends ApiInterface
         try {
             $data = json_decode($request->getContent(), true) ?? [];
             $periode = $data['periode'] ?? 'mois';
-            $entreprise = $this->getUser()->getEntreprise();
+            $entreprise = $this->getManagedEntreprise();
             
             $stats = [
                 'kpis' => $this->getClientsKpis($clientRepository, $reservationRepository, $entreprise, $periode),
@@ -946,7 +946,7 @@ class ApiStatistiqueController extends ApiInterface
         try {
             $data = json_decode($request->getContent(), true) ?? [];
             $periode = $data['periode'] ?? 'mois';
-            $entreprise = $this->getUser()->getEntreprise();
+            $entreprise = $this->getManagedEntreprise();
             
             $stats = [
                 'kpis' => $this->getDashboardKpis($reservationRepository, $paiementRepository, $clientRepository, $entreprise, $periode),
@@ -991,7 +991,7 @@ class ApiStatistiqueController extends ApiInterface
         try {
             $data = json_decode($request->getContent(), true) ?? [];
             $periode = $data['periode'] ?? 'mois';
-            $entreprise = $this->getUser()->getEntreprise();
+            $entreprise = $this->getManagedEntreprise();
             
             $stats = [
                 'kpis' => $this->getPerformanceKpis($boutiqueRepository, $reservationRepository, $entreprise),
@@ -1211,7 +1211,7 @@ class ApiStatistiqueController extends ApiInterface
         try {
             $data = json_decode($request->getContent(), true) ?? [];
             $periode = $data['periode'] ?? 'mois';
-            $entreprise = $this->getUser()->getEntreprise();
+            $entreprise = $this->getManagedEntreprise();
             
             $stats = [
                 'kpis' => $this->getRevenusKpis($paiementRepository, $entreprise, $periode),

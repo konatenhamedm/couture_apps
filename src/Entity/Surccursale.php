@@ -59,7 +59,9 @@ class Surccursale
         $this->clients = new ArrayCollection();
         $this->caisseSuccursales = new ArrayCollection();
         $this->factures = new ArrayCollection();
-    }
+    
+        // Initialiser les valeurs par défaut du trait
+        $this->initializeTraitDefaults();}
 
     public function getId(): ?int
     {

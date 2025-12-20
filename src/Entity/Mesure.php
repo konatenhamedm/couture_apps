@@ -76,7 +76,9 @@ class Mesure
     {
         $this->ligneMesures = new ArrayCollection();
         $this->etat = self::ETAT['EN_COURS'];
-    }
+    
+        // Initialiser les valeurs par défaut du trait
+        $this->initializeTraitDefaults();}
 
     public function getId(): ?int
     {

@@ -45,7 +45,9 @@ class TypeMesure
     {
         $this->categorieTypeMesures = new ArrayCollection();
         $this->mesures = new ArrayCollection();
-    }
+    
+        // Initialiser les valeurs par défaut du trait
+        $this->initializeTraitDefaults();}
 
     public function getId(): ?int
     {

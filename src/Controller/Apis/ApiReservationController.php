@@ -148,7 +148,7 @@ class ApiReservationController extends ApiInterface
         try {
             if ($this->getUser()->getType() == $typeUserRepository->findOneByInEnvironment(['code' => 'SADM'])) {
                 $reservations = $this->paginationService->paginate($reservationRepository->findByInEnvironment(
-                    ['entreprise' => $this->getUser()->getEntreprise()],
+                    ['entreprise' => $this->getManagedEntreprise()],
                     ['id' => 'DESC']
                 ));
             } else {
@@ -412,7 +412,7 @@ class ApiReservationController extends ApiInterface
         UserRepository $userRepository,
         EntityManagerInterface $entityManager
     ): Response {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -589,7 +589,7 @@ class ApiReservationController extends ApiInterface
         }
 
         // Récupérer l'admin pour les notifications
-        $admin = $userRepository->getUserByCodeType($this->getUser()->getEntreprise());
+        $admin = $userRepository->getUserByCodeType($this->getManagedEntreprise());
 
         // Créer la réservation
         $reservation = new Reservation();
@@ -682,7 +682,7 @@ class ApiReservationController extends ApiInterface
             if ($admin) {
                 try {
                     $this->sendMailService->sendNotification([
-                        'entreprise' => $this->getUser()->getEntreprise(),
+                        'entreprise' => $this->getManagedEntreprise(),
                         "user" => $admin,
                         "libelle" => sprintf(
                             "Bonjour %s,\n\n" .
@@ -715,10 +715,10 @@ class ApiReservationController extends ApiInterface
                     $this->sendMailService->send(
                         $this->sendMail,
                         $this->superAdmin,
-                        "Réservation - " . $this->getUser()->getEntreprise()->getLibelle(),
+                        "Réservation - " . $this->getManagedEntreprise()->getLibelle(),
                         "reservation_email",
                         [
-                            "boutique_libelle" => $this->getUser()->getEntreprise()->getLibelle(),
+                            "boutique_libelle" => $this->getManagedEntreprise()->getLibelle(),
                             "client" => $client->getNom() . ' ' . $client->getPrenom(),
                             "montant_total" => number_format($montant, 0, ',', ' ') . " FCFA",
                             "avance" => number_format($avance, 0, ',', ' ') . " FCFA",
@@ -815,7 +815,7 @@ class ApiReservationController extends ApiInterface
         PaiementReservationRepository $paiementReservationRepository,
         Utils $utils
     ): Response {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -984,11 +984,11 @@ class ApiReservationController extends ApiInterface
         Utils $utils,
         UserRepository $userRepository
     ): Response {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
-        $admin = $userRepository->getUserByCodeType($this->getUser()->getEntreprise());
+        $admin = $userRepository->getUserByCodeType($this->getManagedEntreprise());
 
 
         $reservation = $reservationRepository->findInEnvironment($id);
@@ -1044,7 +1044,7 @@ class ApiReservationController extends ApiInterface
 
 
         $this->sendMailService->sendNotification([
-            'entreprise' => $this->getUser()->getEntreprise(),
+            'entreprise' => $this->getManagedEntreprise(),
             "user" => $admin,
             "libelle" => sprintf(
                 "Bonjour %s,\n\n" .
@@ -1068,10 +1068,10 @@ class ApiReservationController extends ApiInterface
         $this->sendMailService->send(
             $this->sendMail,
             $this->superAdmin,
-            "Paiement facture - " . $this->getUser()->getEntreprise()->getLibelle(),
+            "Paiement facture - " . $this->getManagedEntreprise()->getLibelle(),
             "paiement_email",
             [
-                "boutique_libelle" => $this->getUser()->getEntreprise()->getLibelle(),
+                "boutique_libelle" => $this->getManagedEntreprise()->getLibelle(),
                 "montant" => number_format($request->get('avance'), 0, ',', ' ') . " FCFA",
                 "date" => (new \DateTime())->format('d/m/Y H:i'),
             ]
@@ -1114,7 +1114,7 @@ class ApiReservationController extends ApiInterface
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
     public function delete(Request $request, int $id, ReservationRepository $villeRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
@@ -1181,7 +1181,7 @@ class ApiReservationController extends ApiInterface
     #[OA\Response(response: 500, description: "Erreur lors de la suppression")]
     public function deleteAll(Request $request, ReservationRepository $villeRepository): Response
     {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getManagedEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
