@@ -27,7 +27,7 @@ trait TraitEntity
     #[ORM\JoinColumn(nullable: true)]
     private ?User $updatedBy = null;
 
-    #[ORM\Column(options: ['default' => true])]
+    #[ORM\Column(options: ['default' => true], nullable: true)]
     #[Group(["group1", "group_type","group_modeleBoutique"])]
     private bool $isActive = true; // ✅ Non-nullable avec valeur par défaut
 
