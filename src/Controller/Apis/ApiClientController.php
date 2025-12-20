@@ -325,7 +325,7 @@ class ApiClientController extends ApiInterface
         if ($errorResponse !== null) {
             return $errorResponse;
         } else {
-            $clientRepository->add($client, true);
+            $clientRepository->saveInEnvironment($client, true);
         }
 
         return $this->responseData($client, 'group1', ['Content-Type' => 'application/json']);
@@ -449,7 +449,7 @@ class ApiClientController extends ApiInterface
         if ($errorResponse !== null) {
             return $errorResponse;
         } else {
-            $clientRepository->add($client, true);
+            $clientRepository->saveInEnvironment($client, true);
         }
 
         return $this->responseData($client, 'group1', ['Content-Type' => 'application/json']);
@@ -581,7 +581,7 @@ class ApiClientController extends ApiInterface
                 if ($errorResponse !== null) {
                     return $errorResponse;
                 } else {
-                    $clientRepository->add($client, true);
+                    $clientRepository->saveInEnvironment($client, true);
                 }
 
                 $response = $this->responseData($client, 'group1', ['Content-Type' => 'application/json']);
@@ -639,7 +639,7 @@ class ApiClientController extends ApiInterface
         try {
             $client = $villeRepository->findInEnvironment($id);
             if ($client != null) {
-                $villeRepository->remove($client, true);
+                $villeRepository->removeInEnvironment($client, true);
                 $this->setMessage("Operation effectuées avec succès");
                 $response = $this->response($client);
             } else {
@@ -710,7 +710,7 @@ class ApiClientController extends ApiInterface
                 $client = $villeRepository->findInEnvironment($id);
 
                 if ($client != null) {
-                    $villeRepository->remove($client);
+                    $villeRepository->removeInEnvironment($client);
                 }
             }
             $this->setMessage("Operation effectuées avec succès");
