@@ -346,11 +346,11 @@ class ApiClientController extends ApiInterface
             }
 
             // Vérifier qu'on a au moins une boutique (soit directement, soit via la succursale)
-            if (!$client->getBoutique()) {
+           /*  if (!$client->getBoutique()) {
                 $this->setStatusCode(400);
                 $this->setMessage("Une boutique doit être associée au client (directement ou via la succursale)");
                 return $this->response([]);
-            }
+            } */
 
             // Gestion de l'upload de photo
             if ($uploadedFile) {
@@ -374,7 +374,7 @@ class ApiClientController extends ApiInterface
             }
             
             // Sauvegarde
-            $clientRepository->add($client, true);
+            $clientRepository->saveInEnvironment($client, true);
 
             return $this->responseData($client, 'group1', ['Content-Type' => 'application/json']);
             
