@@ -20,6 +20,7 @@ use App\Service\SubscriptionChecker;
 use App\Service\Utils;
 use App\Service\Validation\EntityValidationServiceInterface;
 use App\Service\Environment\EnvironmentEntityManagerInterface;
+use App\Service\Persistence\SafePersistenceHandlerInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Component\Pager\Pagination\PaginationInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -68,6 +69,7 @@ class ApiInterface extends AbstractController
     protected $superAdmin;
     protected EntityValidationServiceInterface $entityValidationService;
     protected EnvironmentEntityManagerInterface $environmentEntityManager;
+    protected SafePersistenceHandlerInterface $safePersistenceHandler;
 
     public function __construct(
         EntityManagerInterface $em,
@@ -88,6 +90,7 @@ class ApiInterface extends AbstractController
         EntityManagerProvider $entityManagerProvider,
         EntityValidationServiceInterface $entityValidationService,
         EnvironmentEntityManagerInterface $environmentEntityManager,
+        SafePersistenceHandlerInterface $safePersistenceHandler,
         #[Autowire(param: 'SEND_MAIL')] string $sendMail,
         #[Autowire(param: 'SUPER_ADMIN')] string $superAdmin
     ) {
@@ -108,6 +111,7 @@ class ApiInterface extends AbstractController
         $this->superAdmin = $superAdmin;
         $this->entityValidationService = $entityValidationService;
         $this->environmentEntityManager = $environmentEntityManager;
+        $this->safePersistenceHandler = $safePersistenceHandler;
 
         // Injecter l'EntityManagerProvider dans le trait
         $this->setEntityManagerProvider($entityManagerProvider);
@@ -622,8 +626,17 @@ $this->setStatusCode(500);
                     }
                 }
                 
-                // En dernier recours, merger l'entité
-                return $this->em->merge($managedEntity);
+                // En dernier recours, si l'entité a un ID, la récupérer directement
+                // Note: merge() n'existe plus dans Doctrine ORM 3.x
+                if (method_exists($managedEntity, 'getId') && $managedEntity->getId()) {
+                    $entityClass = get_class($managedEntity);
+                    if (strpos($entityClass, 'Proxies\\__CG__\\') === 0) {
+                        $entityClass = substr($entityClass, strlen('Proxies\\__CG__\\'));
+                    }
+                    return $this->em->getReference($entityClass, $managedEntity->getId());
+                }
+                
+                return $managedEntity;
             }
             
             return $managedEntity;
@@ -808,6 +821,99 @@ $this->setStatusCode(500);
         // Log les avertissements s'il y en a
         if ($validationResult->hasWarnings()) {
             error_log("Avertissements de validation: " . $validationResult->getFormattedWarnings());
+        }
+        
+        return null;
+    }
+
+    /**
+     * Persiste une entité de manière sécurisée avec validation complète
+     * 
+     * @param object $entity L'entité à persister
+     * @param bool $flush Effectuer un flush immédiatement
+     * @return JsonResponse|null Retourne une réponse d'erreur si la persistance échoue, null sinon
+     */
+    protected function safePersistEntity(object $entity, bool $flush = false): ?JsonResponse
+    {
+        $result = $this->safePersistenceHandler->safePersist($entity, $flush);
+        
+        if (!$result->isSuccess()) {
+            $this->setStatusCode(500);
+            $this->setMessage($result->getMessage());
+            
+            return new JsonResponse([
+                'code' => 500,
+                'message' => $result->getMessage(),
+                'errors' => $result->getErrors(),
+                'warnings' => $result->getWarnings()
+            ], 500);
+        }
+        
+        // Log les avertissements s'il y en a
+        if ($result->hasWarnings()) {
+            error_log("Avertissements de persistance: " . implode(', ', $result->getWarnings()));
+        }
+        
+        return null;
+    }
+
+    /**
+     * Met à jour une entité de manière sécurisée
+     * 
+     * @param object $entity L'entité à mettre à jour
+     * @param bool $flush Effectuer un flush immédiatement
+     * @return JsonResponse|null Retourne une réponse d'erreur si la mise à jour échoue, null sinon
+     */
+    protected function safeUpdateEntity(object $entity, bool $flush = false): ?JsonResponse
+    {
+        $result = $this->safePersistenceHandler->safeUpdate($entity, $flush);
+        
+        if (!$result->isSuccess()) {
+            $this->setStatusCode(500);
+            $this->setMessage($result->getMessage());
+            
+            return new JsonResponse([
+                'code' => 500,
+                'message' => $result->getMessage(),
+                'errors' => $result->getErrors(),
+                'warnings' => $result->getWarnings()
+            ], 500);
+        }
+        
+        // Log les avertissements s'il y en a
+        if ($result->hasWarnings()) {
+            error_log("Avertissements de mise à jour: " . implode(', ', $result->getWarnings()));
+        }
+        
+        return null;
+    }
+
+    /**
+     * Supprime une entité de manière sécurisée
+     * 
+     * @param object $entity L'entité à supprimer
+     * @param bool $flush Effectuer un flush immédiatement
+     * @return JsonResponse|null Retourne une réponse d'erreur si la suppression échoue, null sinon
+     */
+    protected function safeRemoveEntity(object $entity, bool $flush = false): ?JsonResponse
+    {
+        $result = $this->safePersistenceHandler->safeRemove($entity, $flush);
+        
+        if (!$result->isSuccess()) {
+            $this->setStatusCode(500);
+            $this->setMessage($result->getMessage());
+            
+            return new JsonResponse([
+                'code' => 500,
+                'message' => $result->getMessage(),
+                'errors' => $result->getErrors(),
+                'warnings' => $result->getWarnings()
+            ], 500);
+        }
+        
+        // Log les avertissements s'il y en a
+        if ($result->hasWarnings()) {
+            error_log("Avertissements de suppression: " . implode(', ', $result->getWarnings()));
         }
         
         return null;

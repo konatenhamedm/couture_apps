@@ -100,3 +100,29 @@ services:
 
     # Alias pour l'interface
     App\Service\Environment\EnvironmentEntityManagerInterface: '@App\Service\Environment\EnvironmentEntityManager'
+
+    # Service de validation des opérations cascade
+    App\Service\Validation\CascadeOperationValidator:
+        arguments:
+            $entityManager: '@doctrine.orm.entity_manager'
+            $logger: '@logger'
+            $entityValidationService: '@App\Service\Validation\EntityValidationService'
+        tags:
+            - { name: monolog.logger, channel: cascade_validation }
+
+    # Alias pour l'interface
+    App\Service\Validation\CascadeOperationValidatorInterface: '@App\Service\Validation\CascadeOperationValidator'
+
+    # Service de persistance sécurisée
+    App\Service\Persistence\SafePersistenceHandler:
+        arguments:
+            $entityManager: '@doctrine.orm.entity_manager'
+            $entityValidationService: '@App\Service\Validation\EntityValidationService'
+            $cascadeValidator: '@App\Service\Validation\CascadeOperationValidator'
+            $environmentEntityManager: '@App\Service\Environment\EnvironmentEntityManager'
+            $logger: '@logger'
+        tags:
+            - { name: monolog.logger, channel: safe_persistence }
+
+    # Alias pour l'interface
+    App\Service\Persistence\SafePersistenceHandlerInterface: '@App\Service\Persistence\SafePersistenceHandler'
