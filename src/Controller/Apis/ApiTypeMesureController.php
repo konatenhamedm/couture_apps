@@ -313,7 +313,7 @@ class ApiTypeMesureController extends ApiInterface
                 $errorResponse = $this->errorResponse($typeMesure);
 
                 // On vérifie si lignesCategoriesMesure n'est pas vide
-               /*  $lignesCategoriesMesure = $data->ligneCategorieMesures;
+             $lignesCategoriesMesure = $data->ligneCategorieMesures;
                 if (isset($lignesCategoriesMesure) && is_array($lignesCategoriesMesure)) {
                     foreach ($lignesCategoriesMesure as $ligneCategorieMesure) {
 
@@ -345,7 +345,7 @@ class ApiTypeMesureController extends ApiInterface
                             $categorieMesureRepository->remove($categorieMesure, true);
                         }
                     }
-                } */
+                } 
 
 
                 if ($errorResponse !== null) {
@@ -353,8 +353,6 @@ class ApiTypeMesureController extends ApiInterface
                 } else {
                     $typeMesureRepository->add($typeMesure, true);
                 }
-
-
 
                 // On retourne la confirmation
                 $response = $this->responseData($typeMesure, 'group1', ['Content-Type' => 'application/json']);
