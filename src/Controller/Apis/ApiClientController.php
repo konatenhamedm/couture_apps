@@ -374,7 +374,7 @@ class ApiClientController extends ApiInterface
             }
             
             // Sauvegarde
-            $clientRepository->saveInEnvironment($client, true);
+            $clientRepository->add($client, true);
 
             return $this->responseData($client, 'group1', ['Content-Type' => 'application/json']);
             
