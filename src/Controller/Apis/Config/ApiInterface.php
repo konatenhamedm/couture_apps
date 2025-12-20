@@ -480,8 +480,14 @@ $this->setStatusCode(500);
             return null;
         }
 
-        // Utiliser la méthode générique
-        return $this->getManagedEntity($currentUser);
+        // Pour éviter les problèmes de cascade persist, récupérer l'utilisateur directement par son ID
+        // sans ses relations qui pourraient causer des problèmes
+        try {
+            $managedUser = $this->em->find('App\\Entity\\User', $currentUser->getId());
+            return $managedUser;
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 
     /**
@@ -493,13 +499,13 @@ $this->setStatusCode(500);
             return;
         }
 
-        // Configurer l'utilisateur géré
-        $managedUser = $this->getManagedUser();
-        if ($managedUser && method_exists($entity, 'setCreatedBy')) {
-            $entity->setCreatedBy($managedUser);
-        }
-        if ($managedUser && method_exists($entity, 'setUpdatedBy')) {
-            $entity->setUpdatedBy($managedUser);
+        // Configurer l'utilisateur géré - seulement si l'entité supporte TraitEntity
+        if (method_exists($entity, 'setCreatedBy') && method_exists($entity, 'setUpdatedBy')) {
+            $managedUser = $this->getManagedUser();
+            if ($managedUser) {
+                $entity->setCreatedBy($managedUser);
+                $entity->setUpdatedBy($managedUser);
+            }
         }
 
         // Configurer les dates correctement
