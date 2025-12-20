@@ -326,7 +326,7 @@ class ApiSurccursaleController extends ApiInterface
         $surccursale->setLibelle($data['libelle']);
         $surccursale->setContact($data['contact']);
         $surccursale->setIsActive($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "succursale"));
-        $surccursale->setEntreprise($this->getUser()->getEntreprise());
+        $surccursale->setEntreprise($this->getManagedEntreprise());
         $surccursale->setCreatedBy($this->getManagedUser());
         $surccursale->setUpdatedBy($this->getManagedUser());
         $surccursale->setCreatedAtValue();
@@ -345,7 +345,7 @@ class ApiSurccursaleController extends ApiInterface
             $caisse->setIsActive(true);
             $caisse->setReference($utils->generateReference('CAIS'));
             $caisse->setType(Caisse::TYPE['succursale']);
-            $caisse->setEntreprise($this->getUser()->getEntreprise());
+            $caisse->setEntreprise($this->getManagedEntreprise());
             $caisse->setCreatedBy($this->getManagedUser());
             $caisse->setUpdatedBy($this->getManagedUser());
             $caisse->setCreatedAtValue();
@@ -433,7 +433,7 @@ class ApiSurccursaleController extends ApiInterface
                     $surccursale->setContact($data['contact']);
                 }
 
-                $surccursale->setEntreprise($this->getUser()->getEntreprise());
+                $surccursale->setEntreprise($this->getManagedEntreprise());
                 $surccursale->setUpdatedBy($this->getManagedUser());
                 $surccursale->setUpdatedAt();
 

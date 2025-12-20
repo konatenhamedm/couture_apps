@@ -270,7 +270,7 @@ class ApiModeleController extends ApiInterface
         $modele->setLibelle($request->get('libelle'));
         $modele->setIsActive(true);
         $modele->setQuantiteGlobale($request->get('quantite') ?? 0);
-        $modele->setEntreprise($this->getUser()->getEntreprise());
+        $modele->setEntreprise($this->getManagedEntreprise());
 
         // Upload de la photo si fournie
         $uploadedFile = $request->files->get('photo');

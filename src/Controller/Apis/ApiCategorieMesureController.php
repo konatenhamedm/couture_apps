@@ -251,7 +251,7 @@ class ApiCategorieMesureController extends ApiInterface
         $data = json_decode($request->getContent(), true);
         $categorieMesure = new CategorieMesure();
         $categorieMesure->setLibelle($data['libelle']);
-        $categorieMesure->setEntreprise($this->getUser()->getEntreprise());
+        $categorieMesure->setEntreprise($this->getManagedEntreprise());
         $categorieMesure->setCreatedBy($this->getManagedUser());
         $categorieMesure->setUpdatedBy($this->getManagedUser());
         $categorieMesure->setIsActive(true);

@@ -6,6 +6,7 @@ use App\Controller\Apis\Config\ApiInterface;
 use App\DTO\ClientDTO;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use App\Entity\Client;
+use App\Entity\Entreprise;
 use App\Repository\BoutiqueRepository;
 use App\Repository\ClientRepository;
 use App\Repository\SurccursaleRepository;
@@ -297,10 +298,11 @@ class ApiClientController extends ApiInterface
 
 
         $client = new Client();
-        $client->setEntreprise($this->getUser()->getEntreprise());
-        $client->setPrenom($request->get('prenoms'));
-        $client->setCreatedAtValue();
         
+        // Utiliser la méthode centralisée pour gérer l'entreprise
+        $this->setManagedEntreprise($client);
+        
+        $client->setPrenom($request->get('prenoms'));
         $client->setNom($request->get('nom'));
         $client->setNumero($request->get('numero'));
         
@@ -421,9 +423,11 @@ class ApiClientController extends ApiInterface
         $uploadedFile = $request->files->get('photo');
 
         $client = new Client();
-        $client->setEntreprise($this->getUser()->getEntreprise());
+        
+        // Utiliser la méthode centralisée pour gérer l'entreprise
+        $this->setManagedEntreprise($client);
+        
         $client->setNom($request->get('nom'));
-        $client->setIsActive(true);
         $client->setPrenom($request->get('prenoms'));
         $client->setNumero($request->get('numero'));
 

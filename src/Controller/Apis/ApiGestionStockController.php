@@ -590,7 +590,7 @@ class ApiGestionStockController extends ApiInterface
         $entreStock->setBoutique($boutique);
         $entreStock->setType('Entree');
         $entreStock->setStatut('EN_ATTENTE'); // Statut initial
-        $entreStock->setEntreprise($this->getUser()->getEntreprise());
+        $entreStock->setEntreprise($this->getManagedEntreprise());
         $entreStock->setCreatedBy($this->getManagedUser());
         $entreStock->setUpdatedBy($this->getManagedUser());
         $entreStock->setCreatedAtValue();
@@ -986,7 +986,7 @@ class ApiGestionStockController extends ApiInterface
         $entreStock->setBoutique($boutique);
         $entreStock->setType('Sortie');
         $entreStock->setStatut('EN_ATTENTE'); // Statut initial
-        $entreStock->setEntreprise($this->getUser()->getEntreprise());
+        $entreStock->setEntreprise($this->getManagedEntreprise());
         $entreStock->setCreatedBy($this->getManagedUser());
         $entreStock->setUpdatedBy($this->getManagedUser());
         $entreStock->setCreatedAtValue();

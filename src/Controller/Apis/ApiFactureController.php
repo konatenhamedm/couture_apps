@@ -395,7 +395,7 @@ class ApiFactureController extends ApiInterface
         $filePrefix = str_slug($names);
         $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
         $facture = new Facture();
-        $facture->setEntreprise($this->getUser()->getEntreprise());
+        $facture->setEntreprise($this->getManagedEntreprise());
         $admin = $userRepository->getUserByCodeType($this->getUser()->getEntreprise());
 
         $facture->setClient($clientRepository->findInEnvironment($request->get('clientId')));

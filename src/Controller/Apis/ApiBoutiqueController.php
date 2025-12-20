@@ -283,7 +283,7 @@ class ApiBoutiqueController extends ApiInterface
         $boutique->setLibelle($data['libelle']);
         $boutique->setSituation($data['situation']);
 
-        $boutique->setEntreprise($this->getUser()->getEntreprise());
+        $boutique->setEntreprise($this->getManagedEntreprise());
         $boutique->setContact($data['contact']);
         $boutique->setIsActive($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "boutique"));
         $boutique->setCreatedBy($this->getManagedUser());
@@ -304,7 +304,7 @@ class ApiBoutiqueController extends ApiInterface
             $caisse->setIsActive(true);
             $caisse->setReference($utils->generateReference('CAIS'));
             $caisse->setType(Caisse::TYPE['boutique']);
-            $caisse->setEntreprise($this->getUser()->getEntreprise());
+            $caisse->setEntreprise($this->getManagedEntreprise());
             $caisse->setCreatedBy($this->getManagedUser());
             $caisse->setUpdatedBy($this->getManagedUser());
             $caisse->setCreatedAtValue();
@@ -389,7 +389,7 @@ class ApiBoutiqueController extends ApiInterface
             if ($boutique != null) {
                 $boutique->setLibelle($data->libelle);
                 $boutique->setSituation($data->situation);
-                $boutique->setEntreprise($this->getUser()->getEntreprise());
+                $boutique->setEntreprise($this->getManagedEntreprise());
                 $boutique->setContact($data->contact);
                 $boutique->setUpdatedBy($this->getManagedUser());
                 $boutique->setUpdatedAt();

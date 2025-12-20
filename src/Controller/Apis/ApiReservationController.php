@@ -597,7 +597,7 @@ class ApiReservationController extends ApiInterface
         $reservation->setDateRetrait($dateRetrait);
         $reservation->setClient($client);
         $reservation->setBoutique($boutique);
-        $reservation->setEntreprise($this->getUser()->getEntreprise());
+        $reservation->setEntreprise($this->getManagedEntreprise());
         $reservation->setMontant($montant);
         $reservation->setReste($reste);
         $reservation->setCreatedAtValue();

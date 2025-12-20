@@ -248,7 +248,7 @@ class ApiTypeMesureController extends ApiInterface
         $data = json_decode($request->getContent(), true);
         $typeMesure = new TypeMesure();
         $typeMesure->setLibelle($data['libelle']);
-        $typeMesure->setEntreprise($this->getUser()->getEntreprise());
+        $typeMesure->setEntreprise($this->getManagedEntreprise());
         $typeMesure->setCreatedBy($this->getManagedUser());
         $typeMesure->setIsActive(true);
         $typeMesure->setUpdatedBy($this->getManagedUser());
@@ -321,7 +321,7 @@ class ApiTypeMesureController extends ApiInterface
                         if (!isset($ligneCategorieMesure->id) || $ligneCategorieMesure->id == null) {
                             $categorieMesure = new CategorieMesure();
                             $categorieMesure->setLibelle($ligneCategorieMesure->libelle);
-                            $categorieMesure->setEntreprise($this->getUser()->getEntreprise());
+                            $categorieMesure->setEntreprise($this->getManagedEntreprise());
                             $categorieMesure->setCreatedBy($this->getManagedUser());
                             $categorieMesure->setUpdatedBy($this->getManagedUser());
                             $categorieMesureRepository->add($categorieMesure, true);

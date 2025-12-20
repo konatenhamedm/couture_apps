@@ -5,6 +5,7 @@ namespace App\Controller\Apis\Config;
 use App\Controller\FileTrait;
 use App\Trait\DatabaseEnvironmentTrait;
 use App\Entity\Boutique;
+use App\Entity\Entreprise;
 use App\Repository\BoutiqueRepository;
 use App\Repository\SettingRepository;
 use App\Repository\SurccursaleRepository;
@@ -525,6 +526,41 @@ $this->setStatusCode(500);
         // S'assurer que isActive est défini
         if (method_exists($entity, 'setIsActive')) {
             $entity->setIsActive(true);
+        }
+    }
+
+    /**
+     * Obtient une instance gérée de l'entreprise de l'utilisateur connecté
+     * Résout le problème des entités détachées (Proxies)
+     */
+    protected function getManagedEntreprise(): ?\App\Entity\Entreprise
+    {
+        $currentUser = $this->getUser();
+        if (!$currentUser || !$currentUser->getEntreprise()) {
+            return null;
+        }
+
+        $entrepriseId = $currentUser->getEntreprise()->getId();
+        if (!$entrepriseId) {
+            return null;
+        }
+
+        // Récupérer une instance gérée de l'entreprise
+        return $this->em->find(Entreprise::class, $entrepriseId);
+    }
+
+    /**
+     * Configure une entité avec l'entreprise gérée de l'utilisateur connecté
+     */
+    protected function setManagedEntreprise($entity): void
+    {
+        if (!$entity || !method_exists($entity, 'setEntreprise')) {
+            return;
+        }
+
+        $managedEntreprise = $this->getManagedEntreprise();
+        if ($managedEntreprise) {
+            $entity->setEntreprise($managedEntreprise);
         }
     }
 }
