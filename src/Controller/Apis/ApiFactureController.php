@@ -399,19 +399,19 @@ class ApiFactureController extends ApiInterface
         $admin = $userRepository->getUserByCodeType($this->getUser()->getEntreprise());
 
         // Récupérer l'entité et s'assurer qu'elle est gérée
-            $foundClient = $clientRepository->findInEnvironment($request->get('clientId');
+            $foundClient = $clientRepository->findInEnvironment($request->get('clientId'));
             if ($foundClient) {
                 $managedClient = $this->getManagedEntity($foundClient);
                 $facture->setClient($managedClient);
-            });
+            };
         $facture->setDateDepot(new \DateTime());
         $facture->setAvance($request->get('avance'));
         // Récupérer l'entité et s'assurer qu'elle est gérée
-            $foundSuccursale = $surccursaleRepository->findInEnvironment($request->get('succursaleId');
+            $foundSuccursale = $surccursaleRepository->findInEnvironment($request->get('succursaleId'));
             if ($foundSuccursale) {
                 $managedSuccursale = $this->getManagedEntity($foundSuccursale);
                 $facture->setSuccursale($managedSuccursale);
-            });
+            };
 
         // Gestion de la signature
         $uploadedFichierSignature = $request->files->get('signature');
