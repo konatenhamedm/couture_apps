@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\PaiementFacture;
+use App\Service\DateRangeBuilder;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -123,35 +124,41 @@ class PaiementFactureRepository extends ServiceEntityRepository
      */
     public function sumByEntrepriseAndPeriod($entreprise, \DateTime $dateDebut, \DateTime $dateFin): float
     {
+        [$startDate, $endDate] = DateRangeBuilder::periodRange($dateDebut, $dateFin);
+        
         $result = $this->createQueryBuilder('pf')
-            ->select('SUM(pf.montant)')
+            ->select('COALESCE(SUM(pf.montant), 0)')
             ->leftJoin('pf.facture', 'f')
             ->where('f.entreprise = :entreprise')
-            ->andWhere('DATE(pf.createdAt) >= DATE(:dateDebut)')
-            ->andWhere('DATE(pf.createdAt) <= DATE(:dateFin)')
+            ->andWhere('pf.createdAt >= :dateDebut')
+            ->andWhere('pf.createdAt <= :dateFin')
             ->setParameter('entreprise', $entreprise)
-            ->setParameter('dateDebut', $dateDebut->format('Y-m-d'))
-            ->setParameter('dateFin', $dateFin->format('Y-m-d'))
+            ->setParameter('dateDebut', DateRangeBuilder::formatForDQL($startDate))
+            ->setParameter('dateFin', DateRangeBuilder::formatForDQL($endDate))
             ->getQuery()
             ->getSingleScalarResult();
 
-        return $result ?? 0;
+        return (float) $result;
     }
     /**
      * Calcule la somme des paiements facture par jour pour une entreprise
      */
     public function sumByEntrepriseAndDay($entreprise, \DateTime $date): float
     {
+        [$startDate, $endDate] = DateRangeBuilder::dayRange($date);
+        
         $result = $this->createQueryBuilder('pf')
-            ->select('SUM(pf.montant)')
+            ->select('COALESCE(SUM(pf.montant), 0)')
             ->leftJoin('pf.facture', 'f')
             ->where('f.entreprise = :entreprise')
-            ->andWhere('DATE(pf.createdAt) = DATE(:date)')
+            ->andWhere('pf.createdAt >= :dateStart')
+            ->andWhere('pf.createdAt <= :dateEnd')
             ->setParameter('entreprise', $entreprise)
-            ->setParameter('date', $date->format('Y-m-d'))
+            ->setParameter('dateStart', DateRangeBuilder::formatForDQL($startDate))
+            ->setParameter('dateEnd', DateRangeBuilder::formatForDQL($endDate))
             ->getQuery()
             ->getSingleScalarResult();
 
-        return $result ?? 0;
+        return (float) $result;
     }
 }

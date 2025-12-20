@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Boutique;
 use App\Entity\PaiementReservation;
+use App\Service\DateRangeBuilder;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -127,25 +128,21 @@ class PaiementReservationRepository extends ServiceEntityRepository
      */
     public function sumByEntrepriseAndPeriod($entreprise, \DateTime $dateDebut, \DateTime $dateFin): float
     {
-        // Créer les dates de début et fin avec les bonnes heures
-        $dateDebutStart = clone $dateDebut;
-        $dateDebutStart->setTime(0, 0, 0);
-        $dateFinEnd = clone $dateFin;
-        $dateFinEnd->setTime(23, 59, 59);
+        [$startDate, $endDate] = DateRangeBuilder::periodRange($dateDebut, $dateFin);
         
         $result = $this->createQueryBuilder('pr')
-            ->select('SUM(pr.montant)')
+            ->select('COALESCE(SUM(pr.montant), 0)')
             ->leftJoin('pr.reservation', 'r')
             ->where('r.entreprise = :entreprise')
             ->andWhere('pr.createdAt >= :dateDebut')
             ->andWhere('pr.createdAt <= :dateFin')
             ->setParameter('entreprise', $entreprise)
-            ->setParameter('dateDebut', $dateDebutStart)
-            ->setParameter('dateFin', $dateFinEnd)
+            ->setParameter('dateDebut', DateRangeBuilder::formatForDQL($startDate))
+            ->setParameter('dateFin', DateRangeBuilder::formatForDQL($endDate))
             ->getQuery()
             ->getSingleScalarResult();
 
-        return $result ?? 0;
+        return (float) $result;
     }
 
     /**
@@ -153,49 +150,42 @@ class PaiementReservationRepository extends ServiceEntityRepository
      */
     public function sumByBoutiqueAndPeriod($boutique, \DateTime $dateDebut, \DateTime $dateFin): float
     {
-        // Créer les dates de début et fin avec les bonnes heures
-        $dateDebutStart = clone $dateDebut;
-        $dateDebutStart->setTime(0, 0, 0);
-        $dateFinEnd = clone $dateFin;
-        $dateFinEnd->setTime(23, 59, 59);
+        [$startDate, $endDate] = DateRangeBuilder::periodRange($dateDebut, $dateFin);
         
         $result = $this->createQueryBuilder('pr')
-            ->select('SUM(pr.montant)')
+            ->select('COALESCE(SUM(pr.montant), 0)')
             ->leftJoin('pr.reservation', 'r')
             ->where('r.boutique = :boutique')
             ->andWhere('pr.createdAt >= :dateDebut')
             ->andWhere('pr.createdAt <= :dateFin')
             ->setParameter('boutique', $boutique)
-            ->setParameter('dateDebut', $dateDebutStart)
-            ->setParameter('dateFin', $dateFinEnd)
+            ->setParameter('dateDebut', DateRangeBuilder::formatForDQL($startDate))
+            ->setParameter('dateFin', DateRangeBuilder::formatForDQL($endDate))
             ->getQuery()
             ->getSingleScalarResult();
 
-        return $result ?? 0;
+        return (float) $result;
     }
     /**
      * Calcule la somme des paiements par jour pour une entreprise
      */
     public function sumByEntrepriseAndDay($entreprise, \DateTime $date): float
     {
-        $dateStart = clone $date;
-        $dateStart->setTime(0, 0, 0);
-        $dateEnd = clone $date;
-        $dateEnd->setTime(23, 59, 59);
+        [$startDate, $endDate] = DateRangeBuilder::dayRange($date);
         
         $result = $this->createQueryBuilder('pr')
-            ->select('SUM(pr.montant)')
+            ->select('COALESCE(SUM(pr.montant), 0)')
             ->leftJoin('pr.reservation', 'r')
             ->where('r.entreprise = :entreprise')
             ->andWhere('pr.createdAt >= :dateStart')
             ->andWhere('pr.createdAt <= :dateEnd')
             ->setParameter('entreprise', $entreprise)
-            ->setParameter('dateStart', $dateStart)
-            ->setParameter('dateEnd', $dateEnd)
+            ->setParameter('dateStart', DateRangeBuilder::formatForDQL($startDate))
+            ->setParameter('dateEnd', DateRangeBuilder::formatForDQL($endDate))
             ->getQuery()
             ->getSingleScalarResult();
 
-        return $result ?? 0;
+        return (float) $result;
     }
 
     /**
@@ -203,24 +193,61 @@ class PaiementReservationRepository extends ServiceEntityRepository
      */
     public function sumByBoutiqueAndDay($boutique, \DateTime $date): float
     {
-        $dateStart = clone $date;
-        $dateStart->setTime(0, 0, 0);
-        $dateEnd = clone $date;
-        $dateEnd->setTime(23, 59, 59);
+        [$startDate, $endDate] = DateRangeBuilder::dayRange($date);
         
         $result = $this->createQueryBuilder('pr')
-            ->select('SUM(pr.montant)')
+            ->select('COALESCE(SUM(pr.montant), 0)')
             ->leftJoin('pr.reservation', 'r')
             ->where('r.boutique = :boutique')
             ->andWhere('pr.createdAt >= :dateStart')
             ->andWhere('pr.createdAt <= :dateEnd')
             ->setParameter('boutique', $boutique)
-            ->setParameter('dateStart', $dateStart)
-            ->setParameter('dateEnd', $dateEnd)
+            ->setParameter('dateStart', DateRangeBuilder::formatForDQL($startDate))
+            ->setParameter('dateEnd', DateRangeBuilder::formatForDQL($endDate))
             ->getQuery()
             ->getSingleScalarResult();
 
-        return $result ?? 0;
+        return (float) $result;
+    }
+
+    /**
+     * Compte les paiements par jour pour une entreprise
+     */
+    public function countByEntrepriseAndDay($entreprise, \DateTime $date): int
+    {
+        [$startDate, $endDate] = DateRangeBuilder::dayRange($date);
+        
+        return $this->createQueryBuilder('pr')
+            ->select('COUNT(pr.id)')
+            ->leftJoin('pr.reservation', 'r')
+            ->where('r.entreprise = :entreprise')
+            ->andWhere('pr.createdAt >= :dateStart')
+            ->andWhere('pr.createdAt <= :dateEnd')
+            ->setParameter('entreprise', $entreprise)
+            ->setParameter('dateStart', DateRangeBuilder::formatForDQL($startDate))
+            ->setParameter('dateEnd', DateRangeBuilder::formatForDQL($endDate))
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * Compte les paiements par jour pour une boutique
+     */
+    public function countByBoutiqueAndDay($boutique, \DateTime $date): int
+    {
+        [$startDate, $endDate] = DateRangeBuilder::dayRange($date);
+        
+        return $this->createQueryBuilder('pr')
+            ->select('COUNT(pr.id)')
+            ->leftJoin('pr.reservation', 'r')
+            ->where('r.boutique = :boutique')
+            ->andWhere('pr.createdAt >= :dateStart')
+            ->andWhere('pr.createdAt <= :dateEnd')
+            ->setParameter('boutique', $boutique)
+            ->setParameter('dateStart', DateRangeBuilder::formatForDQL($startDate))
+            ->setParameter('dateEnd', DateRangeBuilder::formatForDQL($endDate))
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 
     /**

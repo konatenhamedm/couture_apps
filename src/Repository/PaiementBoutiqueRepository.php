@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\PaiementBoutique;
 use App\Entity\Boutique;
+use App\Service\DateRangeBuilder;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -97,19 +98,21 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
      */
     public function sumByEntrepriseAndPeriod($entreprise, \DateTime $dateDebut, \DateTime $dateFin): float
     {
+        [$startDate, $endDate] = DateRangeBuilder::periodRange($dateDebut, $dateFin);
+        
         $result = $this->createQueryBuilder('pb')
-            ->select('SUM(pb.montant)')
+            ->select('COALESCE(SUM(pb.montant), 0)')
             ->leftJoin('pb.boutique', 'b')
             ->where('b.entreprise = :entreprise')
-            ->andWhere('DATE(pb.createdAt) >= DATE(:dateDebut)')
-            ->andWhere('DATE(pb.createdAt) <= DATE(:dateFin)')
+            ->andWhere('pb.createdAt >= :dateDebut')
+            ->andWhere('pb.createdAt <= :dateFin')
             ->setParameter('entreprise', $entreprise)
-            ->setParameter('dateDebut', $dateDebut->format('Y-m-d'))
-            ->setParameter('dateFin', $dateFin->format('Y-m-d'))
+            ->setParameter('dateDebut', DateRangeBuilder::formatForDQL($startDate))
+            ->setParameter('dateFin', DateRangeBuilder::formatForDQL($endDate))
             ->getQuery()
             ->getSingleScalarResult();
 
-        return $result ?? 0;
+        return (float) $result;
     }
 
     /**
@@ -117,18 +120,20 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
      */
     public function sumByBoutiqueAndPeriod(Boutique $boutique, \DateTime $dateDebut, \DateTime $dateFin): float
     {
+        [$startDate, $endDate] = DateRangeBuilder::periodRange($dateDebut, $dateFin);
+        
         $result = $this->createQueryBuilder('pb')
-            ->select('SUM(pb.montant)')
+            ->select('COALESCE(SUM(pb.montant), 0)')
             ->where('pb.boutique = :boutique')
-            ->andWhere('DATE(pb.createdAt) >= DATE(:dateDebut)')
-            ->andWhere('DATE(pb.createdAt) <= DATE(:dateFin)')
+            ->andWhere('pb.createdAt >= :dateDebut')
+            ->andWhere('pb.createdAt <= :dateFin')
             ->setParameter('boutique', $boutique)
-            ->setParameter('dateDebut', $dateDebut->format('Y-m-d'))
-            ->setParameter('dateFin', $dateFin->format('Y-m-d'))
+            ->setParameter('dateDebut', DateRangeBuilder::formatForDQL($startDate))
+            ->setParameter('dateFin', DateRangeBuilder::formatForDQL($endDate))
             ->getQuery()
             ->getSingleScalarResult();
 
-        return $result ?? 0;
+        return (float) $result;
     }
 
     /**
@@ -136,13 +141,17 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
      */
     public function countByEntrepriseAndDay($entreprise, \DateTime $date): int
     {
+        [$startDate, $endDate] = DateRangeBuilder::dayRange($date);
+        
         return $this->createQueryBuilder('pb')
             ->select('COUNT(pb.id)')
             ->leftJoin('pb.boutique', 'b')
             ->where('b.entreprise = :entreprise')
-            ->andWhere('DATE(pb.createdAt) = DATE(:date)')
+            ->andWhere('pb.createdAt >= :dateStart')
+            ->andWhere('pb.createdAt <= :dateEnd')
             ->setParameter('entreprise', $entreprise)
-            ->setParameter('date', $date->format('Y-m-d'))
+            ->setParameter('dateStart', DateRangeBuilder::formatForDQL($startDate))
+            ->setParameter('dateEnd', DateRangeBuilder::formatForDQL($endDate))
             ->getQuery()
             ->getSingleScalarResult();
     }
@@ -152,12 +161,16 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
      */
     public function countByBoutiqueAndDay(Boutique $boutique, \DateTime $date): int
     {
+        [$startDate, $endDate] = DateRangeBuilder::dayRange($date);
+        
         return $this->createQueryBuilder('pb')
             ->select('COUNT(pb.id)')
             ->where('pb.boutique = :boutique')
-            ->andWhere('DATE(pb.createdAt) = DATE(:date)')
+            ->andWhere('pb.createdAt >= :dateStart')
+            ->andWhere('pb.createdAt <= :dateEnd')
             ->setParameter('boutique', $boutique)
-            ->setParameter('date', $date->format('Y-m-d'))
+            ->setParameter('dateStart', DateRangeBuilder::formatForDQL($startDate))
+            ->setParameter('dateEnd', DateRangeBuilder::formatForDQL($endDate))
             ->getQuery()
             ->getSingleScalarResult();
     }
@@ -195,17 +208,21 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
      */
     public function sumByEntrepriseAndDay($entreprise, \DateTime $date): float
     {
+        [$startDate, $endDate] = DateRangeBuilder::dayRange($date);
+        
         $result = $this->createQueryBuilder('pb')
-            ->select('SUM(pb.montant)')
+            ->select('COALESCE(SUM(pb.montant), 0)')
             ->leftJoin('pb.boutique', 'b')
             ->where('b.entreprise = :entreprise')
-            ->andWhere('DATE(pb.createdAt) = DATE(:date)')
+            ->andWhere('pb.createdAt >= :dateStart')
+            ->andWhere('pb.createdAt <= :dateEnd')
             ->setParameter('entreprise', $entreprise)
-            ->setParameter('date', $date->format('Y-m-d'))
+            ->setParameter('dateStart', DateRangeBuilder::formatForDQL($startDate))
+            ->setParameter('dateEnd', DateRangeBuilder::formatForDQL($endDate))
             ->getQuery()
             ->getSingleScalarResult();
 
-        return $result ?? 0;
+        return (float) $result;
     }
 
     /**
@@ -213,16 +230,20 @@ class PaiementBoutiqueRepository extends ServiceEntityRepository
      */
     public function sumByBoutiqueAndDay(Boutique $boutique, \DateTime $date): float
     {
+        [$startDate, $endDate] = DateRangeBuilder::dayRange($date);
+        
         $result = $this->createQueryBuilder('pb')
-            ->select('SUM(pb.montant)')
+            ->select('COALESCE(SUM(pb.montant), 0)')
             ->where('pb.boutique = :boutique')
-            ->andWhere('DATE(pb.createdAt) = DATE(:date)')
+            ->andWhere('pb.createdAt >= :dateStart')
+            ->andWhere('pb.createdAt <= :dateEnd')
             ->setParameter('boutique', $boutique)
-            ->setParameter('date', $date->format('Y-m-d'))
+            ->setParameter('dateStart', DateRangeBuilder::formatForDQL($startDate))
+            ->setParameter('dateEnd', DateRangeBuilder::formatForDQL($endDate))
             ->getQuery()
             ->getSingleScalarResult();
 
-        return $result ?? 0;
+        return (float) $result;
     }
 
     /**
