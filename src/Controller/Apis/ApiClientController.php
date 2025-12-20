@@ -295,6 +295,8 @@ class ApiClientController extends ApiInterface
 
         $uploadedFile = $request->files->get('photo');
 
+        
+dd($this->getUser());
         $client = new Client();
         $client->setEntreprise($this->getUser()->getEntreprise());
         $client->setPrenom($request->get('prenoms'));
