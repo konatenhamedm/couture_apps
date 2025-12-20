@@ -21,7 +21,7 @@ class AuthController extends ApiInterface
 {
 
 
-    #[Route('/api/login', methods: ['POST'])]
+    #[Route('/api/login?env=dev', methods: ['POST'])]
     #[OA\Post(
         summary: "Permet d'authentifier un utilisateur",
         description: "Permet d'authentifier un utilisateur",

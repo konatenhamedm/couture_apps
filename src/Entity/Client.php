@@ -39,7 +39,7 @@ class Client
     #[ORM\OneToMany(targetEntity: Facture::class, mappedBy: 'client')]
     private Collection $factures;
 
-    #[ORM\ManyToOne(inversedBy: 'clients', cascade: ['persist'])]
+    #[ORM\ManyToOne(inversedBy: 'clients')]
      #[Groups(["group1", "group_type"])]
     private ?Surccursale $surccursale = null;
 
@@ -63,7 +63,7 @@ class Client
      #[ORM\OneToMany(targetEntity: self::class, mappedBy: 'entreprise')]
      private Collection $clients;
 
-     #[ORM\ManyToOne(inversedBy: 'clients', cascade: ['persist'])]
+     #[ORM\ManyToOne(inversedBy: 'clients')]
      #[Groups(["group1", "group_type"])]
      private ?Boutique $boutique = null;
 
@@ -73,7 +73,7 @@ class Client
      #[ORM\OneToMany(targetEntity: PaiementBoutique::class, mappedBy: 'client')]
      private Collection $paiementBoutiques;
 
-     #[ORM\ManyToOne(inversedBy: 'clients', cascade: ['persist'])]
+     #[ORM\ManyToOne(inversedBy: 'clients')]
      private ?Entreprise $entreprise = null;
 
     public function __construct()
