@@ -116,6 +116,11 @@ class ApiClientController extends ApiInterface
         }
 
         try {
+
+            dd($clientRepository->findByInEnvironment(
+                    ['entreprise' => $this->getUser()->getEntreprise()],
+                    ['id' => 'ASC']
+            ));
             if ($this->getUser()->getType() == $typeUserRepository->findOneByInEnvironment(['code' => 'SADM'])) {
                 $clients = $this->paginationService->paginate($clientRepository->findByInEnvironment(
                     ['entreprise' => $this->getUser()->getEntreprise()],
@@ -321,13 +326,13 @@ class ApiClientController extends ApiInterface
         }
 
         // Configurer l'entité avec les bonnes valeurs (utilisateur géré, dates, isActive)
-      /*   $this->configureTraitEntity($client); */
+        $this->configureTraitEntity($client);
 
         $errorResponse = $this->errorResponse($client);
         if ($errorResponse !== null) {
             return $errorResponse;
         } else {
-            $clientRepository->add($client,true);
+            $clientRepository->saveInEnvironment($client, true);
         }
 
         return $this->responseData($client, 'group1', ['Content-Type' => 'application/json']);

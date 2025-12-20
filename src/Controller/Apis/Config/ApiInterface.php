@@ -546,7 +546,15 @@ $this->setStatusCode(500);
         }
 
         // Récupérer une instance gérée de l'entreprise
-        return $this->em->find(Entreprise::class, $entrepriseId);
+        $managedEntreprise = $this->em->find(Entreprise::class, $entrepriseId);
+        
+        // S'assurer que l'entité est bien gérée
+        if ($managedEntreprise && !$this->em->contains($managedEntreprise)) {
+            // Si l'entité n'est pas gérée, la merger
+            $managedEntreprise = $this->em->merge($managedEntreprise);
+        }
+        
+        return $managedEntreprise;
     }
 
     /**
