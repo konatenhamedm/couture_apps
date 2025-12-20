@@ -29,7 +29,7 @@ class Notification
      #[Groups(["group1", "group_type"])]
     private ?string $titre = null;
 
-    #[ORM\Column(type: Types::TEXT)]
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
      #[Groups(["group1", "group_type"])]
     private ?string $libelle = null;
 
