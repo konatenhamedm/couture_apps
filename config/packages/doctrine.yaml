@@ -1,40 +1,17 @@
 doctrine:
     dbal:
-        default_connection: default
-        connections:
-            default:
-                url: '%env(resolve:DATABASE_URL)%'
-                driver: 'pdo_mysql'
-                server_version: '8.0.32'
-                charset: utf8mb4
-                profiling_collect_backtrace: '%kernel.debug%'
-                use_savepoints: true
-            dev:
-                url: '%database.dev.url%'
-                driver: 'pdo_mysql'
-                server_version: '8.0.32'
-                charset: utf8mb4
-                profiling_collect_backtrace: '%kernel.debug%'
-                use_savepoints: true
-            prod:
-                url: '%database.prod.url%'
-                driver: 'pdo_mysql'
-                server_version: '8.0.32'
-                charset: utf8mb4
-                profiling_collect_backtrace: false
-                use_savepoints: true
+        url: '%env(resolve:DATABASE_URL)%'
+        driver: 'pdo_mysql'
+        server_version: '8.0.32'
+        charset: utf8mb4
+        profiling_collect_backtrace: '%kernel.debug%'
+        use_savepoints: true
     orm:
         auto_generate_proxy_classes: true
         enable_lazy_ghost_objects: true
-        report_fields_where_declared: true
-        validate_xml_mapping: true
-        naming_strategy: doctrine.orm.naming_strategy.underscore_number_aware
-        identity_generation_preferences:
-            Doctrine\DBAL\Platforms\PostgreSQLPlatform: identity
         default_entity_manager: default
         entity_managers:
             default:
-                connection: default
                 mappings:
                     App:
                         type: attribute
@@ -42,26 +19,6 @@ doctrine:
                         dir: '%kernel.project_dir%/src/Entity'
                         prefix: 'App\Entity'
                         alias: App
-            dev:
-                connection: dev
-                mappings:
-                    App:
-                        type: attribute
-                        is_bundle: false
-                        dir: '%kernel.project_dir%/src/Entity'
-                        prefix: 'App\Entity'
-                        alias: App
-            prod:
-                connection: prod
-                mappings:
-                    App:
-                        type: attribute
-                        is_bundle: false
-                        dir: '%kernel.project_dir%/src/Entity'
-                        prefix: 'App\Entity'
-                        alias: App
-        controller_resolver:
-            auto_mapping: false
 
 when@test:
     doctrine:
