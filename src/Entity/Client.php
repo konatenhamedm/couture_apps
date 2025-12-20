@@ -57,11 +57,6 @@ class Client
      private Collection $reservations;
 
 
-     /**
-      * @var Collection<int, self>
-      */
-     #[ORM\OneToMany(targetEntity: self::class, mappedBy: 'entreprise')]
-     private Collection $clients;
 
      #[ORM\ManyToOne(inversedBy: 'clients')]
      #[Groups(["group1", "group_type"])]
@@ -80,7 +75,6 @@ class Client
     {
         $this->factures = new ArrayCollection();
         $this->reservations = new ArrayCollection();
-        $this->clients = new ArrayCollection();
         $this->paiementBoutiques = new ArrayCollection();
         
         // Initialiser les valeurs par défaut du trait
