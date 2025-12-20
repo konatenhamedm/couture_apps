@@ -52,7 +52,7 @@ class ApiStatistiqueController extends ApiInterface
         Utils $utils,
         UserPasswordHasherInterface $hasher,
         BoutiqueRepository $boutiqueRepository,
-        SurccursaleRepository $surccursaleRepository,
+        private SurccursaleRepository $surccursaleRepository,
         SettingRepository $settingRepository,
         HttpClientInterface $client,
         SerializerInterface $serializer,
