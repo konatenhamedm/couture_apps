@@ -259,7 +259,12 @@ class ApiTypeMesureController extends ApiInterface
         if (isset($lignesCategoriesMesure) && is_array($lignesCategoriesMesure)) {
             foreach ($lignesCategoriesMesure as $ligneCategorieMesure) {
                 $categorieMesure = new CategorieTypeMesure();
-                $categorieMesure->setCategorieMesure($categorieMesureRepository->findInEnvironment($ligneCategorieMesure['categorieId']));
+                // Récupérer l'entité et s'assurer qu'elle est gérée
+            $foundCategorieMesure = $categorieMesureRepository->findInEnvironment($ligneCategorieMesure['categorieId']);
+            if ($foundCategorieMesure) {
+                $managedCategorieMesure = $this->getManagedEntity($foundCategorieMesure);
+                $categorieMesure->setCategorieMesure($managedCategorieMesure);
+            };
                 $errorResponse = $this->errorResponse($categorieMesure);
 
                 $typeMesure->addCategorieTypeMesure($categorieMesure);

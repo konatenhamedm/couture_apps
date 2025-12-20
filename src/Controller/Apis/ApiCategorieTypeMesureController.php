@@ -125,8 +125,18 @@ class ApiCategorieTypeMesureController extends ApiInterface
         foreach ($data['categorieMesures'] as $categorieMesure) {
             $categorieTypeMesure = new CategorieTypeMesure();
             $categorieTypeMesure->setEntreprise($this->getManagedEntreprise());
-            $categorieTypeMesure->setTypeMesure($typeMesureRepository->findInEnvironment($data['typeMesure']));
-            $categorieTypeMesure->setCategorieMesure($categorieMesureRepository->findInEnvironment($categorieMesure));
+            // Récupérer l'entité et s'assurer qu'elle est gérée
+            $foundTypeMesure = $typeMesureRepository->findInEnvironment($data['typeMesure']);
+            if ($foundTypeMesure) {
+                $managedTypeMesure = $this->getManagedEntity($foundTypeMesure);
+                $categorieTypeMesure->setTypeMesure($managedTypeMesure);
+            };
+            // Récupérer l'entité et s'assurer qu'elle est gérée
+            $foundCategorieMesure = $categorieMesureRepository->findInEnvironment($categorieMesure);
+            if ($foundCategorieMesure) {
+                $managedCategorieMesure = $this->getManagedEntity($foundCategorieMesure);
+                $categorieTypeMesure->setCategorieMesure($managedCategorieMesure);
+            };
             $categorieTypeMesure->setCreatedBy($this->getManagedUser());
             $categorieTypeMesure->setUpdatedBy($this->getManagedUser());
             $categorieTypeMesure->setIsActive(true);
@@ -203,7 +213,12 @@ class ApiCategorieTypeMesureController extends ApiInterface
 
             if ($categorieTypeMesure != null) {
                 if (isset($data['categorieMesure'])) {
-                    $categorieTypeMesure->setCategorieMesure($categorieMesureRepository->findInEnvironment($data['categorieMesure']));
+                    // Récupérer l'entité et s'assurer qu'elle est gérée
+            $foundCategorieMesure = $categorieMesureRepository->findInEnvironment($data['categorieMesure']);
+            if ($foundCategorieMesure) {
+                $managedCategorieMesure = $this->getManagedEntity($foundCategorieMesure);
+                $categorieTypeMesure->setCategorieMesure($managedCategorieMesure);
+            };
                 }
                 
 

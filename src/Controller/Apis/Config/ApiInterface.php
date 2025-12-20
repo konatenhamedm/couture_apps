@@ -480,21 +480,8 @@ $this->setStatusCode(500);
             return null;
         }
 
-        // Si l'utilisateur est déjà géré par l'EntityManager, le retourner
-        $entityManager = $this->em; // Utiliser l'EntityManager injecté
-        if ($entityManager->contains($currentUser)) {
-            return $currentUser;
-        }
-
-        // Sinon, récupérer l'utilisateur depuis la base de données pour avoir une instance gérée
-        if ($currentUser instanceof \App\Entity\User) {
-            $userId = $currentUser->getId();
-            if ($userId) {
-                return $entityManager->find(\App\Entity\User::class, $userId);
-            }
-        }
-
-        return null;
+        // Utiliser la méthode générique
+        return $this->getManagedEntity($currentUser);
     }
 
     /**
@@ -530,6 +517,36 @@ $this->setStatusCode(500);
     }
 
     /**
+     * Obtient une instance gérée de n'importe quelle entité
+     * Résout le problème des entités détachées (Proxies) de manière générique
+     */
+    protected function getManagedEntity($entity)
+    {
+        if (!$entity) {
+            return null;
+        }
+
+        // Si l'entité est déjà gérée, la retourner
+        if ($this->em->contains($entity)) {
+            return $entity;
+        }
+
+        // Si l'entité a un ID, la récupérer depuis la base
+        if (method_exists($entity, 'getId') && $entity->getId()) {
+            $entityClass = get_class($entity);
+            // Enlever le préfixe Proxy si présent
+            if (strpos($entityClass, 'Proxies\\__CG__\\') === 0) {
+                $entityClass = substr($entityClass, strlen('Proxies\\__CG__\\'));
+            }
+            
+            $managedEntity = $this->em->find($entityClass, $entity->getId());
+            return $managedEntity;
+        }
+
+        return null;
+    }
+
+    /**
      * Obtient une instance gérée de l'entreprise de l'utilisateur connecté
      * Résout le problème des entités détachées (Proxies)
      */
@@ -540,21 +557,8 @@ $this->setStatusCode(500);
             return null;
         }
 
-        $entrepriseId = $currentUser->getEntreprise()->getId();
-        if (!$entrepriseId) {
-            return null;
-        }
-
-        // Récupérer une instance gérée de l'entreprise
-        $managedEntreprise = $this->em->find(Entreprise::class, $entrepriseId);
-        
-        // S'assurer que l'entité est bien gérée
-        if ($managedEntreprise && !$this->em->contains($managedEntreprise)) {
-            // Si l'entité n'est pas gérée, la merger
-            $managedEntreprise = $this->em->merge($managedEntreprise);
-        }
-        
-        return $managedEntreprise;
+        // Utiliser la méthode générique
+        return $this->getManagedEntity($currentUser->getEntreprise());
     }
 
     /**

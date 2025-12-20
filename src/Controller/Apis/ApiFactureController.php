@@ -398,10 +398,20 @@ class ApiFactureController extends ApiInterface
         $facture->setEntreprise($this->getManagedEntreprise());
         $admin = $userRepository->getUserByCodeType($this->getUser()->getEntreprise());
 
-        $facture->setClient($clientRepository->findInEnvironment($request->get('clientId')));
+        // Récupérer l'entité et s'assurer qu'elle est gérée
+            $foundClient = $clientRepository->findInEnvironment($request->get('clientId');
+            if ($foundClient) {
+                $managedClient = $this->getManagedEntity($foundClient);
+                $facture->setClient($managedClient);
+            });
         $facture->setDateDepot(new \DateTime());
         $facture->setAvance($request->get('avance'));
-        $facture->setSuccursale($surccursaleRepository->findInEnvironment($request->get('succursaleId')));
+        // Récupérer l'entité et s'assurer qu'elle est gérée
+            $foundSuccursale = $surccursaleRepository->findInEnvironment($request->get('succursaleId');
+            if ($foundSuccursale) {
+                $managedSuccursale = $this->getManagedEntity($foundSuccursale);
+                $facture->setSuccursale($managedSuccursale);
+            });
 
         // Gestion de la signature
         $uploadedFichierSignature = $request->files->get('signature');
@@ -427,7 +437,12 @@ class ApiFactureController extends ApiInterface
         if (isset($lignesMesure) && is_array($lignesMesure)) {
             foreach ($lignesMesure as $index => $ligne) {
                 $mesure = new Mesure();
-                $mesure->setTypeMesure($typeMesureRepository->findInEnvironment($ligne['typeMesureId']));
+                // Récupérer l'entité et s'assurer qu'elle est gérée
+            $foundTypeMesure = $typeMesureRepository->findInEnvironment($ligne['typeMesureId']);
+            if ($foundTypeMesure) {
+                $managedTypeMesure = $this->getManagedEntity($foundTypeMesure);
+                $mesure->setTypeMesure($managedTypeMesure);
+            };
                 $mesure->setMontant($ligne['montant']);
                 $mesure->setRemise($ligne['remise'] ?? 0);
                 $mesure->setNom($ligne['nom'] ?? "");
@@ -452,7 +467,12 @@ class ApiFactureController extends ApiInterface
                 if (isset($ligneMesures) && is_array($ligneMesures)) {
                     foreach ($ligneMesures as $ligneData) {
                         $ligneMesure = new LigneMesure();
-                        $ligneMesure->setCategorieMesure($categorieMesureRepository->findInEnvironment($ligneData['categorieId']));
+                        // Récupérer l'entité et s'assurer qu'elle est gérée
+            $foundCategorieMesure = $categorieMesureRepository->findInEnvironment($ligneData['categorieId']);
+            if ($foundCategorieMesure) {
+                $managedCategorieMesure = $this->getManagedEntity($foundCategorieMesure);
+                $ligneMesure->setCategorieMesure($managedCategorieMesure);
+            };
                         $ligneMesure->setTaille($ligneData['taille']);
                         $entityManager->persist($ligneMesure);
                         $mesure->addLigneMesure($ligneMesure);
@@ -658,12 +678,22 @@ class ApiFactureController extends ApiInterface
 
             // Mise à jour des informations de base
             if (isset($data['clientId'])) {
-                $facture->setClient($clientRepository->findInEnvironment($data['clientId']));
+                // Récupérer l'entité et s'assurer qu'elle est gérée
+            $foundClient = $clientRepository->findInEnvironment($data['clientId']);
+            if ($foundClient) {
+                $managedClient = $this->getManagedEntity($foundClient);
+                $facture->setClient($managedClient);
+            };
             }
 
             // Mise à jour de la succursale
             if (isset($data['succursaleId'])) {
-                $facture->setSuccursale($surccursaleRepository->findInEnvironment($data['succursaleId']));
+                // Récupérer l'entité et s'assurer qu'elle est gérée
+            $foundSuccursale = $surccursaleRepository->findInEnvironment($data['succursaleId']);
+            if ($foundSuccursale) {
+                $managedSuccursale = $this->getManagedEntity($foundSuccursale);
+                $facture->setSuccursale($managedSuccursale);
+            };
             }
 
             // Gestion de la signature
@@ -705,7 +735,12 @@ class ApiFactureController extends ApiInterface
                     }
 
                     if ($mesure) {
-                        $mesure->setTypeMesure($typeMesureRepository->findInEnvironment($mesureData['typeMesureId']));
+                        // Récupérer l'entité et s'assurer qu'elle est gérée
+            $foundTypeMesure = $typeMesureRepository->findInEnvironment($mesureData['typeMesureId']);
+            if ($foundTypeMesure) {
+                $managedTypeMesure = $this->getManagedEntity($foundTypeMesure);
+                $mesure->setTypeMesure($managedTypeMesure);
+            };
                         $mesure->setMontant($mesureData['montant']);
                         $mesure->setNom($mesureData['nom'] ?? ""); // ✅ Valeur par défaut ajoutée
                         $mesure->setRemise($mesureData['remise'] ?? 0);
@@ -750,7 +785,12 @@ class ApiFactureController extends ApiInterface
                                 }
 
                                 if ($ligneMesure) {
-                                    $ligneMesure->setCategorieMesure($categorieMesureRepository->findInEnvironment($ligneData['categorieId']));
+                                    // Récupérer l'entité et s'assurer qu'elle est gérée
+            $foundCategorieMesure = $categorieMesureRepository->findInEnvironment($ligneData['categorieId']);
+            if ($foundCategorieMesure) {
+                $managedCategorieMesure = $this->getManagedEntity($foundCategorieMesure);
+                $ligneMesure->setCategorieMesure($managedCategorieMesure);
+            };
                                     $ligneMesure->setTaille($ligneData['taille']);
                                     if (!isset($ligneData['id'])) {
                                         $entityManager->persist($ligneMesure);

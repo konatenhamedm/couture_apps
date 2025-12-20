@@ -394,7 +394,9 @@ class ApiUserController extends ApiInterface
             if (!$pays) {
                 return $this->createCustomErrorResponse("Pays non trouvé", 404);
             }
-            $entreprise->setPays($pays);
+            // Utiliser une entité gérée pour éviter les problèmes de cascade persist
+            $managedPays = $this->getManagedEntity($pays);
+            $entreprise->setPays($managedPays);
             $entreprise->setCreatedAtValue();
             $entreprise->setUpdatedAt();
 
@@ -405,7 +407,12 @@ class ApiUserController extends ApiInterface
             $user->setIsActive(true);
             $user->setPassword($this->hasher->hashPassword($user, $data['password']));
             $user->setRoles(['ROLE_ADMIN']);
-            $user->setType($typeUserRepository->findOneByInEnvironment(['code' => 'SADM']));
+            // Récupérer l'entité et s'assurer qu'elle est gérée
+            $foundType = $typeUserRepository->findInEnvironment(['code' => 'SADM']);
+            if ($foundType) {
+                $managedType = $this->getManagedEntity($foundType);
+                $user->setType($managedType);
+            };
             /* $user->setCreatedAtValue();
             $user->setUpdatedAt(); */
 

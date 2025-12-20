@@ -122,7 +122,7 @@ class ApiClientController extends ApiInterface
             if ($this->getUser()->getType()->getCode() == $typeUserRepository->findOneByInEnvironment(['code' => 'SADM'])->getCode()) {
 
                 $clients = $this->paginationService->paginate($clientRepository->findByInEnvironment(
-                    ['entreprise' => $this->getUser()->getEntreprise()],
+                    ['entreprise' => $this->getManagedEntreprise()],
                     ['id' => 'ASC']
                 ));
             } elseif ($this->getUser()->getType() == $typeUserRepository->findOneByInEnvironment(['code' => 'ADB'])) {
@@ -311,11 +311,17 @@ class ApiClientController extends ApiInterface
         $client->setNumero($request->get('numero'));
         
         if($request->get('succursale') && $request->get('succursale') != null){
-        $client->setSurccursale($surccursaleRepository->findInEnvironment($request->get('succursale')));
+            $succursale = $surccursaleRepository->findInEnvironment($request->get('succursale'));
+            if ($succursale) {
+                $client->setSurccursale($this->getManagedEntity($succursale));
+            }
         }
-        $client->setBoutique($boutiqueRepository->findInEnvironment($request->get('boutique')));
+        
         if($request->get('boutique') && $request->get('boutique') != null){
-            $client->setBoutique($boutiqueRepository->findInEnvironment($request->get('boutique')));
+            $boutique = $boutiqueRepository->findInEnvironment($request->get('boutique'));
+            if ($boutique) {
+                $client->setBoutique($this->getManagedEntity($boutique));
+            }
         }
 
         if ($uploadedFile) {
@@ -435,11 +441,17 @@ class ApiClientController extends ApiInterface
         $client->setPrenom($request->get('prenoms'));
         $client->setNumero($request->get('numero'));
 
-        if ($request->get('boutique')    && $request->get('boutique') != null) {
-            $client->setBoutique($boutiqueRepository->findInEnvironment($request->get('boutique')));
+        if ($request->get('boutique') && $request->get('boutique') != null) {
+            $boutique = $boutiqueRepository->findInEnvironment($request->get('boutique'));
+            if ($boutique) {
+                $client->setBoutique($this->getManagedEntity($boutique));
+            }
         }
-        if ($request->get('succursale')    && $request->get('succursale') != null) {
-            $client->setSurccursale($surccursaleRepository->findInEnvironment($request->get('succursale')));
+        if ($request->get('succursale') && $request->get('succursale') != null) {
+            $succursale = $surccursaleRepository->findInEnvironment($request->get('succursale'));
+            if ($succursale) {
+                $client->setSurccursale($this->getManagedEntity($succursale));
+            }
         }
 
         if ($uploadedFile) {
@@ -567,10 +579,16 @@ class ApiClientController extends ApiInterface
                     $client->setNumero($request->get('numero'));
                 }
                 if ($request->get('surccursale')) {
-                    $client->setSurccursale($surccursaleRepository->findInEnvironment($request->get('surccursale')));
+                    $succursale = $surccursaleRepository->findInEnvironment($request->get('surccursale'));
+                    if ($succursale) {
+                        $client->setSurccursale($this->getManagedEntity($succursale));
+                    }
                 }
                 if ($request->get('boutique')) {
-                    $client->setBoutique($boutiqueRepository->findInEnvironment($request->get('boutique')));
+                    $boutique = $boutiqueRepository->findInEnvironment($request->get('boutique'));
+                    if ($boutique) {
+                        $client->setBoutique($this->getManagedEntity($boutique));
+                    }
                 }
 
                 $uploadedFile = $request->files->get('photo');
