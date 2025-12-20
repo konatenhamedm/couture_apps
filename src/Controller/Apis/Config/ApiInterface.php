@@ -539,18 +539,12 @@ $this->setStatusCode(500);
                 $entityClass = substr($entityClass, strlen('Proxies\\__CG__\\'));
             }
             
-            // Utiliser merge() au lieu de find() pour s'assurer que l'entité est gérée
-            try {
-                $managedEntity = $this->em->merge($entity);
-                return $managedEntity;
-            } catch (\Exception $e) {
-                // Si merge échoue, essayer find()
-                $managedEntity = $this->em->find($entityClass, $entity->getId());
-                return $managedEntity;
-            }
+            // Utiliser find() pour récupérer l'entité gérée
+            $managedEntity = $this->em->find($entityClass, $entity->getId());
+            return $managedEntity ?: $entity;
         }
 
-        return null;
+        return $entity;
     }
 
     /**
@@ -604,9 +598,13 @@ $this->setStatusCode(500);
             try {
                 // Utiliser l'EntityManager de l'environnement pour récupérer l'entité
                 $currentEM = $this->entityManagerProvider->getEntityManager();
+                
+                // Vérifier si l'entité est déjà gérée par cet EM
                 if ($currentEM->contains($entity)) {
                     return $entity;
                 }
+                
+                // Récupérer une nouvelle instance gérée
                 $managedEntity = $currentEM->find($entityClass, $entity->getId());
                 return $managedEntity ?: $entity;
             } catch (\Exception $e) {
@@ -616,5 +614,35 @@ $this->setStatusCode(500);
         }
 
         return $entity;
+    }
+
+    /**
+     * Méthode alternative pour forcer la gestion d'une entité
+     * Utilise refresh() pour s'assurer que l'entité est attachée au contexte de persistance
+     */
+    protected function ensureEntityIsManaged($entity)
+    {
+        if (!$entity) {
+            return null;
+        }
+
+        try {
+            // Si l'entité n'est pas gérée, la récupérer à nouveau
+            if (!$this->em->contains($entity) && method_exists($entity, 'getId') && $entity->getId()) {
+                $entityClass = get_class($entity);
+                // Enlever le préfixe Proxy si présent
+                if (strpos($entityClass, 'Proxies\\__CG__\\') === 0) {
+                    $entityClass = substr($entityClass, strlen('Proxies\\__CG__\\'));
+                }
+                
+                $managedEntity = $this->em->find($entityClass, $entity->getId());
+                return $managedEntity ?: $entity;
+            }
+            
+            return $entity;
+        } catch (\Exception $e) {
+            // En cas d'erreur, retourner l'entité originale
+            return $entity;
+        }
     }
 }
