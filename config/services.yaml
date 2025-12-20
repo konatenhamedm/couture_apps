@@ -80,3 +80,23 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
     
+    # Service de validation d'entités
+    App\Service\Validation\EntityValidationService:
+        arguments:
+            $entityManager: '@doctrine.orm.entity_manager'
+            $logger: '@logger'
+        tags:
+            - { name: monolog.logger, channel: entity_validation }
+
+    # Alias pour l'interface
+    App\Service\Validation\EntityValidationServiceInterface: '@App\Service\Validation\EntityValidationService'
+    # Service de gestion des entités dans l'environnement
+    App\Service\Environment\EnvironmentEntityManager:
+        arguments:
+            $entityManagerProvider: '@App\Service\EntityManagerProvider'
+            $logger: '@logger'
+        tags:
+            - { name: monolog.logger, channel: environment_entity }
+
+    # Alias pour l'interface
+    App\Service\Environment\EnvironmentEntityManagerInterface: '@App\Service\Environment\EnvironmentEntityManager'

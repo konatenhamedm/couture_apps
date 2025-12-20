@@ -367,7 +367,13 @@ class ApiClientController extends ApiInterface
             // Configurer l'entité avec les bonnes valeurs (utilisateur géré, dates, isActive)
             $this->configureTraitEntity($client);
 
-            // Validation des données
+            // Validation complète de l'entité avant persistance
+            $validationError = $this->validateEntityForPersistence($client);
+            if ($validationError !== null) {
+                return $validationError;
+            }
+
+            // Validation des données avec le validateur Symfony (pour compatibilité)
             $errorResponse = $this->errorResponse($client);
             if ($errorResponse !== null) {
                 return $errorResponse;
@@ -509,6 +515,12 @@ class ApiClientController extends ApiInterface
 
             // Configurer l'entité avec les bonnes valeurs (utilisateur géré, dates, isActive)
             $this->configureTraitEntity($client);
+
+            // Validation complète de l'entité avant persistance
+            $validationError = $this->validateEntityForPersistence($client);
+            if ($validationError !== null) {
+                return $validationError;
+            }
 
             $errorResponse = $this->errorResponse($client);
             if ($errorResponse !== null) {
@@ -657,6 +669,12 @@ class ApiClientController extends ApiInterface
                     $client->setUpdatedBy($managedUser);
                 }
                 $client->setUpdatedAt(); // Pas de paramètre
+
+                // Validation complète de l'entité avant persistance
+                $validationError = $this->validateEntityForPersistence($client);
+                if ($validationError !== null) {
+                    return $validationError;
+                }
 
                 $errorResponse = $this->errorResponse($client);
                 if ($errorResponse !== null) {

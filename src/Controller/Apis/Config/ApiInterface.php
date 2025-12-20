@@ -17,6 +17,8 @@ use App\Service\SendMailService;
 use App\Service\StatistiquesService;
 use App\Service\SubscriptionChecker;
 use App\Service\Utils;
+use App\Service\Validation\EntityValidationServiceInterface;
+use App\Service\Environment\EnvironmentEntityManagerInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Component\Pager\Pagination\PaginationInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -63,6 +65,8 @@ class ApiInterface extends AbstractController
 
     protected $sendMail;
     protected $superAdmin;
+    protected EntityValidationServiceInterface $entityValidationService;
+    protected EnvironmentEntityManagerInterface $environmentEntityManager;
 
     public function __construct(
         EntityManagerInterface $em,
@@ -81,6 +85,8 @@ class ApiInterface extends AbstractController
         protected StatistiquesService $statistiquesService,
         protected PaginationService $paginationService,
         EntityManagerProvider $entityManagerProvider,
+        EntityValidationServiceInterface $entityValidationService,
+        EnvironmentEntityManagerInterface $environmentEntityManager,
         #[Autowire(param: 'SEND_MAIL')] string $sendMail,
         #[Autowire(param: 'SUPER_ADMIN')] string $superAdmin
     ) {
@@ -99,6 +105,8 @@ class ApiInterface extends AbstractController
         $this->settingRepository = $settingRepository;
         $this->sendMail = $sendMail;
         $this->superAdmin = $superAdmin;
+        $this->entityValidationService = $entityValidationService;
+        $this->environmentEntityManager = $environmentEntityManager;
 
         // Injecter l'EntityManagerProvider dans le trait
         $this->setEntityManagerProvider($entityManagerProvider);
@@ -584,8 +592,8 @@ $this->setStatusCode(500);
     }
 
     /**
-     * Méthode spécialisée pour obtenir une entité gérée depuis findInEnvironment
-     * Utilise l'EntityManager de l'environnement actuel pour s'assurer que l'entité est correctement gérée
+     * Méthode améliorée pour obtenir une entité gérée depuis findInEnvironment
+     * Utilise le service EnvironmentEntityManager pour une gestion robuste
      */
     protected function getManagedEntityFromEnvironment($entity)
     {
@@ -593,38 +601,62 @@ $this->setStatusCode(500);
             return null;
         }
 
-        // Si l'entité a un ID, la récupérer depuis la base avec l'EM de l'environnement
-        if (method_exists($entity, 'getId') && $entity->getId()) {
-            $entityClass = get_class($entity);
-            // Enlever le préfixe Proxy si présent
-            if (strpos($entityClass, 'Proxies\\__CG__\\') === 0) {
-                $entityClass = substr($entityClass, strlen('Proxies\\__CG__\\'));
+        try {
+            // Utiliser le service dédié pour gérer l'entité
+            return $this->environmentEntityManager->ensureEntityIsManaged($entity);
+        } catch (\Exception $e) {
+            // Fallback vers l'ancienne méthode en cas d'erreur
+            error_log("Erreur dans getManagedEntityFromEnvironment: " . $e->getMessage());
+            return $this->getManagedEntity($entity);
+        }
+    }
+
+    /**
+     * Nouvelle méthode pour valider et corriger le contexte des entités
+     */
+    protected function validateAndFixEntityContext($entity)
+    {
+        if (!$entity) {
+            return null;
+        }
+
+        // Vérifier si l'entité est dans le bon contexte
+        if (!$this->environmentEntityManager->validateEntityContext($entity)) {
+            // Si l'entité est détachée, la réattacher
+            if ($this->environmentEntityManager->isEntityDetached($entity)) {
+                return $this->environmentEntityManager->mergeDetachedEntity($entity);
             }
             
-            try {
-                // Utiliser l'EntityManager de l'environnement pour récupérer l'entité
-                $currentEM = $this->entityManagerProvider->getEntityManager();
-                
-                // Vérifier si l'entité est déjà gérée par cet EM
-                if ($currentEM->contains($entity)) {
-                    return $entity;
-                }
-                
-                // Récupérer une nouvelle instance gérée
-                $managedEntity = $currentEM->find($entityClass, $entity->getId());
-                return $managedEntity ?: $entity;
-            } catch (\Exception $e) {
-                // Fallback vers l'EM principal
-                return $this->getManagedEntity($entity);
-            }
+            // Sinon, s'assurer qu'elle est gérée
+            return $this->environmentEntityManager->ensureEntityIsManaged($entity);
         }
 
         return $entity;
     }
 
     /**
-     * Méthode alternative pour forcer la gestion d'une entité
-     * Utilise refresh() pour s'assurer que l'entité est attachée au contexte de persistance
+     * Méthode pour résoudre les entités proxy
+     */
+    protected function resolveProxyEntity($entity)
+    {
+        if (!$entity) {
+            return null;
+        }
+
+        return $this->environmentEntityManager->resolveProxyEntity($entity);
+    }
+
+    /**
+     * Méthode pour nettoyer le cache des entités lors du changement d'environnement
+     */
+    protected function clearEntityCacheForEnvironmentSwitch(): void
+    {
+        $this->environmentEntityManager->clearEntityCache();
+    }
+
+    /**
+     * Méthode améliorée pour forcer la gestion d'une entité
+     * Utilise le service EnvironmentEntityManager pour une gestion robuste
      */
     protected function ensureEntityIsManaged($entity)
     {
@@ -633,22 +665,30 @@ $this->setStatusCode(500);
         }
 
         try {
-            // Si l'entité n'est pas gérée, la récupérer à nouveau
-            if (!$this->em->contains($entity) && method_exists($entity, 'getId') && $entity->getId()) {
-                $entityClass = get_class($entity);
-                // Enlever le préfixe Proxy si présent
-                if (strpos($entityClass, 'Proxies\\__CG__\\') === 0) {
-                    $entityClass = substr($entityClass, strlen('Proxies\\__CG__\\'));
+            return $this->environmentEntityManager->ensureEntityIsManaged($entity);
+        } catch (\Exception $e) {
+            // Fallback vers l'ancienne méthode
+            error_log("Erreur dans ensureEntityIsManaged: " . $e->getMessage());
+            
+            try {
+                // Si l'entité n'est pas gérée, la récupérer à nouveau
+                if (!$this->em->contains($entity) && method_exists($entity, 'getId') && $entity->getId()) {
+                    $entityClass = get_class($entity);
+                    // Enlever le préfixe Proxy si présent
+                    if (strpos($entityClass, 'Proxies\\__CG__\\') === 0) {
+                        $entityClass = substr($entityClass, strlen('Proxies\\__CG__\\'));
+                    }
+                    
+                    $managedEntity = $this->em->find($entityClass, $entity->getId());
+                    return $managedEntity ?: $entity;
                 }
                 
-                $managedEntity = $this->em->find($entityClass, $entity->getId());
-                return $managedEntity ?: $entity;
+                return $entity;
+            } catch (\Exception $fallbackException) {
+                // En cas d'erreur, retourner l'entité originale
+                error_log("Erreur dans le fallback ensureEntityIsManaged: " . $fallbackException->getMessage());
+                return $entity;
             }
-            
-            return $entity;
-        } catch (\Exception $e) {
-            // En cas d'erreur, retourner l'entité originale
-            return $entity;
         }
     }
 
@@ -680,5 +720,35 @@ $this->setStatusCode(500);
         } catch (\Exception $e) {
             return $pays;
         }
+    }
+
+    /**
+     * Valide une entité avant persistance avec le service de validation
+     * 
+     * @param object $entity L'entité à valider
+     * @return JsonResponse|null Retourne une réponse d'erreur si la validation échoue, null sinon
+     */
+    protected function validateEntityForPersistence(object $entity): ?JsonResponse
+    {
+        $validationResult = $this->entityValidationService->validateForPersistence($entity);
+        
+        if (!$validationResult->isValid()) {
+            $this->setStatusCode(400);
+            $this->setMessage("Validation de l'entité échouée");
+            
+            return new JsonResponse([
+                'code' => 400,
+                'message' => 'Validation échouée',
+                'errors' => $validationResult->getErrors(),
+                'warnings' => $validationResult->getWarnings()
+            ], 400);
+        }
+        
+        // Log les avertissements s'il y en a
+        if ($validationResult->hasWarnings()) {
+            error_log("Avertissements de validation: " . $validationResult->getFormattedWarnings());
+        }
+        
+        return null;
     }
 }
