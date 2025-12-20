@@ -294,53 +294,103 @@ class ApiClientController extends ApiInterface
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
-        $names = 'document_' . '01';
-        $filePrefix = str_slug($names);
-        $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
-
-        $uploadedFile = $request->files->get('photo');
-
-
-        $client = new Client();
-        
-        // Utiliser la méthode centralisée pour gérer l'entreprise
-        $this->setManagedEntreprise($client);
-        
-        $client->setPrenom($request->get('prenoms'));
-        $client->setNom($request->get('nom'));
-        $client->setNumero($request->get('numero'));
-        
-        if($request->get('succursale') && $request->get('succursale') != null){
-            $succursale = $surccursaleRepository->findInEnvironment($request->get('succursale'));
-            if ($succursale) {
-                $client->setSurccursale($this->getManagedEntityFromEnvironment($succursale));
+        try {
+            // Validation des données d'entrée
+            $nom = trim($request->get('nom'));
+            $prenoms = trim($request->get('prenoms'));
+            $numero = trim($request->get('numero'));
+            
+            if (empty($nom) || empty($prenoms) || empty($numero)) {
+                $this->setStatusCode(400);
+                $this->setMessage("Les champs nom, prenoms et numero sont obligatoires");
+                return $this->response([]);
             }
-        }
-        
-        if($request->get('boutique') && $request->get('boutique') != null){
-            $boutique = $boutiqueRepository->findInEnvironment($request->get('boutique'));
-            if ($boutique) {
-                $client->setBoutique($this->getManagedEntityFromEnvironment($boutique));
+
+            $names = 'document_' . '01';
+            $filePrefix = str_slug($names);
+            $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
+
+            $uploadedFile = $request->files->get('photo');
+
+            $client = new Client();
+            
+            // Utiliser la méthode centralisée pour gérer l'entreprise
+            $this->setManagedEntreprise($client);
+            
+            $client->setPrenom($prenoms);
+            $client->setNom($nom);
+            $client->setNumero($numero);
+            
+            // Gestion de la succursale
+            if($request->get('succursale') && $request->get('succursale') != null){
+                $succursale = $surccursaleRepository->findInEnvironment($request->get('succursale'));
+                if ($succursale) {
+                    $client->setSurccursale($this->getManagedEntityFromEnvironment($succursale));
+                    // Si on a une succursale, on peut récupérer sa boutique
+                    if ($succursale->getBoutique()) {
+                        $client->setBoutique($this->getManagedEntityFromEnvironment($succursale->getBoutique()));
+                    }
+                } else {
+                    $this->setStatusCode(404);
+                    $this->setMessage("Succursale non trouvée");
+                    return $this->response([]);
+                }
             }
-        }
-
-        if ($uploadedFile) {
-            if ($fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH)) {
-                $client->setPhoto($fichier);
+            
+            // Gestion de la boutique (décommenté et corrigé)
+            if($request->get('boutique') && $request->get('boutique') != null){
+                $boutique = $boutiqueRepository->findInEnvironment($request->get('boutique'));
+                if ($boutique) {
+                    $client->setBoutique($this->getManagedEntityFromEnvironment($boutique));
+                } else {
+                    $this->setStatusCode(404);
+                    $this->setMessage("Boutique non trouvée");
+                    return $this->response([]);
+                }
             }
-        }
 
-        // Configurer l'entité avec les bonnes valeurs (utilisateur géré, dates, isActive)
-        $this->configureTraitEntity($client);
+            // Vérifier qu'on a au moins une boutique (soit directement, soit via la succursale)
+            if (!$client->getBoutique()) {
+                $this->setStatusCode(400);
+                $this->setMessage("Une boutique doit être associée au client (directement ou via la succursale)");
+                return $this->response([]);
+            }
 
-        $errorResponse = $this->errorResponse($client);
-        if ($errorResponse !== null) {
-            return $errorResponse;
-        } else {
+            // Gestion de l'upload de photo
+            if ($uploadedFile) {
+                try {
+                    if ($fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH)) {
+                        $client->setPhoto($fichier);
+                    }
+                } catch (\Exception $uploadException) {
+                    // Log l'erreur mais continue sans photo
+                    error_log("Erreur upload photo: " . $uploadException->getMessage());
+                }
+            }
+
+            // Configurer l'entité avec les bonnes valeurs (utilisateur géré, dates, isActive)
+            $this->configureTraitEntity($client);
+
+            // Validation des données
+            $errorResponse = $this->errorResponse($client);
+            if ($errorResponse !== null) {
+                return $errorResponse;
+            }
+            
+            // Sauvegarde
             $clientRepository->saveInEnvironment($client, true);
-        }
 
-        return $this->responseData($client, 'group1', ['Content-Type' => 'application/json']);
+            return $this->responseData($client, 'group1', ['Content-Type' => 'application/json']);
+            
+        } catch (\Exception $exception) {
+            // Log l'erreur complète pour le debug
+            error_log("Erreur création client: " . $exception->getMessage());
+            error_log("Stack trace: " . $exception->getTraceAsString());
+            
+            $this->setStatusCode(500);
+            $this->setMessage("Erreur lors de la création du client: " . $exception->getMessage());
+            return $this->response([]);
+        }
     }
 
     /**
@@ -426,51 +476,58 @@ class ApiClientController extends ApiInterface
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
-        $names = 'document_' . '01';
-        $filePrefix = str_slug($names);
-        $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
+        try {
+            $names = 'document_' . '01';
+            $filePrefix = str_slug($names);
+            $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
 
-        $uploadedFile = $request->files->get('photo');
+            $uploadedFile = $request->files->get('photo');
 
-        $client = new Client();
-        
-        // Utiliser la méthode centralisée pour gérer l'entreprise
-        $this->setManagedEntreprise($client);
-        
-        $client->setNom($request->get('nom'));
-        $client->setPrenom($request->get('prenoms'));
-        $client->setNumero($request->get('numero'));
+            $client = new Client();
+            
+            // Utiliser la méthode centralisée pour gérer l'entreprise
+            $this->setManagedEntreprise($client);
+            
+            $client->setNom($request->get('nom'));
+            $client->setPrenom($request->get('prenoms'));
+            $client->setNumero($request->get('numero'));
 
-        if ($request->get('boutique') && $request->get('boutique') != null) {
-            $boutique = $boutiqueRepository->findInEnvironment($request->get('boutique'));
-            if ($boutique) {
-                $client->setBoutique($this->getManagedEntityFromEnvironment($boutique));
+            if ($request->get('boutique') && $request->get('boutique') != null) {
+                $boutique = $boutiqueRepository->findInEnvironment($request->get('boutique'));
+                if ($boutique) {
+                    $client->setBoutique($this->getManagedEntityFromEnvironment($boutique));
+                }
             }
-        }
-        if ($request->get('succursale') && $request->get('succursale') != null) {
-            $succursale = $surccursaleRepository->findInEnvironment($request->get('succursale'));
-            if ($succursale) {
-                $client->setSurccursale($this->getManagedEntityFromEnvironment($succursale));
+            if ($request->get('succursale') && $request->get('succursale') != null) {
+                $succursale = $surccursaleRepository->findInEnvironment($request->get('succursale'));
+                if ($succursale) {
+                    $client->setSurccursale($this->getManagedEntityFromEnvironment($succursale));
+                }
             }
-        }
 
-        if ($uploadedFile) {
-            if ($fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH)) {
-                $client->setPhoto($fichier);
+            if ($uploadedFile) {
+                if ($fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH)) {
+                    $client->setPhoto($fichier);
+                }
             }
-        }
 
-        // Configurer l'entité avec les bonnes valeurs (utilisateur géré, dates, isActive)
-        $this->configureTraitEntity($client);
+            // Configurer l'entité avec les bonnes valeurs (utilisateur géré, dates, isActive)
+            $this->configureTraitEntity($client);
 
-        $errorResponse = $this->errorResponse($client);
-        if ($errorResponse !== null) {
-            return $errorResponse;
-        } else {
+            $errorResponse = $this->errorResponse($client);
+            if ($errorResponse !== null) {
+                return $errorResponse;
+            }
+            
             $clientRepository->saveInEnvironment($client);
-        }
 
-        return $this->responseData($client, 'group1', ['Content-Type' => 'application/json']);
+            return $this->responseData($client, 'group1', ['Content-Type' => 'application/json']);
+            
+        } catch (\Exception $exception) {
+            $this->setStatusCode(500);
+            $this->setMessage("Erreur lors de la création du client: " . $exception->getMessage());
+            return $this->response([]);
+        }
     }
 
     /**

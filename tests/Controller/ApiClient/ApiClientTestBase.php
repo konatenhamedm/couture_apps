@@ -12,6 +12,10 @@ use App\Entity\Surccursale;
 use App\Entity\Entreprise;
 use App\Entity\User;
 use App\Entity\TypeUser;
+use App\Entity\Pays;
+use App\Entity\Abonnement;
+use App\Entity\ModuleAbonnement;
+use App\Service\JwtService;
 
 /**
  * Base class for API Client Controller tests
@@ -21,6 +25,7 @@ abstract class ApiClientTestBase extends WebTestCase
 {
     protected KernelBrowser $client;
     protected EntityManagerInterface $entityManager;
+    protected JwtService $jwtService;
     protected array $testData = [];
     
     /**
@@ -32,6 +37,7 @@ abstract class ApiClientTestBase extends WebTestCase
         
         $this->client = static::createClient();
         $this->entityManager = static::getContainer()->get('doctrine')->getManager();
+        $this->jwtService = static::getContainer()->get(JwtService::class);
         
         // Start a database transaction for test isolation
         $this->entityManager->beginTransaction();
@@ -61,70 +67,79 @@ abstract class ApiClientTestBase extends WebTestCase
      */
     protected function setupTestEnvironment(): void
     {
+        // Create test pays (country)
+        $pays = new Pays();
+        $pays->setLibelle('Côte d\'Ivoire');
+        $pays->setCode('CI');
+        $pays->setIndicatif('+225');
+        $pays->setActif(true);
+        $pays->setIsActive(true);
+        $this->entityManager->persist($pays);
+        
         // Create test entreprise
         $entreprise = new Entreprise();
-        $entreprise->setNom('Test Entreprise');
+        $entreprise->setLibelle('Test Entreprise');
         $entreprise->setEmail('test@entreprise.com');
-        $entreprise->setTelephone('+225 0123456789');
-        $entreprise->setAdresse('123 Test Street');
+        $entreprise->setNumero('+225 0123456789');
+        $entreprise->setPays($pays);
         $entreprise->setIsActive(true);
         $this->entityManager->persist($entreprise);
         
         // Create test boutique
         $boutique = new Boutique();
-        $boutique->setNom('Test Boutique');
-        $boutique->setAdresse('456 Boutique Street');
-        $boutique->setTelephone('+225 0987654321');
+        $boutique->setLibelle('Test Boutique');
+        $boutique->setSituation('456 Boutique Street');
+        $boutique->setContact('+225 0987654321');
         $boutique->setEntreprise($entreprise);
         $boutique->setIsActive(true);
         $this->entityManager->persist($boutique);
         
         // Create test succursale
         $succursale = new Surccursale();
-        $succursale->setNom('Test Succursale');
-        $succursale->setAdresse('789 Succursale Street');
-        $succursale->setTelephone('+225 0555666777');
-        $succursale->setBoutique($boutique);
+        $succursale->setLibelle('Test Succursale');
+        $succursale->setContact('+225 0555666777');
         $succursale->setEntreprise($entreprise);
         $succursale->setIsActive(true);
         $this->entityManager->persist($succursale);
+        
+        // Note: Surccursale doesn't have a direct boutique relationship in the entity
+        // but the controller expects it. This might need to be addressed in the entity model.
         
         // Create test user types
         $sadmType = new TypeUser();
         $sadmType->setCode('SADM');
         $sadmType->setLibelle('Super Admin');
-        $sadmType->setEntreprise($entreprise);
         $sadmType->setIsActive(true);
         $this->entityManager->persist($sadmType);
         
         $adbType = new TypeUser();
         $adbType->setCode('ADB');
         $adbType->setLibelle('Admin Boutique');
-        $adbType->setEntreprise($entreprise);
         $adbType->setIsActive(true);
         $this->entityManager->persist($adbType);
         
         $regularType = new TypeUser();
         $regularType->setCode('REG');
         $regularType->setLibelle('Utilisateur Regular');
-        $regularType->setEntreprise($entreprise);
         $regularType->setIsActive(true);
         $this->entityManager->persist($regularType);
         
         // Create test users
         $superAdmin = new User();
-        $superAdmin->setEmail('sadm@test.com');
+        $superAdmin->setLogin('sadm@test.com');
         $superAdmin->setNom('Super');
-        $superAdmin->setPrenom('Admin');
+        $superAdmin->setPrenoms('Admin');
+        $superAdmin->setPassword('$2y$13$test'); // Mock password hash
         $superAdmin->setType($sadmType);
         $superAdmin->setEntreprise($entreprise);
         $superAdmin->setIsActive(true);
         $this->entityManager->persist($superAdmin);
         
         $boutiqueAdmin = new User();
-        $boutiqueAdmin->setEmail('adb@test.com');
+        $boutiqueAdmin->setLogin('adb@test.com');
         $boutiqueAdmin->setNom('Boutique');
-        $boutiqueAdmin->setPrenom('Admin');
+        $boutiqueAdmin->setPrenoms('Admin');
+        $boutiqueAdmin->setPassword('$2y$13$test'); // Mock password hash
         $boutiqueAdmin->setType($adbType);
         $boutiqueAdmin->setBoutique($boutique);
         $boutiqueAdmin->setEntreprise($entreprise);
@@ -132,15 +147,38 @@ abstract class ApiClientTestBase extends WebTestCase
         $this->entityManager->persist($boutiqueAdmin);
         
         $regularUser = new User();
-        $regularUser->setEmail('user@test.com');
+        $regularUser->setLogin('user@test.com');
         $regularUser->setNom('Regular');
-        $regularUser->setPrenom('User');
+        $regularUser->setPrenoms('User');
+        $regularUser->setPassword('$2y$13$test'); // Mock password hash
         $regularUser->setType($regularType);
         $regularUser->setSurccursale($succursale);
         $regularUser->setBoutique($boutique);
         $regularUser->setEntreprise($entreprise);
         $regularUser->setIsActive(true);
         $this->entityManager->persist($regularUser);
+        
+        $this->entityManager->flush();
+        
+        // Create test subscription module
+        $moduleAbonnement = new ModuleAbonnement();
+        $moduleAbonnement->setCode('TEST_MODULE');
+        $moduleAbonnement->setDescription('Test subscription module');
+        $moduleAbonnement->setMontant('1000');
+        $moduleAbonnement->setDuree('30');
+        $moduleAbonnement->setEtat(true);
+        $moduleAbonnement->setIsActive(true);
+        $this->entityManager->persist($moduleAbonnement);
+        
+        // Create active subscription for the entreprise
+        $abonnement = new Abonnement();
+        $abonnement->setModuleAbonnement($moduleAbonnement);
+        $abonnement->setEntreprise($entreprise);
+        $abonnement->setEtat('actif'); // Must be lowercase 'actif'
+        $abonnement->setType('PREMIUM');
+        $abonnement->setDateFin(new \DateTime('+1 year')); // Active for 1 year
+        $abonnement->setIsActive(true);
+        $this->entityManager->persist($abonnement);
         
         $this->entityManager->flush();
         
@@ -213,23 +251,33 @@ abstract class ApiClientTestBase extends WebTestCase
         $server['HTTP_AUTHORIZATION'] = 'Bearer ' . $this->generateMockToken($userType);
         $server['CONTENT_TYPE'] = 'application/json';
         
+        // Add database environment parameter to ensure test environment is used
+        if (strpos($uri, '?') !== false) {
+            $uri .= '&env=dev';
+        } else {
+            $uri .= '?env=dev';
+        }
+        
         $this->client->request($method, $uri, $parameters, $files, $server, $content);
         
         return $this->client->getResponse();
     }
     
     /**
-     * Generate a mock JWT token for testing
+     * Generate a real JWT token for testing
      */
     protected function generateMockToken(string $userType = 'sadm'): string
     {
-        // For now, return a simple mock token
-        // In a real implementation, this would generate a proper JWT
-        return base64_encode(json_encode([
-            'user_id' => $this->testData['users'][$userType]->getId(),
-            'user_type' => $userType,
-            'exp' => time() + 3600
-        ]));
+        $user = $this->testData['users'][$userType];
+        
+        $payload = [
+            'id' => $user->getId(),
+            'login' => $user->getLogin(),
+            'roles' => $user->getRoles(),
+            'entreprise_id' => $user->getEntreprise()->getId()
+        ];
+        
+        return $this->jwtService->generateToken($payload);
     }
     
     /**

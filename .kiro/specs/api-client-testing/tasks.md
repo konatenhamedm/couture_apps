@@ -11,74 +11,74 @@
   - **Property 2: Response headers consistency**
   - **Validates: Requirements 1.5**
 
-- [ ] 2. Implement authentication and authorization test helpers
+- [x] 2. Implement authentication and authorization test helpers
   - Create AuthenticationTestHelper with token generation methods
   - Implement user role simulation (SADM, ADB, regular users)
   - Create subscription state management for tests
   - Set up JWT token mocking and validation
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 10.4, 10.5_
 
-- [ ] 2.1 Write property test for subscription enforcement
+- [x] 2.1 Write property test for subscription enforcement
   - **Property 14: Subscription requirement enforcement**
   - **Validates: Requirements 2.1, 3.3, 4.5, 7.5**
 
-- [ ] 3. Create test data factories and fixtures
+- [x] 3. Create test data factories and fixtures
   - Implement ClientTestDataFactory with various client data scenarios
   - Create FileUploadTestHelper for photo upload testing
   - Build database seeders for consistent test data
   - Implement test data cleanup utilities
   - _Requirements: 4.1, 4.2, 5.1, 5.2_
 
-- [ ] 3.1 Write property test for client creation with associations
+- [x] 3.1 Write property test for client creation with associations
   - **Property 5: Client creation with associations**
   - **Validates: Requirements 4.1, 4.4, 5.1, 5.4**
 
-- [ ] 3.2 Write property test for required field validation
+- [x] 3.2 Write property test for required field validation
   - **Property 6: Required field validation**
   - **Validates: Requirements 4.2, 5.2**
 
-- [ ] 4. Implement client listing endpoint tests
+- [x] 4. Implement client listing endpoint tests
   - Test GET /api/client/ with pagination scenarios
   - Test GET /api/client/entreprise with role-based filtering
   - Verify response structure and data completeness
   - Test error scenarios and edge cases
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 2.2, 2.3, 2.4, 2.5_
 
-- [ ] 4.1 Write property test for client list pagination
+- [x] 4.1 Write property test for client list pagination
   - **Property 1: Client list pagination consistency**
   - **Validates: Requirements 1.1, 1.2, 1.4**
 
-- [ ] 4.2 Write property test for role-based access filtering
+- [x] 4.2 Write property test for role-based access filtering
   - **Property 3: Role-based access filtering**
   - **Validates: Requirements 2.2, 2.3, 2.4, 2.5**
 
-- [ ] 5. Implement client retrieval endpoint tests
+- [x] 5. Implement client retrieval endpoint tests
   - Test GET /api/client/get/one/{id} with valid and invalid IDs
   - Verify complete client information retrieval
   - Test subscription and authentication requirements
   - Test error handling for non-existent clients
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
 
-- [ ] 5.1 Write property test for client retrieval completeness
+- [x] 5.1 Write property test for client retrieval completeness
   - **Property 4: Client retrieval completeness**
   - **Validates: Requirements 3.1, 3.5**
 
-- [ ] 5.2 Write property test for not found resource handling
+- [x] 5.2 Write property test for not found resource handling
   - **Property 15: Not found resource handling**
   - **Validates: Requirements 3.2, 6.2, 7.2**
 
-- [ ] 6. Implement client creation endpoint tests
+- [x] 6. Implement client creation endpoint tests
   - Test POST /api/client/create with various data combinations
   - Test POST /api/client/create/boutique for boutique-specific creation
   - Verify photo upload functionality and file handling
   - Test validation errors and constraint violations
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [ ] 6.1 Write property test for photo upload and naming
+- [x] 6.1 Write property test for photo upload and naming
   - **Property 7: Photo upload and naming**
   - **Validates: Requirements 4.3, 5.3, 9.3, 9.4**
 
-- [ ] 6.2 Write property test for trait entity configuration
+- [x] 6.2 Write property test for trait entity configuration
   - **Property 8: Trait entity configuration**
   - **Validates: Requirements 5.5**
 
