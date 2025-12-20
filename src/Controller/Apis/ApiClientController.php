@@ -318,8 +318,8 @@ class ApiClientController extends ApiInterface
 
         $client->setCreatedBy($this->getUser());
         $client->setUpdatedBy($this->getUser());
-        $client->setCreatedAtValue(new \DateTime());
-        $client->setUpdatedAt(new \DateTime());
+        $client->setCreatedAtValue(); // Pas de paramètre - la méthode gère elle-même la création de DateTimeImmutable
+        $client->setUpdatedAt();
 
         $errorResponse = $this->errorResponse($client);
         if ($errorResponse !== null) {
@@ -442,8 +442,8 @@ class ApiClientController extends ApiInterface
 
         $client->setCreatedBy($this->getUser());
         $client->setUpdatedBy($this->getUser());
-        $client->setCreatedAtValue(new \DateTime());
-        $client->setUpdatedAt(new \DateTime());
+        $client->setCreatedAtValue(); // Pas de paramètre - la méthode gère elle-même la création de DateTimeImmutable
+        $client->setUpdatedAt();
 
         $errorResponse = $this->errorResponse($client);
         if ($errorResponse !== null) {

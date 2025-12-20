@@ -18,12 +18,12 @@ trait TraitEntity
     #[Group(["group_user"])]
     private ?\DateTimeImmutable $updatedAt = null;
 
-    #[ORM\ManyToOne(targetEntity: User::class, cascade: ['persist'])]
+    #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(nullable: true)]
     #[Group(["group_pro","group_modeleBoutique"])]
     private ?User $createdBy = null;
 
-    #[ORM\ManyToOne(targetEntity: User::class, cascade: ['persist'])]
+    #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(nullable: true)]
     private ?User $updatedBy = null;
 
@@ -37,17 +37,15 @@ trait TraitEntity
         if ($this->createdAt === null) {
             $this->createdAt = new DateTimeImmutable();
         }
-        // S'assurer que isActive a une valeur par défaut
-        if (!isset($this->isActive)) {
-            $this->isActive = true;
-        }
+        // FORCER isActive à true si pas défini
+        $this->isActive = true;
     }
 
     #[ORM\PreUpdate]
     public function setUpdatedAt(): void
     {
         $this->updatedAt = new DateTimeImmutable();
-        // S'assurer que isActive a une valeur par défaut même lors des mises à jour
+        // FORCER isActive à true si pas défini lors des mises à jour
         if (!isset($this->isActive)) {
             $this->isActive = true;
         }
