@@ -288,7 +288,7 @@ class ApiPaysController extends ApiInterface
             return $errorResponse;
         } else {
             // Utiliser le trait pour sauvegarder dans le bon environnement
-            $paysRepository->saveInEnvironment($pays);
+            $paysRepository->add($pays);
         }
 
         return $this->responseData($pays, 'group1', ['Content-Type' => 'application/json']);

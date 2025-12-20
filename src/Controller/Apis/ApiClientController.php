@@ -299,7 +299,8 @@ class ApiClientController extends ApiInterface
         $client = new Client();
         $client->setEntreprise($this->getUser()->getEntreprise());
         $client->setPrenom($request->get('prenoms'));
-        $client->setIsActive(true);
+        $client->setCreatedAtValue();
+        
         $client->setNom($request->get('nom'));
         $client->setNumero($request->get('numero'));
         
@@ -318,13 +319,13 @@ class ApiClientController extends ApiInterface
         }
 
         // Configurer l'entité avec les bonnes valeurs (utilisateur géré, dates, isActive)
-        $this->configureTraitEntity($client);
+      /*   $this->configureTraitEntity($client); */
 
         $errorResponse = $this->errorResponse($client);
         if ($errorResponse !== null) {
             return $errorResponse;
         } else {
-            $clientRepository->saveInEnvironment($client, true);
+            $clientRepository->add($client);
         }
 
         return $this->responseData($client, 'group1', ['Content-Type' => 'application/json']);
