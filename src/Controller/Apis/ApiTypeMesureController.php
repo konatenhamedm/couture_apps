@@ -9,17 +9,12 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use App\Entity\TypeMesure;
 use App\Repository\CategorieMesureRepository;
 use App\Repository\CategorieTypeMesureRepository;
-use App\Repository\EntrepriseRepository;
 use App\Repository\TypeMesureRepository;
-use App\Repository\UserRepository;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use OpenApi\Attributes as OA;
-use Nelmio\ApiDocBundle\Annotation\Model as Model;
-use Nelmio\ApiDocBundle\Attribute\Security;
 use Nelmio\ApiDocBundle\Attribute\Model as AttributeModel;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
 #[Route('/api/typeMesure')]
 class ApiTypeMesureController extends ApiInterface
@@ -74,20 +69,20 @@ class ApiTypeMesureController extends ApiInterface
     )]
     #[OA\Tag(name: 'typeMesure')]
     // #[Security(name: 'Bearer')]
-    public function indexAll(TypeMesureRepository $typeMesureRepository,CategorieTypeMesureRepository $categorieTypeMesureRepository): Response
+    public function indexAll(TypeMesureRepository $typeMesureRepository, CategorieTypeMesureRepository $categorieTypeMesureRepository): Response
     {
-       /*  if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        /*  if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }  */
 
         try {
-            $typeMesures = $typeMesureRepository->findBy([],['id' => 'ASC']);
+            $typeMesures = $typeMesureRepository->findBy([], ['id' => 'ASC']);
 
 
-             $formattedTypeMesures = array_map(function ($typeMesure) use ($categorieTypeMesureRepository) {
+            $formattedTypeMesures = array_map(function ($typeMesure) use ($categorieTypeMesureRepository) {
 
-                $categorieTypeMesures = $categorieTypeMesureRepository->findBy(['typeMesure' => $typeMesure,'entreprise' => $this->getUser()->getEntreprise()]);
-        
+                $categorieTypeMesures = $categorieTypeMesureRepository->findBy(['typeMesure' => $typeMesure, 'entreprise' => $this->getUser()->getEntreprise()]);
+
                 return [
                     'id' => $typeMesure->getId(),
                     'libelle' => $typeMesure->getLibelle(),
@@ -97,11 +92,11 @@ class ApiTypeMesureController extends ApiInterface
                             'idCategorie' => $categorieTypeMesure->getCategorieMesure()->getId(),
                             'libelleCategorie' => $categorieTypeMesure->getCategorieMesure()->getLibelle(),
                         ];
-                    }, $categorieTypeMesures), 
+                    }, $categorieTypeMesures),
                 ];
             }, $typeMesures);
 
-          //  $typeMesures = $this->paginationService->paginate($typeMesures);
+            //  $typeMesures = $this->paginationService->paginate($typeMesures);
 
 
 
@@ -287,7 +282,16 @@ class ApiTypeMesureController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
-                   
+                    new OA\Property(
+                        property: "categories",
+                        type: "array",
+                        items: new OA\Items(
+                            type: "object",
+                            properties: [
+                                new OA\Property(property: "idCategorie", type: "integer"),
+                            ]
+                        ),
+                    ),
                 ],
                 type: "object"
             )
@@ -297,76 +301,166 @@ class ApiTypeMesureController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'typeMesure')]
-    public function update(Request $request, TypeMesure $typeMesure, TypeMesureRepository $typeMesureRepository, EntrepriseRepository $entrepriseRepository, CategorieMesureRepository $categorieMesureRepository): Response
+    public function update(
+        Request $request, 
+        TypeMesure $typeMesure, 
+        TypeMesureRepository $typeMesureRepository,
+        CategorieMesureRepository $categorieMesureRepository,
+        CategorieTypeMesureRepository $categorieTypeMesureRepository
+    ): Response
     {
         if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         try {
-            $data = json_decode($request->getContent());
-            if ($typeMesure != null) {
+            // Parse JSON payload with error handling
+            $jsonContent = $request->getContent();
+            if (empty($jsonContent)) {
+                return new JsonResponse([
+                    'code' => 400,
+                    'message' => 'Empty request body',
+                    'errors' => ['Request body cannot be empty']
+                ], 400);
+            }
 
-                $typeMesure->setLibelle($data->libelle);
+            $data = json_decode($jsonContent, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return new JsonResponse([
+                    'code' => 400,
+                    'message' => 'Malformed JSON',
+                    'errors' => ['Invalid JSON format: ' . json_last_error_msg()]
+                ], 400);
+            }
+
+            if ($typeMesure == null) {
+                return new JsonResponse([
+                    'code' => 404,
+                    'message' => 'TypeMesure not found',
+                    'errors' => ['TypeMesure with this ID does not exist']
+                ], 404);
+            }
+
+            // Start transaction for atomic updates
+            $this->em->beginTransaction();
+
+            try {
+                // Update libelle if provided
+                if (isset($data['libelle'])) {
+                    $typeMesure->setLibelle($data['libelle']);
+                }
+                
                 $typeMesure->setUpdatedBy($this->getUser());
                 $typeMesure->setUpdatedAt(new \DateTime());
+
+                // Validate TypeMesure entity
                 $errorResponse = $this->errorResponse($typeMesure);
-
-                // On vérifie si lignesCategoriesMesure n'est pas vide
-             $lignesCategoriesMesure = $data->ligneCategorieMesures;
-                if (isset($lignesCategoriesMesure) && is_array($lignesCategoriesMesure)) {
-                    foreach ($lignesCategoriesMesure as $ligneCategorieMesure) {
-
-                        if (!isset($ligneCategorieMesure->id) || $ligneCategorieMesure->id == null) {
-                            $categorieMesure = new CategorieMesure();
-                            $categorieMesure->setLibelle($ligneCategorieMesure->libelle);
-                            $categorieMesure->setEntreprise($this->getUser()->getEntreprise());
-                            $categorieMesure->setCreatedBy($this->getUser());
-                            $categorieMesure->setUpdatedBy($this->getUser());
-                            $categorieMesureRepository->add($categorieMesure, true);
-                        } else {
-                            $categorieMesure = $categorieMesureRepository->find($ligneCategorieMesure->id);
-                            $categorieMesure->setLibelle($ligneCategorieMesure->libelle);
-                            $categorieMesure->setCreatedBy($this->getUser());
-                            $categorieMesure->setUpdatedBy($this->getUser());
-                            $categorieMesureRepository->add($categorieMesure, true);
-                        }
-                    }
-                }
-
-                // On vérifie si les catégories mesures à supprimer existent 
-                $lignesCategoriesMesureDelete = $data->ligneCategorieMesuresDelete;
-
-                if (isset($lignesCategoriesMesureDelete) && is_array($lignesCategoriesMesureDelete)) {
-                    foreach ($lignesCategoriesMesureDelete as $ligneCategorieMesure) {
-                        $categorieMesure = $categorieMesureRepository->find($ligneCategorieMesure->id);
-                        if ($categorieMesure != null) {
-                            $typeMesure->removeCategorieTypeMesure($categorieMesure);
-                            $categorieMesureRepository->remove($categorieMesure, true);
-                        }
-                    }
-                } 
-
-
                 if ($errorResponse !== null) {
+                    $this->em->rollback();
                     return $errorResponse;
-                } else {
-                    $typeMesureRepository->add($typeMesure, true);
                 }
 
-                // On retourne la confirmation
-                $response = $this->responseData($typeMesure, 'group1', ['Content-Type' => 'application/json']);
-            } else {
-                $this->setMessage("Cette ressource est inexsitante");
-                $this->setStatusCode(300);
-                $response = $this->response([]);
+                // Handle categories if provided
+                if (isset($data['categories']) && is_array($data['categories'])) {
+                    // Validate all category IDs exist before making changes
+                    $categoryIds = [];
+                    foreach ($data['categories'] as $category) {
+                        if (!isset($category['idCategorie'])) {
+                            $this->em->rollback();
+                            return new JsonResponse([
+                                'code' => 400,
+                                'message' => 'Invalid category format',
+                                'errors' => ['Each category must have an idCategorie field']
+                            ], 400);
+                        }
+
+                        $categoryId = $category['idCategorie'];
+                        $categoryIds[] = $categoryId;
+
+                        // Check if category exists
+                        $categorieMesure = $categorieMesureRepository->find($categoryId);
+                        if (!$categorieMesure) {
+                            $this->em->rollback();
+                            return new JsonResponse([
+                                'code' => 400,
+                                'message' => 'Category not found',
+                                'errors' => ["Category {$categoryId} not found"]
+                            ], 400);
+                        }
+                    }
+
+                    // Remove all existing category associations
+                    $existingAssociations = $categorieTypeMesureRepository->findBy([
+                        'typeMesure' => $typeMesure,
+                        'entreprise' => $this->getUser()->getEntreprise()
+                    ]);
+
+                    foreach ($existingAssociations as $association) {
+                        $typeMesure->removeCategorieTypeMesure($association);
+                        $this->em->remove($association);
+                    }
+
+                    // Create new category associations
+                    foreach ($categoryIds as $categoryId) {
+                        $categorieMesure = $categorieMesureRepository->find($categoryId);
+                        
+                        $categorieTypeMesure = new CategorieTypeMesure();
+                        $categorieTypeMesure->setTypeMesure($typeMesure);
+                        $categorieTypeMesure->setCategorieMesure($categorieMesure);
+                        $categorieTypeMesure->setEntreprise($this->getUser()->getEntreprise());
+                        $categorieTypeMesure->setCreatedBy($this->getUser());
+                        $categorieTypeMesure->setUpdatedBy($this->getUser());
+
+                        $typeMesure->addCategorieTypeMesure($categorieTypeMesure);
+                        $this->em->persist($categorieTypeMesure);
+                    }
+                }
+
+                // Persist changes
+                $typeMesureRepository->add($typeMesure, true);
+                
+                // Commit transaction
+                $this->em->commit();
+
+                // Prepare response with formatted category details
+                $categorieTypeMesures = $categorieTypeMesureRepository->findBy([
+                    'typeMesure' => $typeMesure, 
+                    'entreprise' => $this->getUser()->getEntreprise()
+                ]);
+
+                $formattedTypeMesure = [
+                    'id' => $typeMesure->getId(),
+                    'libelle' => $typeMesure->getLibelle(),
+                    'categories' => array_map(function ($categorieTypeMesure) {
+                        return [
+                            'id' => $categorieTypeMesure->getId(),
+                            'idCategorie' => $categorieTypeMesure->getCategorieMesure()->getId(),
+                            'libelleCategorie' => $categorieTypeMesure->getCategorieMesure()->getLibelle(),
+                        ];
+                    }, $categorieTypeMesures),
+                ];
+
+                return new JsonResponse([
+                    'code' => 200,
+                    'message' => 'Operation effectuée avec succes',
+                    'data' => $formattedTypeMesure,
+                    'errors' => []
+                ], 200);
+
+            } catch (\Exception $e) {
+                $this->em->rollback();
+                throw $e;
             }
+
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
-            $this->setMessage("");
-            $response = $this->response([]);
+            $this->setMessage("Internal server error");
+            return new JsonResponse([
+                'code' => 500,
+                'message' => 'Internal server error',
+                'errors' => []
+            ], 500);
         }
-        return $response;
     }
 
     //const TAB_ID = 'parametre-tabs';
