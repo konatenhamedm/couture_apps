@@ -1,548 +1,238 @@
-# Design Document: Repository Standardization
+# Design Document
 
 ## Overview
 
-This design establishes a standardized architecture for repository classes in the Symfony application. The current codebase contains numerous repositories with inconsistent patterns, duplicated code, and varying approaches to data access. This standardization will create a unified interface, base implementation, and validation system to ensure consistent, maintainable repository code.
+This design addresses the DQL syntax error in the statistics dashboard by replacing invalid `DATE()` function calls with proper date range comparisons. The solution standardizes date filtering methods across all payment repositories while maintaining backward compatibility and ensuring optimal performance.
 
-The design leverages Symfony's existing ServiceEntityRepository pattern while adding standardized interfaces, base classes, and automated validation tools.
+The core issue is that Doctrine DQL does not support the MySQL `DATE()` function. Instead of using `DATE(field) = DATE(:param)`, we need to use proper date range comparisons like `field >= :start AND field <= :end`.
 
 ## Architecture
 
-### Component Hierarchy
+### Current Architecture Issues
+- Repository methods use `DATE()` function in DQL queries
+- Inconsistent date filtering approaches across repositories
+- Direct dependency on MySQL-specific functions
+- Potential for SQL injection through string concatenation
 
-```mermaid
-classDiagram
-    class StandardRepositoryInterface {
-        <<interface>>
-        +find(id): ?object
-        +findAll(): array
-        +findBy(criteria, orderBy, limit, offset): array
-        +findOneBy(criteria): ?object
-        +save(entity, flush): void
-        +remove(entity, flush): void
-        +count(criteria): int
-        +paginate(page, limit, criteria): PaginationResult
-    }
-    
-    class BaseRepository {
-        <<abstract>>
-        #entityManager: EntityManagerInterface
-        #entityClass: string
-        +validateEntity(entity): void
-        +handleException(exception): void
-        +createPaginatedQuery(criteria): QueryBuilder
-        +applyFilters(qb, filters): QueryBuilder
-    }
-    
-    class ConcreteRepository {
-        +findByCustomCriteria(): array
-        +findOneByLogin(login): ?Entity
-        +countActiveByPeriod(): int
-    }
-    
-    StandardRepositoryInterface <|.. BaseRepository
-    BaseRepository <|-- ConcreteRepository
+### Proposed Architecture
+```
+┌─────────────────────┐    ┌──────────────────────┐    ┌─────────────────────┐
+│  Statistics Service │───▶│  Standardized Repos  │───▶│   Database Layer    │
+└─────────────────────┘    └──────────────────────┘    └─────────────────────┘
+                                      │
+                                      ▼
+                           ┌──────────────────────┐
+                           │  Date Range Builder  │
+                           └──────────────────────┘
 ```
 
-### Service Integration
-
-```mermaid
-graph TD
-    A[Repository Validator] --> B[Standard Interface Check]
-    A --> C[Method Naming Check]
-    A --> D[Return Type Check]
-    
-    E[Migration Tool] --> F[Pattern Detection]
-    E --> G[Code Generation]
-    E --> H[Backward Compatibility]
-    
-    I[Documentation Generator] --> J[API Documentation]
-    I --> K[Usage Examples]
-    I --> L[Test Templates]
-```
+### Key Components
+1. **Date Range Builder**: Utility for converting single dates to proper date ranges
+2. **Standardized Repository Methods**: Consistent method signatures across all payment repositories
+3. **Parameter Binding**: Secure parameter handling for date values
+4. **Query Optimization**: Efficient DQL queries using proper date comparisons
 
 ## Components and Interfaces
 
-### StandardRepositoryInterface
-
-The core interface that all repositories must implement:
-
+### DateRangeBuilder Utility
 ```php
-<?php
-
-namespace App\Repository\Interface;
-
-use App\Repository\Result\PaginationResult;
-
-interface StandardRepositoryInterface
+class DateRangeBuilder
 {
-    // Core CRUD operations
-    public function find(mixed $id): ?object;
-    public function findAll(): array;
-    public function findBy(array $criteria, ?array $orderBy = null, ?int $limit = null, ?int $offset = null): array;
-    public function findOneBy(array $criteria): ?object;
-    public function save(object $entity, bool $flush = true): void;
-    public function remove(object $entity, bool $flush = true): void;
-    
-    // Counting and pagination
-    public function count(array $criteria = []): int;
-    public function paginate(int $page = 1, int $limit = 20, array $criteria = []): PaginationResult;
-    
-    // Validation and error handling
-    public function validateEntity(object $entity): void;
-    public function getEntityClass(): string;
-}
-```
-
-### BaseRepository
-
-Abstract base class providing common functionality:
-
-```php
-<?php
-
-namespace App\Repository\Base;
-
-use App\Repository\Interface\StandardRepositoryInterface;
-use App\Repository\Result\PaginationResult;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\ORM\QueryBuilder;
-use Doctrine\Persistence\ManagerRegistry;
-
-abstract class BaseRepository extends ServiceEntityRepository implements StandardRepositoryInterface
-{
-    public function __construct(ManagerRegistry $registry, string $entityClass)
+    public static function dayRange(DateTime $date): array
     {
-        parent::__construct($registry, $entityClass);
-    }
-    
-    // Standardized CRUD implementations
-    public function save(object $entity, bool $flush = true): void
-    {
-        $this->validateEntity($entity);
-        $this->getEntityManager()->persist($entity);
+        $start = clone $date;
+        $start->setTime(0, 0, 0);
         
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
-    }
-    
-    public function remove(object $entity, bool $flush = true): void
-    {
-        $this->getEntityManager()->remove($entity);
+        $end = clone $date;
+        $end->setTime(23, 59, 59);
         
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        return [$start, $end];
     }
     
-    // Pagination support
-    public function paginate(int $page = 1, int $limit = 20, array $criteria = []): PaginationResult
+    public static function formatForDQL(DateTime $date): string
     {
-        $qb = $this->createPaginatedQuery($criteria);
-        $qb->setFirstResult(($page - 1) * $limit)
-           ->setMaxResults($limit);
-           
-        return new PaginationResult(
-            $qb->getQuery()->getResult(),
-            $this->count($criteria),
-            $page,
-            $limit
-        );
-    }
-    
-    // Protected helper methods
-    protected function createPaginatedQuery(array $criteria): QueryBuilder
-    {
-        $qb = $this->createQueryBuilder('e');
-        return $this->applyFilters($qb, $criteria);
-    }
-    
-    protected function applyFilters(QueryBuilder $qb, array $filters): QueryBuilder
-    {
-        foreach ($filters as $field => $value) {
-            if ($value !== null) {
-                $qb->andWhere("e.{$field} = :{$field}")
-                   ->setParameter($field, $value);
-            }
-        }
-        return $qb;
-    }
-    
-    // Validation and error handling
-    public function validateEntity(object $entity): void
-    {
-        if (!$entity instanceof $this->getEntityClass()) {
-            throw new \InvalidArgumentException(
-                sprintf('Expected entity of type %s, got %s', $this->getEntityClass(), get_class($entity))
-            );
-        }
-    }
-    
-    public function getEntityClass(): string
-    {
-        return $this->getClassName();
+        return $date->format('Y-m-d H:i:s');
     }
 }
 ```
 
-### PaginationResult
-
-Data transfer object for paginated results:
-
+### Repository Interface Standardization
 ```php
-<?php
-
-namespace App\Repository\Result;
-
-class PaginationResult
+interface PaymentRepositoryInterface
 {
-    public function __construct(
-        private array $items,
-        private int $totalCount,
-        private int $currentPage,
-        private int $itemsPerPage
-    ) {}
-    
-    public function getItems(): array
-    {
-        return $this->items;
-    }
-    
-    public function getTotalCount(): int
-    {
-        return $this->totalCount;
-    }
-    
-    public function getCurrentPage(): int
-    {
-        return $this->currentPage;
-    }
-    
-    public function getItemsPerPage(): int
-    {
-        return $this->itemsPerPage;
-    }
-    
-    public function getTotalPages(): int
-    {
-        return (int) ceil($this->totalCount / $this->itemsPerPage);
-    }
-    
-    public function hasNextPage(): bool
-    {
-        return $this->currentPage < $this->getTotalPages();
-    }
-    
-    public function hasPreviousPage(): bool
-    {
-        return $this->currentPage > 1;
-    }
+    public function sumByEntrepriseAndPeriod($entreprise, DateTime $dateDebut, DateTime $dateFin): float;
+    public function sumByEntrepriseAndDay($entreprise, DateTime $date): float;
+    public function countByEntrepriseAndDay($entreprise, DateTime $date): int;
+    public function sumByBoutiqueAndPeriod($boutique, DateTime $dateDebut, DateTime $dateFin): float;
+    public function sumByBoutiqueAndDay($boutique, DateTime $date): float;
+    public function countByBoutiqueAndDay($boutique, DateTime $date): int;
 }
 ```
+
+### Updated Repository Methods
+Each payment repository will implement standardized methods:
+
+#### PaiementBoutiqueRepository
+- `sumByEntrepriseAndPeriod()`: Sum payments for enterprise within date range
+- `sumByEntrepriseAndDay()`: Sum payments for enterprise on specific day
+- `countByEntrepriseAndDay()`: Count payments for enterprise on specific day
+- `sumByBoutiqueAndPeriod()`: Sum payments for boutique within date range
+- `sumByBoutiqueAndDay()`: Sum payments for boutique on specific day
+- `countByBoutiqueAndDay()`: Count payments for boutique on specific day
+
+#### PaiementReservationRepository
+- Same method signatures as PaiementBoutiqueRepository
+- Joins through reservation entity to access enterprise/boutique
+
+#### PaiementFactureRepository
+- Same method signatures adapted for facture entity relationships
+- Joins through facture entity to access enterprise information
 
 ## Data Models
 
-### Repository Validation Rules
-
+### Date Range Handling
 ```php
-<?php
+// Current problematic approach
+->andWhere('DATE(pb.createdAt) = DATE(:date)')
 
-namespace App\Repository\Validation;
-
-class RepositoryValidationRule
-{
-    private string $ruleName;
-    private string $description;
-    private callable $validator;
-    private string $errorMessage;
-    
-    public function __construct(string $ruleName, string $description, callable $validator, string $errorMessage)
-    {
-        $this->ruleName = $ruleName;
-        $this->description = $description;
-        $this->validator = $validator;
-        $this->errorMessage = $errorMessage;
-    }
-    
-    public function validate(\ReflectionClass $repositoryClass): ValidationResult
-    {
-        try {
-            $isValid = ($this->validator)($repositoryClass);
-            return new ValidationResult($this->ruleName, $isValid, $isValid ? null : $this->errorMessage);
-        } catch (\Exception $e) {
-            return new ValidationResult($this->ruleName, false, $e->getMessage());
-        }
-    }
-}
+// New standardized approach
+->andWhere('pb.createdAt >= :dateStart')
+->andWhere('pb.createdAt <= :dateEnd')
 ```
 
-### Migration Report
-
+### Parameter Binding Strategy
 ```php
-<?php
-
-namespace App\Repository\Migration;
-
-class MigrationReport
-{
-    private array $migratedRepositories = [];
-    private array $errors = [];
-    private array $warnings = [];
-    
-    public function addMigratedRepository(string $className, array $changes): void
-    {
-        $this->migratedRepositories[$className] = $changes;
-    }
-    
-    public function addError(string $className, string $error): void
-    {
-        $this->errors[$className][] = $error;
-    }
-    
-    public function addWarning(string $className, string $warning): void
-    {
-        $this->warnings[$className][] = $warning;
-    }
-    
-    public function generateSummary(): array
-    {
-        return [
-            'total_repositories' => count($this->migratedRepositories),
-            'successful_migrations' => count(array_filter($this->migratedRepositories, fn($changes) => !empty($changes))),
-            'errors' => count($this->errors),
-            'warnings' => count($this->warnings),
-            'details' => [
-                'migrated' => $this->migratedRepositories,
-                'errors' => $this->errors,
-                'warnings' => $this->warnings
-            ]
-        ];
-    }
-}
+// Secure parameter binding
+$qb->setParameter('dateStart', $dateStart->format('Y-m-d H:i:s'))
+   ->setParameter('dateEnd', $dateEnd->format('Y-m-d H:i:s'));
 ```
 
-Now I need to use the prework tool to analyze the acceptance criteria before writing the correctness properties:
-
-<function_calls>
-<invoke name="prework">
-<parameter name="featureName">repository-standardization
-
-## Correctness Properties
-
-*A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
-
-After analyzing the acceptance criteria, I've identified the following properties that can be automatically tested. Some criteria focus on structural requirements (interface definitions) which are better validated through examples, while others describe universal behaviors suitable for property-based testing.
-
-### Property Reflection
-
-Looking at all the testable properties from the prework analysis, I can identify some areas for consolidation:
-
-- Properties about interface structure (1.1, 1.3, 1.5, 2.1) are better handled as structural examples
-- Properties about validation system behavior (4.1-4.4) can be combined into comprehensive validation properties
-- Properties about migration tool behavior (5.1-5.5) can be grouped by functionality
-- Properties about code generation (6.1, 6.2, 6.3, 6.4, 6.5) can be consolidated
-
-### Core Properties
-
-**Property 1: Repository Interface Compliance**
-*For any* repository class in the system, it should implement the StandardRepositoryInterface and provide all required CRUD methods
-**Validates: Requirements 1.2**
-
-**Property 2: Method Naming Convention Consistency**
-*For any* custom query method in any repository, the method name should follow established conventions (findBy*, findOneBy*, countBy*, etc.)
-**Validates: Requirements 1.4, 3.1**
-
-**Property 3: Repository Inheritance Consistency**
-*For any* repository extending BaseRepository, it should inherit all standard CRUD methods and maintain their signatures
-**Validates: Requirements 2.2**
-
-**Property 4: Error Handling Consistency**
-*For any* repository method that encounters an error condition, it should throw standardized exceptions with consistent error messages
-**Validates: Requirements 2.3, 3.5**
-
-**Property 5: Transaction Handling Consistency**
-*For any* database operation performed through BaseRepository, transaction state should be handled consistently across all operations
-**Validates: Requirements 2.4**
-
-**Property 6: Pagination Functionality**
-*For any* valid pagination parameters (page, limit, criteria), the pagination method should return results with correct counts and page information
-**Validates: Requirements 2.5**
-
-**Property 7: Query Builder Usage**
-*For any* complex query method in a repository, it should use QueryBuilder instead of raw SQL for database operations
-**Validates: Requirements 3.2**
-
-**Property 8: Input Validation Consistency**
-*For any* query method receiving parameters, it should validate and sanitize inputs before using them in database queries
-**Validates: Requirements 3.3**
-
-**Property 9: Return Type Consistency**
-*For any* repository method, the actual return type should match the declared return type (entities, arrays, or null)
-**Validates: Requirements 3.4**
-
-**Property 10: Validation Rule Effectiveness**
-*For any* repository class, the validation system should correctly identify whether it conforms to standards or not
-**Validates: Requirements 4.1, 4.2, 4.3, 4.4**
-
-**Property 11: Migration Functionality Preservation**
-*For any* repository migrated by the migration tool, all existing public methods should maintain the same behavior and signatures
-**Validates: Requirements 5.1, 5.3**
-
-**Property 12: Migration Detection Accuracy**
-*For any* repository in the system, the migration tool should correctly identify whether it conforms to standards
-**Validates: Requirements 5.2**
-
-**Property 13: Migration Reporting Completeness**
-*For any* migration operation, the tool should generate a complete report containing all changes, errors, and warnings
-**Validates: Requirements 5.4**
-
-**Property 14: Post-Migration Validation**
-*For any* completed migration, all migrated repositories should pass the validation system
-**Validates: Requirements 5.5**
-
-**Property 15: Documentation Generation Completeness**
-*For any* repository with public methods, the documentation generator should create complete API documentation for all methods
-**Validates: Requirements 6.1, 6.3**
-
-**Property 16: Code Generation Consistency**
-*For any* new entity, the code generator should create a repository template that follows all established standards
-**Validates: Requirements 6.2, 6.5**
-
-**Property 17: Documentation Synchronization**
-*For any* change to repository interfaces, the documentation generator should update the documentation to reflect the changes
-**Validates: Requirements 6.4**
+### Query Structure Template
+```php
+public function sumByEntrepriseAndDay($entreprise, DateTime $date): float
+{
+    [$dateStart, $dateEnd] = DateRangeBuilder::dayRange($date);
+    
+    return $this->createQueryBuilder('p')
+        ->select('COALESCE(SUM(p.montant), 0)')
+        ->leftJoin('p.relatedEntity', 'r')
+        ->where('r.entreprise = :entreprise')
+        ->andWhere('p.createdAt >= :dateStart')
+        ->andWhere('p.createdAt <= :dateEnd')
+        ->setParameter('entreprise', $entreprise)
+        ->setParameter('dateStart', DateRangeBuilder::formatForDQL($dateStart))
+        ->setParameter('dateEnd', DateRangeBuilder::formatForDQL($dateEnd))
+        ->getQuery()
+        ->getSingleScalarResult() ?? 0.0;
+}
+```
 
 ## Error Handling
 
-### Exception Hierarchy
+### Date Validation
+- Validate DateTime parameters before query execution
+- Handle null dates gracefully with default values
+- Provide meaningful error messages for invalid date ranges
 
+### Query Error Recovery
+- Use COALESCE to handle null aggregation results
+- Implement fallback values for failed queries
+- Log query errors for debugging purposes
+
+### Exception Handling Strategy
 ```php
-<?php
-
-namespace App\Repository\Exception;
-
-// Base repository exception
-class RepositoryException extends \Exception {}
-
-// Validation exceptions
-class EntityValidationException extends RepositoryException {}
-class InvalidCriteriaException extends RepositoryException {}
-class InvalidParameterException extends RepositoryException {}
-
-// Query exceptions
-class QueryExecutionException extends RepositoryException {}
-class InvalidQueryException extends RepositoryException {}
-
-// Migration exceptions
-class MigrationException extends RepositoryException {}
-class BackwardCompatibilityException extends MigrationException {}
-```
-
-### Error Handling Patterns
-
-1. **Input Validation Errors**: Throw `InvalidParameterException` with descriptive messages
-2. **Entity Validation Errors**: Throw `EntityValidationException` with field-specific details
-3. **Query Execution Errors**: Wrap Doctrine exceptions in `QueryExecutionException`
-4. **Migration Errors**: Provide detailed error context in `MigrationException`
-
-### Logging Strategy
-
-- Log all repository exceptions at ERROR level
-- Log validation warnings at WARN level
-- Log migration progress at INFO level
-- Include context: repository class, method, parameters
-
-## Testing Strategy
-
-### Dual Testing Approach
-
-The testing strategy employs both unit tests and property-based tests to ensure comprehensive coverage:
-
-**Unit Tests**: Focus on specific examples, edge cases, and error conditions
-- Interface structure validation (Requirements 1.1, 1.3, 1.5, 2.1)
-- Specific error scenarios and exception handling
-- Integration points between components
-- Edge cases in pagination and filtering
-
-**Property-Based Tests**: Verify universal properties across all inputs
-- Repository interface compliance across all repository classes
-- Method naming conventions across all custom methods
-- Consistent behavior across all database operations
-- Migration tool effectiveness across different repository types
-
-### Property-Based Testing Configuration
-
-- **Testing Library**: Use `giorgiosironi/eris` (already available in the project)
-- **Test Iterations**: Minimum 100 iterations per property test
-- **Test Tagging**: Each property test must reference its design document property
-
-**Tag Format**: `Feature: repository-standardization, Property {number}: {property_text}`
-
-### Test Organization
-
-```
-tests/
-├── Unit/
-│   ├── Repository/
-│   │   ├── Interface/StandardRepositoryInterfaceTest.php
-│   │   ├── Base/BaseRepositoryTest.php
-│   │   └── Validation/ValidationRuleTest.php
-│   └── Migration/MigrationToolTest.php
-└── Property/
-    ├── RepositoryComplianceTest.php
-    ├── MethodNamingTest.php
-    ├── ErrorHandlingTest.php
-    └── MigrationTest.php
-```
-
-### Example Property Test Structure
-
-```php
-<?php
-
-namespace App\Tests\Property\Repository;
-
-use Eris\Generator;
-use Eris\TestTrait;
-use PHPUnit\Framework\TestCase;
-
-class RepositoryComplianceTest extends TestCase
-{
-    use TestTrait;
-    
-    /**
-     * Feature: repository-standardization, Property 1: Repository Interface Compliance
-     */
-    public function testRepositoryInterfaceCompliance(): void
-    {
-        $this->forAll(
-            Generator::elements($this->getAllRepositoryClasses())
-        )->then(function (string $repositoryClass) {
-            $reflection = new \ReflectionClass($repositoryClass);
-            $this->assertTrue(
-                $reflection->implementsInterface(StandardRepositoryInterface::class),
-                "Repository {$repositoryClass} must implement StandardRepositoryInterface"
-            );
-        });
-    }
-    
-    private function getAllRepositoryClasses(): array
-    {
-        // Return all repository classes in the system
-        return [
-            UserRepository::class,
-            BoutiqueRepository::class,
-            ClientRepository::class,
-            // ... other repositories
-        ];
-    }
+try {
+    $result = $query->getSingleScalarResult();
+    return $result ?? 0.0;
+} catch (NoResultException $e) {
+    return 0.0;
+} catch (NonUniqueResultException $e) {
+    throw new RepositoryException('Multiple results found for scalar query');
 }
 ```
 
-### Integration with CI/CD
+## Correctness Properties
 
-- Run property tests in CI pipeline with extended iteration counts (500+)
-- Generate test coverage reports for both unit and property tests
-- Fail builds if any repository validation rules are violated
-- Generate migration reports as build artifacts
+*A property is a characteristic or behavior that should hold true across all valid executions of a system-essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
+
+### Property 1: DQL Syntax Compliance
+*For any* repository method that filters by date, executing the generated DQL query should complete successfully without throwing syntax errors related to unknown functions
+**Validates: Requirements 1.1, 1.2, 1.3**
+
+### Property 2: Date Parameter Formatting
+*For any* DateTime object passed to repository methods, the formatted date string should match the 'Y-m-d H:i:s' pattern required for DQL compatibility
+**Validates: Requirements 1.4**
+
+### Property 3: Day Range Completeness
+*For any* date used in day filtering, the generated date range should span exactly from 00:00:00 to 23:59:59 of that specific day
+**Validates: Requirements 1.5, 4.4**
+
+### Property 4: Repository Method Standardization
+*For any* payment repository class (PaiementBoutique, PaiementReservation, PaiementFacture), all required standardized methods should exist and accept the correct parameter types
+**Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.5, 2.7**
+
+### Property 5: Aggregation Method Completeness
+*For any* filtering scenario in payment repositories, both sum and count methods should be available and return appropriate numeric types
+**Validates: Requirements 2.6**
+
+### Property 6: Service Integration Success
+*For any* statistics service method call, the underlying repository queries should execute successfully and return valid numeric results
+**Validates: Requirements 3.1, 3.2, 3.3**
+
+### Property 7: Calculation Accuracy
+*For any* date range and enterprise/boutique combination, the aggregated payment data should accurately reflect the sum and count of transactions within the specified period
+**Validates: Requirements 3.4, 3.5**
+
+### Property 8: Date Range Inclusivity
+*For any* date range filter, all transactions with timestamps within the specified boundaries should be included in the results
+**Validates: Requirements 4.1, 4.3**
+
+### Property 9: Timezone Consistency
+*For any* date comparison operation, the system should handle timezone considerations consistently across all repository methods
+**Validates: Requirements 4.2**
+
+### Property 10: Date Precision Preservation
+*For any* DateTime object converted to string format and back, the precision should be preserved without data loss
+**Validates: Requirements 4.5**
+
+### Property 11: Error Handling Robustness
+*For any* invalid date parameter or null date input, repository methods should handle them gracefully without throwing unhandled exceptions
+**Validates: Requirements 5.1, 5.2, 5.5**
+
+### Property 12: Parameter Binding Security
+*For any* repository query with date parameters, the parameters should be properly bound rather than concatenated into the query string
+**Validates: Requirements 5.4**
+
+### Property 13: Query Efficiency
+*For any* statistics calculation operation, the system should minimize the number of database queries and select only required fields
+**Validates: Requirements 6.3, 6.5**
+
+### Property 14: Backward Compatibility
+*For any* existing method call to updated repositories, the method signature and return data format should remain compatible with the previous implementation
+**Validates: Requirements 7.1, 7.2, 7.3**
+
+### Property 15: Result Equivalence
+*For any* statistics calculation, the updated repository implementation should produce equivalent results to the previous implementation for the same input data
+**Validates: Requirements 7.4, 7.5**
+
+## Testing Strategy
+
+### Unit Testing Approach
+- Test each repository method with various date ranges
+- Verify correct DQL generation without DATE() function
+- Test parameter binding security
+- Validate aggregation results accuracy
+
+### Integration Testing
+- Test statistics service with updated repositories
+- Verify dashboard functionality end-to-end
+- Test with real database data
+- Performance testing for large datasets
+
+### Property-Based Testing Configuration
+- **Minimum 100 iterations per property test** (due to randomization)
+- Each property test must reference its design document property
+- **Tag format**: Feature: repository-standardization, Property {number}: {property_text}
+- **Dual Testing Approach**: Both unit tests and property tests are required
+- **Unit tests focus on**: Specific examples, edge cases, error conditions
+- **Property tests focus on**: Universal properties across all inputs through randomization

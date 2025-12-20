@@ -2,187 +2,153 @@
 
 ## Overview
 
-This implementation plan converts the repository standardization design into discrete coding tasks. The approach focuses on creating the core interfaces and base classes first, then implementing validation and migration tools, and finally adding documentation and code generation capabilities. Each task builds incrementally to ensure the system remains functional throughout the implementation process.
+This implementation plan fixes the DQL DATE() function syntax error by standardizing date filtering methods across all payment repositories. The approach replaces invalid DATE() function calls with proper date range comparisons while maintaining backward compatibility.
 
 ## Tasks
 
-- [x] 1. Create core interfaces and base repository structure
-  - Create the StandardRepositoryInterface with all required CRUD methods
-  - Create the PaginationResult data transfer object
-  - Set up the directory structure for repository components
-  - _Requirements: 1.1, 1.3, 1.5_
+- [ ] 1. Create DateRangeBuilder utility class
+  - Create utility class for date range operations
+  - Implement dayRange() method for converting single dates to full day ranges
+  - Implement formatForDQL() method for proper date string formatting
+  - Add timezone handling and validation methods
+  - _Requirements: 1.4, 1.5, 4.2, 4.5_
 
-- [x] 1.1 Write unit tests for StandardRepositoryInterface structure
-  - Test that interface defines all required methods with correct signatures
-  - Test that interface includes pagination and filtering methods
-  - _Requirements: 1.1, 1.3, 1.5_
+- [ ] 1.1 Write property test for DateRangeBuilder
+  - **Property 2: Date Parameter Formatting**
+  - **Property 3: Day Range Completeness**
+  - **Property 10: Date Precision Preservation**
+  - **Validates: Requirements 1.4, 1.5, 4.5**
 
-- [x] 2. Implement BaseRepository abstract class
-  - Create BaseRepository extending ServiceEntityRepository
-  - Implement standardized CRUD operations (save, remove)
-  - Add pagination and filtering capabilities
-  - Implement entity validation and error handling
-  - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
+- [ ] 2. Update PaiementBoutiqueRepository methods
+  - Replace DATE() function calls with proper date range comparisons
+  - Implement standardized method signatures for enterprise and boutique filtering
+  - Add proper parameter binding for security
+  - Update sumByEntrepriseAndPeriod, sumByEntrepriseAndDay, countByEntrepriseAndDay methods
+  - Update sumByBoutiqueAndPeriod, sumByBoutiqueAndDay, countByBoutiqueAndDay methods
+  - _Requirements: 1.1, 1.2, 1.3, 2.1, 2.4, 2.5, 2.6, 2.7_
 
-- [x] 2.1 Write property test for repository inheritance
-  - **Property 3: Repository Inheritance Consistency**
-  - **Validates: Requirements 2.2**
+- [ ] 2.1 Write property test for PaiementBoutiqueRepository
+  - **Property 1: DQL Syntax Compliance**
+  - **Property 4: Repository Method Standardization**
+  - **Property 5: Aggregation Method Completeness**
+  - **Validates: Requirements 1.1, 1.2, 1.3, 2.1, 2.4, 2.5, 2.6, 2.7**
 
-- [x] 2.2 Write property test for error handling consistency
-  - **Property 4: Error Handling Consistency**
-  - **Validates: Requirements 2.3, 3.5**
+- [ ] 3. Update PaiementReservationRepository methods
+  - Replace DATE() function calls with proper date range comparisons
+  - Implement standardized method signatures matching PaiementBoutiqueRepository
+  - Handle joins through reservation entity to access enterprise/boutique
+  - Add proper error handling and parameter validation
+  - _Requirements: 1.1, 1.2, 1.3, 2.2, 2.4, 2.5, 2.6, 2.7_
 
-- [x] 2.3 Write property test for transaction handling
-  - **Property 5: Transaction Handling Consistency**
-  - **Validates: Requirements 2.4**
+- [ ] 3.1 Write property test for PaiementReservationRepository
+  - **Property 1: DQL Syntax Compliance**
+  - **Property 4: Repository Method Standardization**
+  - **Property 7: Calculation Accuracy**
+  - **Validates: Requirements 1.1, 1.2, 1.3, 2.2, 2.4, 2.5, 2.6, 2.7**
 
-- [x] 2.4 Write property test for pagination functionality
-  - **Property 6: Pagination Functionality**
-  - **Validates: Requirements 2.5**
+- [ ] 4. Update PaiementFactureRepository methods
+  - Replace DATE() function calls with proper date range comparisons
+  - Implement standardized method signatures matching other payment repositories
+  - Handle joins through facture entity to access enterprise information
+  - Add consistent error handling and null value management
+  - _Requirements: 1.1, 1.2, 1.3, 2.3, 2.4, 2.5, 2.6, 2.7_
 
-- [x] 3. Create repository exception hierarchy
-  - Implement RepositoryException base class
-  - Create specific exception types (EntityValidationException, QueryExecutionException, etc.)
-  - Add error context and logging capabilities
-  - _Requirements: 2.3, 3.5_
+- [ ] 4.1 Write property test for PaiementFactureRepository
+  - **Property 1: DQL Syntax Compliance**
+  - **Property 4: Repository Method Standardization**
+  - **Property 12: Parameter Binding Security**
+  - **Validates: Requirements 1.1, 1.2, 1.3, 2.3, 2.4, 2.5, 2.6, 2.7**
 
-- [x] 3.1 Write unit tests for exception hierarchy
-  - Test exception inheritance and error messages
-  - Test error context preservation
-  - _Requirements: 2.3, 3.5_
-
-- [x] 4. Checkpoint - Ensure core infrastructure tests pass
+- [ ] 5. Checkpoint - Ensure repository tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [x] 5. Implement repository validation system
-  - Create RepositoryValidationRule class
-  - Create ValidationResult data structure
-  - Implement validation rules for interface compliance, naming conventions, and return types
-  - Create RepositoryValidator service to orchestrate validation
-  - _Requirements: 4.1, 4.2, 4.3, 4.4_
+- [ ] 6. Add error handling and validation
+  - Implement graceful handling of invalid date parameters
+  - Add DateTime parameter validation before query execution
+  - Implement proper exception handling for null dates
+  - Add meaningful error messages for date formatting failures
+  - _Requirements: 5.1, 5.2, 5.3, 5.5_
 
-- [x] 5.1 Write property test for validation rule effectiveness
-  - **Property 10: Validation Rule Effectiveness**
-  - **Validates: Requirements 4.1, 4.2, 4.3, 4.4**
+- [ ] 6.1 Write property test for error handling
+  - **Property 11: Error Handling Robustness**
+  - **Validates: Requirements 5.1, 5.2, 5.5**
 
-- [x] 5.2 Write property test for method naming conventions
-  - **Property 2: Method Naming Convention Consistency**
-  - **Validates: Requirements 1.4, 3.1**
+- [ ] 6.2 Write unit tests for error scenarios
+  - Test invalid date parameter handling
+  - Test null date input scenarios
+  - Test error message quality
+  - _Requirements: 5.1, 5.2, 5.3, 5.5_
 
-- [x] 5.3 Write property test for return type consistency
-  - **Property 9: Return Type Consistency**
-  - **Validates: Requirements 3.4**
+- [ ] 7. Optimize query performance
+  - Ensure queries use indexed date columns efficiently
+  - Minimize database queries for statistics calculations
+  - Select only required fields in aggregation queries
+  - Add query result caching where appropriate
+  - _Requirements: 6.1, 6.3, 6.4, 6.5_
 
-- [ ] 6. Create migration tool infrastructure
-  - Create MigrationReport class for tracking changes
-  - Create RepositoryMigrator service
-  - Implement repository analysis and pattern detection
-  - Add backward compatibility checking
-  - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
+- [ ] 7.1 Write property test for query efficiency
+  - **Property 13: Query Efficiency**
+  - **Validates: Requirements 6.3, 6.5**
 
-- [ ] 6.1 Write property test for migration functionality preservation
-  - **Property 11: Migration Functionality Preservation**
-  - **Validates: Requirements 5.1, 5.3**
+- [ ] 8. Verify statistics service integration
+  - Test that StatistiquesService works with updated repositories
+  - Ensure dashboard methods execute without DQL syntax errors
+  - Validate that numeric results are returned correctly
+  - Test date range calculations across all service methods
+  - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
 
-- [ ] 6.2 Write property test for migration detection accuracy
-  - **Property 12: Migration Detection Accuracy**
-  - **Validates: Requirements 5.2**
+- [ ] 8.1 Write property test for service integration
+  - **Property 6: Service Integration Success**
+  - **Property 7: Calculation Accuracy**
+  - **Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5**
 
-- [ ] 6.3 Write property test for migration reporting
-  - **Property 13: Migration Reporting Completeness**
-  - **Validates: Requirements 5.4**
+- [ ] 9. Ensure backward compatibility
+  - Verify existing method signatures are maintained
+  - Test that return data formats remain consistent
+  - Ensure StatistiquesService requires no modifications
+  - Validate dashboard displays same metrics as before
+  - Compare calculation results with previous implementation
+  - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
-- [ ] 6.4 Write property test for post-migration validation
-  - **Property 14: Post-Migration Validation**
-  - **Validates: Requirements 5.5**
+- [ ] 9.1 Write property test for backward compatibility
+  - **Property 14: Backward Compatibility**
+  - **Property 15: Result Equivalence**
+  - **Validates: Requirements 7.1, 7.2, 7.3, 7.4, 7.5**
 
-- [ ] 7. Implement query method standardization
-  - Add query builder validation to BaseRepository
-  - Implement input validation and sanitization
-  - Create helper methods for common query patterns
-  - _Requirements: 3.1, 3.2, 3.3, 3.4_
+- [ ] 10. Add date consistency validation
+  - Ensure date range inclusivity across all repositories
+  - Implement consistent timezone handling
+  - Validate date boundary treatment consistency
+  - Test date precision preservation in conversions
+  - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-- [ ] 7.1 Write property test for query builder usage
-  - **Property 7: Query Builder Usage**
-  - **Validates: Requirements 3.2**
+- [ ] 10.1 Write property test for date consistency
+  - **Property 8: Date Range Inclusivity**
+  - **Property 9: Timezone Consistency**
+  - **Validates: Requirements 4.1, 4.2, 4.3**
 
-- [ ] 7.2 Write property test for input validation
-  - **Property 8: Input Validation Consistency**
-  - **Validates: Requirements 3.3**
+- [ ] 11. Final integration testing
+  - Test complete statistics dashboard functionality
+  - Verify all date filtering scenarios work correctly
+  - Test with various date ranges (daily, monthly, custom)
+  - Ensure no DQL syntax errors occur in any scenario
+  - Performance test with large datasets
+  - _Requirements: All requirements validation_
 
-- [ ] 8. Create documentation generator
-  - Create DocumentationGenerator service
-  - Implement API documentation generation for repository methods
-  - Add usage examples for common query patterns
-  - Implement automatic documentation updates
-  - _Requirements: 6.1, 6.3, 6.4_
+- [ ] 11.1 Write integration tests
+  - Test end-to-end dashboard functionality
+  - Test various date range scenarios
+  - Test performance with large datasets
+  - _Requirements: 3.5, 6.2_
 
-- [ ] 8.1 Write property test for documentation generation
-  - **Property 15: Documentation Generation Completeness**
-  - **Validates: Requirements 6.1, 6.3**
-
-- [ ] 8.2 Write property test for documentation synchronization
-  - **Property 17: Documentation Synchronization**
-  - **Validates: Requirements 6.4**
-
-- [ ] 9. Implement code generation capabilities
-  - Create CodeGenerator service
-  - Implement repository template generation for new entities
-  - Create unit test template generation
-  - Add integration with Symfony's maker bundle
-  - _Requirements: 6.2, 6.5_
-
-- [ ] 9.1 Write property test for code generation consistency
-  - **Property 16: Code Generation Consistency**
-  - **Validates: Requirements 6.2, 6.5**
-
-- [ ] 10. Create Symfony console commands
-  - Create validate:repositories command for running validation
-  - Create migrate:repositories command for migration
-  - Create generate:repository-docs command for documentation
-  - Add progress bars and colored output for better UX
-  - _Requirements: 4.1, 5.1, 6.1_
-
-- [ ] 10.1 Write integration tests for console commands
-  - Test command execution and output
-  - Test error handling in commands
-  - _Requirements: 4.1, 5.1, 6.1_
-
-- [ ] 11. Checkpoint - Ensure all validation and migration tests pass
+- [ ] 12. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
-
-- [ ] 12. Migrate existing repositories to new standards
-  - Run migration tool on UserRepository, BoutiqueRepository, ClientRepository
-  - Update existing repositories to extend BaseRepository
-  - Ensure backward compatibility is maintained
-  - Generate migration reports
-  - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
-
-- [ ] 12.1 Write property test for repository interface compliance
-  - **Property 1: Repository Interface Compliance**
-  - **Validates: Requirements 1.2**
-
-- [ ] 13. Create comprehensive integration tests
-  - Test end-to-end repository standardization workflow
-  - Test validation → migration → documentation generation pipeline
-  - Verify all repositories pass validation after migration
-  - _Requirements: All requirements_
-
-- [ ] 13.1 Write integration tests for complete workflow
-  - Test the full standardization pipeline
-  - Verify system behavior with real repository classes
-  - _Requirements: All requirements_
-
-- [ ] 14. Final checkpoint - Ensure all tests pass and system is ready
-  - Ensure all tests pass, ask the user if questions arise.
-  - Verify all existing repositories are migrated and compliant
-  - Generate final documentation and migration reports
 
 ## Notes
 
-- All tasks are required for comprehensive repository standardization
+- All tasks are required for comprehensive implementation
 - Each task references specific requirements for traceability
-- Property tests validate universal correctness properties using giorgiosironi/eris
+- Checkpoints ensure incremental validation
+- Property tests validate universal correctness properties
 - Unit tests validate specific examples and edge cases
-- Migration tasks preserve existing functionality while adding standardization
-- Console commands provide user-friendly interfaces for validation and migration
+- The implementation maintains backward compatibility while fixing DQL syntax issues
