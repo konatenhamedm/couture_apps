@@ -367,6 +367,9 @@ class ApiClientController extends ApiInterface
             // Configurer l'entité avec les bonnes valeurs (utilisateur géré, dates, isActive)
             $this->configureTraitEntity($client);
 
+            // S'assurer que toutes les entités liées sont gérées (nécessaire sans cascade persist)
+            $this->ensureClientRelatedEntitiesAreManaged($client);
+
             // Validation complète de l'entité avant persistance
             $validationError = $this->validateEntityForPersistence($client);
             if ($validationError !== null) {
@@ -515,6 +518,9 @@ class ApiClientController extends ApiInterface
 
             // Configurer l'entité avec les bonnes valeurs (utilisateur géré, dates, isActive)
             $this->configureTraitEntity($client);
+
+            // S'assurer que toutes les entités liées sont gérées (nécessaire sans cascade persist)
+            $this->ensureClientRelatedEntitiesAreManaged($client);
 
             // Validation complète de l'entité avant persistance
             $validationError = $this->validateEntityForPersistence($client);

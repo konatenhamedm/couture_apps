@@ -5,6 +5,7 @@ namespace App\Controller\Apis\Config;
 use App\Controller\FileTrait;
 use App\Trait\DatabaseEnvironmentTrait;
 use App\Entity\Boutique;
+use App\Entity\Client;
 use App\Entity\Entreprise;
 use App\Repository\BoutiqueRepository;
 use App\Repository\SettingRepository;
@@ -603,7 +604,29 @@ $this->setStatusCode(500);
 
         try {
             // Utiliser le service dédié pour gérer l'entité
-            return $this->environmentEntityManager->ensureEntityIsManaged($entity);
+            $managedEntity = $this->environmentEntityManager->ensureEntityIsManaged($entity);
+            
+            // Vérification supplémentaire : s'assurer que l'entité est bien gérée
+            if (!$this->em->contains($managedEntity)) {
+                // Si l'entité n'est toujours pas gérée, essayer de la récupérer à nouveau
+                if (method_exists($managedEntity, 'getId') && $managedEntity->getId()) {
+                    $entityClass = get_class($managedEntity);
+                    // Enlever le préfixe Proxy si présent
+                    if (strpos($entityClass, 'Proxies\\__CG__\\') === 0) {
+                        $entityClass = substr($entityClass, strlen('Proxies\\__CG__\\'));
+                    }
+                    
+                    $freshEntity = $this->em->find($entityClass, $managedEntity->getId());
+                    if ($freshEntity) {
+                        return $freshEntity;
+                    }
+                }
+                
+                // En dernier recours, merger l'entité
+                return $this->em->merge($managedEntity);
+            }
+            
+            return $managedEntity;
         } catch (\Exception $e) {
             // Fallback vers l'ancienne méthode en cas d'erreur
             error_log("Erreur dans getManagedEntityFromEnvironment: " . $e->getMessage());
@@ -719,6 +742,44 @@ $this->setStatusCode(500);
             return $pays;
         } catch (\Exception $e) {
             return $pays;
+        }
+    }
+
+    /**
+     * S'assure que toutes les entités liées d'un client sont gérées par l'EntityManager
+     * Ceci est nécessaire quand on n'utilise pas cascade persist
+     */
+    protected function ensureClientRelatedEntitiesAreManaged(Client $client): void
+    {
+        // Gérer l'entreprise
+        if ($client->getEntreprise() && !$this->em->contains($client->getEntreprise())) {
+            $managedEntreprise = $this->getManagedEntityFromEnvironment($client->getEntreprise());
+            $client->setEntreprise($managedEntreprise);
+        }
+        
+        // Gérer la boutique
+        if ($client->getBoutique() && !$this->em->contains($client->getBoutique())) {
+            $managedBoutique = $this->getManagedEntityFromEnvironment($client->getBoutique());
+            $client->setBoutique($managedBoutique);
+        }
+        
+        // Gérer la succursale
+        if ($client->getSurccursale() && !$this->em->contains($client->getSurccursale())) {
+            $managedSuccursale = $this->getManagedEntityFromEnvironment($client->getSurccursale());
+            $client->setSurccursale($managedSuccursale);
+        }
+        
+        // Gérer la photo si elle existe
+        if ($client->getPhoto() && !$this->em->contains($client->getPhoto())) {
+            // Pour les fichiers, on peut avoir besoin d'une gestion spéciale
+            try {
+                $managedPhoto = $this->getManagedEntityFromEnvironment($client->getPhoto());
+                $client->setPhoto($managedPhoto);
+            } catch (\Exception $e) {
+                // Si la photo ne peut pas être gérée, on peut la laisser telle quelle
+                // car elle a cascade persist
+                error_log("Avertissement: impossible de gérer la photo: " . $e->getMessage());
+            }
         }
     }
 

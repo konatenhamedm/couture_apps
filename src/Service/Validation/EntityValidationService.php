@@ -161,10 +161,13 @@ class EntityValidationService implements EntityValidationServiceInterface
 
                 // Valider l'entité liée seulement si elle n'est pas déjà persistée
                 // Les entités déjà en base sont considérées comme valides
-                if (!$this->isEntityAlreadyValidated($relatedEntity) && !$this->isEntityPersisted($relatedEntity)) {
-                    $relatedResult = $this->validateLibelleFields($relatedEntity);
-                    if (!$relatedResult->isValid()) {
-                        $result->addError("Entité liée '{$associationName}' invalide: " . $relatedResult->getFormattedErrors());
+                if (!$this->isEntityPersisted($relatedEntity)) {
+                    // Vérifier si on a déjà validé cette entité pour éviter la récursion infinie
+                    if (!$this->isEntityAlreadyValidated($relatedEntity)) {
+                        $relatedResult = $this->validateLibelleFields($relatedEntity);
+                        if (!$relatedResult->isValid()) {
+                            $result->addError("Entité liée '{$associationName}' invalide: " . $relatedResult->getFormattedErrors());
+                        }
                     }
                 }
             }
