@@ -82,6 +82,9 @@ class Client
         $this->reservations = new ArrayCollection();
         $this->clients = new ArrayCollection();
         $this->paiementBoutiques = new ArrayCollection();
+        
+        // Initialiser les valeurs par défaut du trait
+        $this->initializeTraitDefaults();
     }
 
     public function getId(): ?int

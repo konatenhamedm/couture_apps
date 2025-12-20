@@ -27,23 +27,44 @@ trait TraitEntity
     #[ORM\JoinColumn(nullable: true)]
     private ?User $updatedBy = null;
 
-    #[ORM\Column]
+    #[ORM\Column(options: ['default' => true])]
     #[Group(["group1", "group_type","group_modeleBoutique"])]
     private bool $isActive = true; // ✅ Non-nullable avec valeur par défaut
 
-    /* 
-    #[ORM\PrePersist] */
+    #[ORM\PrePersist]
     public function setCreatedAtValue(): void
     {
         if ($this->createdAt === null) {
             $this->createdAt = new DateTimeImmutable();
         }
+        // S'assurer que isActive a une valeur par défaut
+        if (!isset($this->isActive)) {
+            $this->isActive = true;
+        }
     }
 
-    /*    #[ORM\PreUpdate] */
+    #[ORM\PreUpdate]
     public function setUpdatedAt(): void
     {
         $this->updatedAt = new DateTimeImmutable();
+        // S'assurer que isActive a une valeur par défaut même lors des mises à jour
+        if (!isset($this->isActive)) {
+            $this->isActive = true;
+        }
+    }
+
+    /**
+     * Initialise les valeurs par défaut du trait
+     * À appeler dans le constructeur des entités qui utilisent ce trait
+     */
+    public function initializeTraitDefaults(): void
+    {
+        if (!isset($this->isActive)) {
+            $this->isActive = true;
+        }
+        if ($this->createdAt === null) {
+            $this->createdAt = new DateTimeImmutable();
+        }
     }
 
     public function getCreatedAt(): ?\DateTimeImmutable
@@ -80,13 +101,16 @@ trait TraitEntity
 
     public function isActive(): bool
     {
+        // S'assurer qu'isActive a toujours une valeur par défaut
+        if (!isset($this->isActive)) {
+            $this->isActive = true;
+        }
         return $this->isActive;
     }
 
     public function setIsActive(bool $actif): static
     {
         $this->isActive = $actif;
-
         return $this;
     }
 }
