@@ -327,13 +327,9 @@ class ApiClientController extends ApiInterface
                 if ($succursale) {
                     $client->setSurccursale($this->getManagedEntityFromEnvironment($succursale));
                     // Si on a une succursale, on peut récupérer sa boutique
-                    if ($succursale->getBoutique()) {
+                   /*  if ($succursale->getBoutique()) {
                         $client->setBoutique($this->getManagedEntityFromEnvironment($succursale->getBoutique()));
-                    }
-                } else {
-                    $this->setStatusCode(404);
-                    $this->setMessage("Succursale non trouvée");
-                    return $this->response([]);
+                    } */
                 }
             }
             
