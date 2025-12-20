@@ -119,6 +119,8 @@ class ApiClientController extends ApiInterface
 
           
             if ($this->getUser()->getType() == $typeUserRepository->findOneByInEnvironment(['code' => 'SADM'])) {
+
+                dd("");
                 $clients = $this->paginationService->paginate($clientRepository->findByInEnvironment(
                     ['entreprise' => $this->getUser()->getEntreprise()],
                     ['id' => 'ASC']
