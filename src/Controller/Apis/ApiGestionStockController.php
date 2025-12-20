@@ -731,7 +731,7 @@ class ApiGestionStockController extends ApiInterface
             // Récupérer l'entité et s'assurer qu'elle est gérée
             $foundBoutique = $boutiqueRepository->findInEnvironment($data['boutiqueId']);
             if ($foundBoutique) {
-                $managedBoutique = $this->getManagedEntity($foundBoutique);
+                $managedBoutique = $this->getManagedEntityFromEnvironment($foundBoutique);
                 $entreStock->setBoutique($managedBoutique);
             };
         }

@@ -541,7 +541,7 @@ class ApiPaiementController extends ApiInterface
         if (isset($data['client']) && $data['client']) {
             $client = $clientRepository->findInEnvironment($data['client']);
             if ($client) {
-                $paiement->setClient($this->getManagedEntity($client));
+                $paiement->setClient($this->getManagedEntityFromEnvironment($client));
             }
         }
 
@@ -869,7 +869,7 @@ class ApiPaiementController extends ApiInterface
         if (isset($data['client']) && $data['client']) {
             $client = $clientRepository->findInEnvironment($data['client']);
             if ($client) {
-                $paiement->setClient($this->getManagedEntity($client));
+                $paiement->setClient($this->getManagedEntityFromEnvironment($client));
             }
         }
 

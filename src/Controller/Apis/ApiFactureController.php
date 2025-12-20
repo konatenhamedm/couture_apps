@@ -401,7 +401,7 @@ class ApiFactureController extends ApiInterface
         // Récupérer l'entité et s'assurer qu'elle est gérée
             $foundClient = $clientRepository->findInEnvironment($request->get('clientId'));
             if ($foundClient) {
-                $managedClient = $this->getManagedEntity($foundClient);
+                $managedClient = $this->getManagedEntityFromEnvironment($foundClient);
                 $facture->setClient($managedClient);
             };
         $facture->setDateDepot(new \DateTime());
@@ -409,7 +409,7 @@ class ApiFactureController extends ApiInterface
         // Récupérer l'entité et s'assurer qu'elle est gérée
             $foundSuccursale = $surccursaleRepository->findInEnvironment($request->get('succursaleId'));
             if ($foundSuccursale) {
-                $managedSuccursale = $this->getManagedEntity($foundSuccursale);
+                $managedSuccursale = $this->getManagedEntityFromEnvironment($foundSuccursale);
                 $facture->setSuccursale($managedSuccursale);
             };
 
@@ -440,7 +440,7 @@ class ApiFactureController extends ApiInterface
                 // Récupérer l'entité et s'assurer qu'elle est gérée
             $foundTypeMesure = $typeMesureRepository->findInEnvironment($ligne['typeMesureId']);
             if ($foundTypeMesure) {
-                $managedTypeMesure = $this->getManagedEntity($foundTypeMesure);
+                $managedTypeMesure = $this->getManagedEntityFromEnvironment($foundTypeMesure);
                 $mesure->setTypeMesure($managedTypeMesure);
             };
                 $mesure->setMontant($ligne['montant']);
@@ -470,7 +470,7 @@ class ApiFactureController extends ApiInterface
                         // Récupérer l'entité et s'assurer qu'elle est gérée
             $foundCategorieMesure = $categorieMesureRepository->findInEnvironment($ligneData['categorieId']);
             if ($foundCategorieMesure) {
-                $managedCategorieMesure = $this->getManagedEntity($foundCategorieMesure);
+                $managedCategorieMesure = $this->getManagedEntityFromEnvironment($foundCategorieMesure);
                 $ligneMesure->setCategorieMesure($managedCategorieMesure);
             };
                         $ligneMesure->setTaille($ligneData['taille']);
@@ -681,7 +681,7 @@ class ApiFactureController extends ApiInterface
                 // Récupérer l'entité et s'assurer qu'elle est gérée
             $foundClient = $clientRepository->findInEnvironment($data['clientId']);
             if ($foundClient) {
-                $managedClient = $this->getManagedEntity($foundClient);
+                $managedClient = $this->getManagedEntityFromEnvironment($foundClient);
                 $facture->setClient($managedClient);
             };
             }
@@ -691,7 +691,7 @@ class ApiFactureController extends ApiInterface
                 // Récupérer l'entité et s'assurer qu'elle est gérée
             $foundSuccursale = $surccursaleRepository->findInEnvironment($data['succursaleId']);
             if ($foundSuccursale) {
-                $managedSuccursale = $this->getManagedEntity($foundSuccursale);
+                $managedSuccursale = $this->getManagedEntityFromEnvironment($foundSuccursale);
                 $facture->setSuccursale($managedSuccursale);
             };
             }
@@ -738,7 +738,7 @@ class ApiFactureController extends ApiInterface
                         // Récupérer l'entité et s'assurer qu'elle est gérée
             $foundTypeMesure = $typeMesureRepository->findInEnvironment($mesureData['typeMesureId']);
             if ($foundTypeMesure) {
-                $managedTypeMesure = $this->getManagedEntity($foundTypeMesure);
+                $managedTypeMesure = $this->getManagedEntityFromEnvironment($foundTypeMesure);
                 $mesure->setTypeMesure($managedTypeMesure);
             };
                         $mesure->setMontant($mesureData['montant']);
@@ -788,7 +788,7 @@ class ApiFactureController extends ApiInterface
                                     // Récupérer l'entité et s'assurer qu'elle est gérée
             $foundCategorieMesure = $categorieMesureRepository->findInEnvironment($ligneData['categorieId']);
             if ($foundCategorieMesure) {
-                $managedCategorieMesure = $this->getManagedEntity($foundCategorieMesure);
+                $managedCategorieMesure = $this->getManagedEntityFromEnvironment($foundCategorieMesure);
                 $ligneMesure->setCategorieMesure($managedCategorieMesure);
             };
                                     $ligneMesure->setTaille($ligneData['taille']);

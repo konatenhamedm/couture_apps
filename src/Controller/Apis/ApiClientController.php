@@ -313,14 +313,14 @@ class ApiClientController extends ApiInterface
         if($request->get('succursale') && $request->get('succursale') != null){
             $succursale = $surccursaleRepository->findInEnvironment($request->get('succursale'));
             if ($succursale) {
-                $client->setSurccursale($this->getManagedEntity($succursale));
+                $client->setSurccursale($this->getManagedEntityFromEnvironment($succursale));
             }
         }
         
         if($request->get('boutique') && $request->get('boutique') != null){
             $boutique = $boutiqueRepository->findInEnvironment($request->get('boutique'));
             if ($boutique) {
-                $client->setBoutique($this->getManagedEntity($boutique));
+                $client->setBoutique($this->getManagedEntityFromEnvironment($boutique));
             }
         }
 
@@ -444,13 +444,13 @@ class ApiClientController extends ApiInterface
         if ($request->get('boutique') && $request->get('boutique') != null) {
             $boutique = $boutiqueRepository->findInEnvironment($request->get('boutique'));
             if ($boutique) {
-                $client->setBoutique($this->getManagedEntity($boutique));
+                $client->setBoutique($this->getManagedEntityFromEnvironment($boutique));
             }
         }
         if ($request->get('succursale') && $request->get('succursale') != null) {
             $succursale = $surccursaleRepository->findInEnvironment($request->get('succursale'));
             if ($succursale) {
-                $client->setSurccursale($this->getManagedEntity($succursale));
+                $client->setSurccursale($this->getManagedEntityFromEnvironment($succursale));
             }
         }
 
@@ -581,13 +581,13 @@ class ApiClientController extends ApiInterface
                 if ($request->get('surccursale')) {
                     $succursale = $surccursaleRepository->findInEnvironment($request->get('surccursale'));
                     if ($succursale) {
-                        $client->setSurccursale($this->getManagedEntity($succursale));
+                        $client->setSurccursale($this->getManagedEntityFromEnvironment($succursale));
                     }
                 }
                 if ($request->get('boutique')) {
                     $boutique = $boutiqueRepository->findInEnvironment($request->get('boutique'));
                     if ($boutique) {
-                        $client->setBoutique($this->getManagedEntity($boutique));
+                        $client->setBoutique($this->getManagedEntityFromEnvironment($boutique));
                     }
                 }
 

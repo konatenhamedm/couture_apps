@@ -410,7 +410,7 @@ class ApiUserController extends ApiInterface
             // Récupérer l'entité et s'assurer qu'elle est gérée
             $foundType = $typeUserRepository->findInEnvironment(['code' => 'SADM']);
             if ($foundType) {
-                $managedType = $this->getManagedEntity($foundType);
+                $managedType = $this->getManagedEntityFromEnvironment($foundType);
                 $user->setType($managedType);
             };
             /* $user->setCreatedAtValue();
@@ -690,7 +690,7 @@ class ApiUserController extends ApiInterface
             if (isset($data['succursale']) && $data['succursale'] != null) {
                 $succursale = $surccursaleRepository->findInEnvironment($data['succursale']);
             if ($succursale) {
-                $user->setSurccursale($this->getManagedEntity($succursale));
+                $user->setSurccursale($this->getManagedEntityFromEnvironment($succursale));
                 }
             }
 
@@ -698,7 +698,7 @@ class ApiUserController extends ApiInterface
             if (isset($data['boutique']) && $data['boutique'] != null) {
                 $boutique = $boutiqueRepository->findInEnvironment($data['boutique']);
             if ($boutique) {
-                $user->setBoutique($this->getManagedEntity($boutique));
+                $user->setBoutique($this->getManagedEntityFromEnvironment($boutique));
                 }
             }
 

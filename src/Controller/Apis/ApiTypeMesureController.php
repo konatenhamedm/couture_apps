@@ -262,7 +262,7 @@ class ApiTypeMesureController extends ApiInterface
                 // Récupérer l'entité et s'assurer qu'elle est gérée
             $foundCategorieMesure = $categorieMesureRepository->findInEnvironment($ligneCategorieMesure['categorieId']);
             if ($foundCategorieMesure) {
-                $managedCategorieMesure = $this->getManagedEntity($foundCategorieMesure);
+                $managedCategorieMesure = $this->getManagedEntityFromEnvironment($foundCategorieMesure);
                 $categorieMesure->setCategorieMesure($managedCategorieMesure);
             };
                 $errorResponse = $this->errorResponse($categorieMesure);

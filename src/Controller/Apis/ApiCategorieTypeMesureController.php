@@ -128,13 +128,13 @@ class ApiCategorieTypeMesureController extends ApiInterface
             // Récupérer l'entité et s'assurer qu'elle est gérée
             $foundTypeMesure = $typeMesureRepository->findInEnvironment($data['typeMesure']);
             if ($foundTypeMesure) {
-                $managedTypeMesure = $this->getManagedEntity($foundTypeMesure);
+                $managedTypeMesure = $this->getManagedEntityFromEnvironment($foundTypeMesure);
                 $categorieTypeMesure->setTypeMesure($managedTypeMesure);
             };
             // Récupérer l'entité et s'assurer qu'elle est gérée
             $foundCategorieMesure = $categorieMesureRepository->findInEnvironment($categorieMesure);
             if ($foundCategorieMesure) {
-                $managedCategorieMesure = $this->getManagedEntity($foundCategorieMesure);
+                $managedCategorieMesure = $this->getManagedEntityFromEnvironment($foundCategorieMesure);
                 $categorieTypeMesure->setCategorieMesure($managedCategorieMesure);
             };
             $categorieTypeMesure->setCreatedBy($this->getManagedUser());
@@ -216,7 +216,7 @@ class ApiCategorieTypeMesureController extends ApiInterface
                     // Récupérer l'entité et s'assurer qu'elle est gérée
             $foundCategorieMesure = $categorieMesureRepository->findInEnvironment($data['categorieMesure']);
             if ($foundCategorieMesure) {
-                $managedCategorieMesure = $this->getManagedEntity($foundCategorieMesure);
+                $managedCategorieMesure = $this->getManagedEntityFromEnvironment($foundCategorieMesure);
                 $categorieTypeMesure->setCategorieMesure($managedCategorieMesure);
             };
                 }

@@ -539,8 +539,15 @@ $this->setStatusCode(500);
                 $entityClass = substr($entityClass, strlen('Proxies\\__CG__\\'));
             }
             
-            $managedEntity = $this->em->find($entityClass, $entity->getId());
-            return $managedEntity;
+            // Utiliser merge() au lieu de find() pour s'assurer que l'entité est gérée
+            try {
+                $managedEntity = $this->em->merge($entity);
+                return $managedEntity;
+            } catch (\Exception $e) {
+                // Si merge échoue, essayer find()
+                $managedEntity = $this->em->find($entityClass, $entity->getId());
+                return $managedEntity;
+            }
         }
 
         return null;
@@ -574,5 +581,40 @@ $this->setStatusCode(500);
         if ($managedEntreprise) {
             $entity->setEntreprise($managedEntreprise);
         }
+    }
+
+    /**
+     * Méthode spécialisée pour obtenir une entité gérée depuis findInEnvironment
+     * Utilise l'EntityManager de l'environnement actuel pour s'assurer que l'entité est correctement gérée
+     */
+    protected function getManagedEntityFromEnvironment($entity)
+    {
+        if (!$entity) {
+            return null;
+        }
+
+        // Si l'entité a un ID, la récupérer depuis la base avec l'EM de l'environnement
+        if (method_exists($entity, 'getId') && $entity->getId()) {
+            $entityClass = get_class($entity);
+            // Enlever le préfixe Proxy si présent
+            if (strpos($entityClass, 'Proxies\\__CG__\\') === 0) {
+                $entityClass = substr($entityClass, strlen('Proxies\\__CG__\\'));
+            }
+            
+            try {
+                // Utiliser l'EntityManager de l'environnement pour récupérer l'entité
+                $currentEM = $this->entityManagerProvider->getEntityManager();
+                if ($currentEM->contains($entity)) {
+                    return $entity;
+                }
+                $managedEntity = $currentEM->find($entityClass, $entity->getId());
+                return $managedEntity ?: $entity;
+            } catch (\Exception $e) {
+                // Fallback vers l'EM principal
+                return $this->getManagedEntity($entity);
+            }
+        }
+
+        return $entity;
     }
 }

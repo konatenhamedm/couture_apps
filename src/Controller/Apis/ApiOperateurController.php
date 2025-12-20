@@ -398,7 +398,7 @@ class ApiOperateurController extends ApiInterface
                     $paysEntity = $paysRepository->findInEnvironment($pays);
                     if ($paysEntity) {
                         // Utiliser une entité gérée pour éviter les problèmes de cascade persist
-                        $managedPays = $this->getManagedEntity($paysEntity);
+                        $managedPays = $this->getManagedEntityFromEnvironment($paysEntity);
                         $operateur->setPays($managedPays);
                     }
                 }
