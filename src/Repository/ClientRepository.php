@@ -88,6 +88,29 @@ class ClientRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
+    /**
+     * Compte les clients actifs pour une succursale dans une période
+     */
+    public function countActiveBySuccursaleAndPeriod($succursale, \DateTime $dateDebut, \DateTime $dateFin): int
+    {
+        $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebut);
+        $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFin);
+        
+        return $this->createQueryBuilder('c')
+            ->select('COUNT(DISTINCT c.id)')
+            ->leftJoin('c.factures', 'f')
+            ->where('f.succursale = :succursale')
+            ->andWhere('f.createdAt >= :dateDebut')
+            ->andWhere('f.createdAt <= :dateFin')
+            ->andWhere('c.isActive = :isActive')
+            ->setParameter('succursale', $succursale)
+            ->setParameter('dateDebut', $dateDebutImmutable)
+            ->setParameter('dateFin', $dateFinImmutable)
+            ->setParameter('isActive', 1)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     //    /**
     //     * @return Client[] Returns an array of Client objects
     //     */

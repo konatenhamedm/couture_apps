@@ -159,6 +159,85 @@ class FactureRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /**
+     * Compte les factures actives par succursale et période
+     */
+    public function countActiveBySuccursaleAndPeriod($succursale, \DateTime $dateDebut, \DateTime $dateFin): int
+    {
+        $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebut);
+        $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFin);
+        
+        return $this->createQueryBuilder('f')
+            ->select('COUNT(f.id)')
+            ->where('f.succursale = :succursale')
+            ->andWhere('f.createdAt >= :dateDebut')
+            ->andWhere('f.createdAt <= :dateFin')
+            ->andWhere('f.isActive = :active')
+            ->setParameter('succursale', $succursale)
+            ->setParameter('dateDebut', $dateDebutImmutable)
+            ->setParameter('dateFin', $dateFinImmutable)
+            ->setParameter('active', true)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * Compte les factures par succursale et période
+     */
+    public function countBySuccursaleAndPeriod($succursale, \DateTime $dateDebut, \DateTime $dateFin): int
+    {
+        $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebut);
+        $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFin);
+        
+        return $this->createQueryBuilder('f')
+            ->select('COUNT(f.id)')
+            ->where('f.succursale = :succursale')
+            ->andWhere('f.createdAt >= :dateDebut')
+            ->andWhere('f.createdAt <= :dateFin')
+            ->setParameter('succursale', $succursale)
+            ->setParameter('dateDebut', $dateDebutImmutable)
+            ->setParameter('dateFin', $dateFinImmutable)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * Compte les factures par jour pour une succursale
+     */
+    public function countBySuccursaleAndDay($succursale, \DateTime $date): int
+    {
+        $nextDay = clone $date;
+        $nextDay->add(new \DateInterval('P1D'));
+        
+        $dateImmutable = \DateTimeImmutable::createFromMutable($date);
+        $nextDayImmutable = \DateTimeImmutable::createFromMutable($nextDay);
+
+        return $this->createQueryBuilder('f')
+            ->select('COUNT(f.id)')
+            ->where('f.succursale = :succursale')
+            ->andWhere('f.createdAt >= :date')
+            ->andWhere('f.createdAt < :nextDay')
+            ->setParameter('succursale', $succursale)
+            ->setParameter('date', $dateImmutable)
+            ->setParameter('nextDay', $nextDayImmutable)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * Récupère les dernières factures pour une succursale
+     */
+    public function findLatestBySuccursale($succursale, int $limit = 5): array
+    {
+        return $this->createQueryBuilder('f')
+            ->where('f.succursale = :succursale')
+            ->orderBy('f.createdAt', 'DESC')
+            ->setMaxResults($limit)
+            ->setParameter('succursale', $succursale)
+            ->getQuery()
+            ->getResult();
+    }
+
     //    public function findOneBySomeField($value): ?Facture
     //    {
     //        return $this->createQueryBuilder('f')

@@ -161,4 +161,107 @@ class PaiementFactureRepository extends ServiceEntityRepository
 
         return (float) $result;
     }
+
+    /**
+     * Calcule le total des paiements facture pour une succursale dans une période
+     */
+    public function sumBySuccursaleAndPeriod($succursale, \DateTime $dateDebut, \DateTime $dateFin): float
+    {
+        [$startDate, $endDate] = DateRangeBuilder::periodRange($dateDebut, $dateFin);
+        
+        $result = $this->createQueryBuilder('pf')
+            ->select('COALESCE(SUM(pf.montant), 0)')
+            ->leftJoin('pf.facture', 'f')
+            ->where('f.succursale = :succursale')
+            ->andWhere('pf.createdAt >= :dateDebut')
+            ->andWhere('pf.createdAt <= :dateFin')
+            ->setParameter('succursale', $succursale)
+            ->setParameter('dateDebut', DateRangeBuilder::formatForDQL($startDate))
+            ->setParameter('dateFin', DateRangeBuilder::formatForDQL($endDate))
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return (float) $result;
+    }
+
+    /**
+     * Calcule la somme des paiements facture par jour pour une succursale
+     */
+    public function sumBySuccursaleAndDay($succursale, \DateTime $date): float
+    {
+        [$startDate, $endDate] = DateRangeBuilder::dayRange($date);
+        
+        $result = $this->createQueryBuilder('pf')
+            ->select('COALESCE(SUM(pf.montant), 0)')
+            ->leftJoin('pf.facture', 'f')
+            ->where('f.succursale = :succursale')
+            ->andWhere('pf.createdAt >= :dateStart')
+            ->andWhere('pf.createdAt <= :dateEnd')
+            ->setParameter('succursale', $succursale)
+            ->setParameter('dateStart', DateRangeBuilder::formatForDQL($startDate))
+            ->setParameter('dateEnd', DateRangeBuilder::formatForDQL($endDate))
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return (float) $result;
+    }
+
+    /**
+     * Compte les paiements facture par succursale et période
+     */
+    public function countBySuccursaleAndPeriod($succursale, \DateTime $dateDebut, \DateTime $dateFin): int
+    {
+        [$startDate, $endDate] = DateRangeBuilder::periodRange($dateDebut, $dateFin);
+        
+        $result = $this->createQueryBuilder('pf')
+            ->select('COUNT(pf.id)')
+            ->leftJoin('pf.facture', 'f')
+            ->where('f.succursale = :succursale')
+            ->andWhere('pf.createdAt >= :dateDebut')
+            ->andWhere('pf.createdAt <= :dateFin')
+            ->setParameter('succursale', $succursale)
+            ->setParameter('dateDebut', DateRangeBuilder::formatForDQL($startDate))
+            ->setParameter('dateFin', DateRangeBuilder::formatForDQL($endDate))
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return (int) $result;
+    }
+
+    /**
+     * Compte les paiements facture par succursale et jour
+     */
+    public function countBySuccursaleAndDay($succursale, \DateTime $date): int
+    {
+        [$startDate, $endDate] = DateRangeBuilder::dayRange($date);
+        
+        $result = $this->createQueryBuilder('pf')
+            ->select('COUNT(pf.id)')
+            ->leftJoin('pf.facture', 'f')
+            ->where('f.succursale = :succursale')
+            ->andWhere('pf.createdAt >= :dateStart')
+            ->andWhere('pf.createdAt <= :dateEnd')
+            ->setParameter('succursale', $succursale)
+            ->setParameter('dateStart', DateRangeBuilder::formatForDQL($startDate))
+            ->setParameter('dateEnd', DateRangeBuilder::formatForDQL($endDate))
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return (int) $result;
+    }
+
+    /**
+     * Trouve les derniers paiements facture par succursale
+     */
+    public function findLatestBySuccursale($succursale, int $limit = 5): array
+    {
+        return $this->createQueryBuilder('pf')
+            ->leftJoin('pf.facture', 'f')
+            ->where('f.succursale = :succursale')
+            ->setParameter('succursale', $succursale)
+            ->orderBy('pf.createdAt', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
 }

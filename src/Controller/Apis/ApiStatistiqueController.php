@@ -592,6 +592,315 @@ class ApiStatistiqueController extends ApiInterface
         ];
     }
 
+    /**
+     * Dashboard Ateliya pour une succursale spécifique
+     */
+    #[Route('/statistique/ateliya/succursale/{id}', methods: ['POST'])]
+    #[OA\Post(
+        path: "/api/statistique/ateliya/succursale/{id}",
+        summary: "Dashboard Ateliya pour succursale",
+        description: "Retourne toutes les statistiques nécessaires pour le dashboard Ateliya d'une succursale spécifique avec filtres avancés.",
+        tags: ['Statistiques']
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: "ID de la succursale",
+        schema: new OA\Schema(type: 'integer', example: 1)
+    )]
+    #[OA\RequestBody(
+        required: false,
+        description: "Filtres optionnels pour les statistiques",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "dateDebut", type: "string", format: "date", example: "2025-01-01"),
+                new OA\Property(property: "dateFin", type: "string", format: "date", example: "2025-01-31"),
+                new OA\Property(property: "filtre", type: "string", enum: ["jour", "mois", "annee", "periode"], example: "mois"),
+                new OA\Property(property: "valeur", type: "string", example: "2025-01")
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Statistiques de la succursale récupérées avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "success", type: "boolean", example: true),
+                new OA\Property(
+                    property: "data",
+                    type: "object",
+                    properties: [
+                        new OA\Property(property: "succursale_id", type: "integer", example: 1),
+                        new OA\Property(
+                            property: "periode",
+                            type: "object",
+                            properties: [
+                                new OA\Property(property: "debut", type: "string", example: "2025-01-01"),
+                                new OA\Property(property: "fin", type: "string", example: "2025-01-31"),
+                                new OA\Property(property: "nbJours", type: "integer", example: 31)
+                            ]
+                        ),
+                        new OA\Property(
+                            property: "kpis",
+                            type: "object",
+                            properties: [
+                                new OA\Property(property: "chiffreAffaires", type: "integer", example: 1850000),
+                                new OA\Property(property: "facturesActives", type: "integer", example: 18),
+                                new OA\Property(property: "clientsActifs", type: "integer", example: 89),
+                                new OA\Property(property: "mesuresEnCours", type: "integer", example: 12)
+                            ]
+                        ),
+                        new OA\Property(
+                            property: "revenusQuotidiens",
+                            type: "array",
+                            items: new OA\Items(
+                                type: "object",
+                                properties: [
+                                    new OA\Property(property: "jour", type: "string", example: "Lun 15"),
+                                    new OA\Property(property: "factures", type: "integer", example: 3),
+                                    new OA\Property(property: "mesures", type: "integer", example: 5),
+                                    new OA\Property(property: "paiements", type: "integer", example: 2),
+                                    new OA\Property(property: "revenus", type: "integer", example: 185000)
+                                ]
+                            )
+                        ),
+                        new OA\Property(
+                            property: "revenusParType",
+                            type: "array",
+                            items: new OA\Items(
+                                type: "object",
+                                properties: [
+                                    new OA\Property(property: "type", type: "string", example: "Factures"),
+                                    new OA\Property(property: "revenus", type: "integer", example: 1200000)
+                                ]
+                            )
+                        ),
+                        new OA\Property(
+                            property: "activitesSuccursale",
+                            type: "array",
+                            items: new OA\Items(
+                                type: "object",
+                                properties: [
+                                    new OA\Property(property: "activite", type: "string", example: "Factures"),
+                                    new OA\Property(property: "nombre", type: "integer", example: 18),
+                                    new OA\Property(property: "revenus", type: "integer", example: 1200000),
+                                    new OA\Property(property: "progression", type: "integer", example: 125)
+                                ]
+                            )
+                        ),
+                        new OA\Property(
+                            property: "dernieresTransactions",
+                            type: "array",
+                            items: new OA\Items(
+                                type: "object",
+                                properties: [
+                                    new OA\Property(property: "id", type: "string", example: "FAC-20250130-001"),
+                                    new OA\Property(property: "type", type: "string", example: "Facture"),
+                                    new OA\Property(property: "client", type: "string", example: "Jean Kouame"),
+                                    new OA\Property(property: "montant", type: "integer", example: 75000),
+                                    new OA\Property(property: "statut", type: "string", example: "payée")
+                                ]
+                            )
+                        )
+                    ]
+                )
+            ]
+        )
+    )]
+    public function ateliyaSuccursaleDashboard(int $id, Request $request): Response
+    {
+        try {
+            $data = json_decode($request->getContent(), true) ?? [];
+            [$dateDebut, $dateFin] = $this->parseAteliyaFilters($data);
+            
+            // Récupérer les statistiques pour la succursale
+            $stats = $this->getAteliyaSuccursaleStats($id, $dateDebut, $dateFin);
+            
+            return $this->json(['success' => true, 'data' => $stats]);
+        } catch (\Exception $e) {
+            return $this->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
+    private function getAteliyaSuccursaleStats(int $succursaleId, DateTime $dateDebut, DateTime $dateFin): array
+    {
+        $succursale = $this->succursaleRe->find($succursaleId);
+        if (!$succursale) {
+            throw new \Exception("Succursale non trouvée");
+        }
+        
+        // Vérifier que la succursale appartient à l'entreprise de l'utilisateur
+        if ($succursale->getEntreprise() !== $this->getUser()->getEntreprise()) {
+            throw new \Exception("Accès non autorisé à cette succursale");
+        }
+        
+        $nbJours = $dateDebut->diff($dateFin)->days + 1;
+        
+        // Calculer le chiffre d'affaires de la succursale (via les factures et leurs paiements)
+        $chiffreAffaires = $this->calculateSuccursaleRevenue($succursale, $dateDebut, $dateFin);
+        
+        // Factures actives pour cette succursale
+        $facturesActives = $this->factureRepository->countActiveBySuccursaleAndPeriod($succursale, $dateDebut, $dateFin);
+        
+        // Clients actifs pour cette succursale
+        $clientsActifs = $this->clientRepository->countActiveBySuccursaleAndPeriod($succursale, $dateDebut, $dateFin);
+        
+        // Mesures en cours pour cette succursale
+        $mesuresEnCours = $this->mesureRepository->countEnCoursBySuccursale($succursale);
+        
+        // Si la période est > 60 jours, afficher les 30 derniers jours au lieu du début
+        $dateDebutRevenus = $dateDebut;
+        $dateFinRevenus = $dateFin;
+        if ($nbJours > 60) {
+            // Prendre les 30 derniers jours de la période
+            $dateDebutRevenus = clone $dateFin;
+            $dateDebutRevenus->modify('-29 days');
+        }
+        
+        return [
+            'succursale_id' => $succursaleId,
+            'succursale_nom' => $succursale->getLibelle(),
+            'periode' => [
+                'debut' => $dateDebut->format('Y-m-d'),
+                'fin' => $dateFin->format('Y-m-d'),
+                'nbJours' => $nbJours
+            ],
+            'kpis' => [
+                'chiffreAffaires' => (int)$chiffreAffaires,
+                'facturesActives' => (int)$facturesActives,
+                'clientsActifs' => (int)$clientsActifs,
+                'mesuresEnCours' => (int)$mesuresEnCours
+            ],
+            'revenusQuotidiens' => $this->getRevenusQuotidiensSuccursaleReels($succursale, $dateDebutRevenus, $dateFinRevenus),
+            'revenusParType' => $this->getRevenusParTypeSuccursaleReels($succursale, $dateDebut, $dateFin),
+            'activitesSuccursale' => $this->getActivitesSuccursaleReelles($succursale, $dateDebut, $dateFin),
+            'dernieresTransactions' => $this->getDernieresTransactionsSuccursaleReelles($succursale, $dateFin)
+        ];
+    }
+    
+    private function calculateSuccursaleRevenue($succursale, DateTime $dateDebut, DateTime $dateFin): float
+    {
+        // Les revenus d'une succursale proviennent des paiements sur les factures de cette succursale
+        return $this->paiementFactureRepository->sumBySuccursaleAndPeriod($succursale, $dateDebut, $dateFin);
+    }
+    
+    private function getRevenusQuotidiensSuccursaleReels($succursale, DateTime $dateDebut, DateTime $dateFin): array
+    {
+        $revenus = [];
+        $current = clone $dateDebut;
+        $jours = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+        
+        while ($current <= $dateFin && count($revenus) < 30) {
+            $jourSemaine = $jours[$current->format('w')];
+            
+            // Revenus des paiements de factures
+            $revenusFactures = $this->paiementFactureRepository->sumBySuccursaleAndDay($succursale, $current);
+            
+            // Compter le nombre de transactions
+            $nbFactures = $this->factureRepository->countBySuccursaleAndDay($succursale, $current);
+            $nbMesures = $this->mesureRepository->countBySuccursaleAndDay($succursale, $current);
+            $nbPaiements = $this->paiementFactureRepository->countBySuccursaleAndDay($succursale, $current);
+            
+            $revenus[] = [
+                'jour' => $jourSemaine . ' ' . $current->format('d'),
+                'factures' => (int)$nbFactures,
+                'mesures' => (int)$nbMesures,
+                'paiements' => (int)$nbPaiements,
+                'revenus' => (int)$revenusFactures
+            ];
+            
+            $current->add(new \DateInterval('P1D'));
+        }
+        
+        return $revenus;
+    }
+    
+    private function getRevenusParTypeSuccursaleReels($succursale, DateTime $dateDebut, DateTime $dateFin): array
+    {
+        $revenusFactures = $this->paiementFactureRepository->sumBySuccursaleAndPeriod($succursale, $dateDebut, $dateFin);
+        
+        return [
+            ['type' => 'Factures', 'revenus' => (int)$revenusFactures],
+            ['type' => 'Paiements factures', 'revenus' => (int)$revenusFactures],
+            ['type' => 'Mesures', 'revenus' => 0],
+            ['type' => 'Autres', 'revenus' => 0]
+        ];
+    }
+    
+    private function getActivitesSuccursaleReelles($succursale, DateTime $dateDebut, DateTime $dateFin): array
+    {
+        $nbFactures = $this->factureRepository->countBySuccursaleAndPeriod($succursale, $dateDebut, $dateFin);
+        $nbMesures = $this->mesureRepository->countBySuccursaleAndPeriod($succursale, $dateDebut, $dateFin);
+        $nbPaiements = $this->paiementFactureRepository->countBySuccursaleAndPeriod($succursale, $dateDebut, $dateFin);
+        $nbClients = $this->clientRepository->countActiveBySuccursaleAndPeriod($succursale, $dateDebut, $dateFin);
+        
+        $revenusParType = $this->getRevenusParTypeSuccursaleReels($succursale, $dateDebut, $dateFin);
+        
+        return [
+            [
+                'activite' => 'Factures clients',
+                'nombre' => (int)$nbFactures,
+                'revenus' => (int)$revenusParType[0]['revenus'],
+                'progression' => 100
+            ],
+            [
+                'activite' => 'Prises de mesures',
+                'nombre' => (int)$nbMesures,
+                'revenus' => 0,
+                'progression' => 100
+            ],
+            [
+                'activite' => 'Paiements reçus',
+                'nombre' => (int)$nbPaiements,
+                'revenus' => (int)$revenusParType[1]['revenus'],
+                'progression' => 100
+            ],
+            [
+                'activite' => 'Clients actifs',
+                'nombre' => (int)$nbClients,
+                'revenus' => 0,
+                'progression' => 100
+            ]
+        ];
+    }
+    
+    private function getDernieresTransactionsSuccursaleReelles($succursale, DateTime $dateFin): array
+    {
+        $transactions = [];
+        
+        // Récupérer les dernières factures de la succursale
+        $factures = $this->factureRepository->findLatestBySuccursale($succursale, 3);
+        foreach ($factures as $facture) {
+            $client = $facture->getClient();
+            $transactions[] = [
+                'id' => 'FAC-' . $facture->getId(),
+                'type' => 'Facture',
+                'client' => $client ? $client->getNom() . ' ' . $client->getPrenom() : 'Client inconnu',
+                'montant' => (int)$facture->getMontantTotal(),
+                'statut' => $facture->getResteArgent() > 0 ? 'partielle' : 'payée'
+            ];
+        }
+        
+        // Récupérer les derniers paiements de factures de la succursale
+        $paiements = $this->paiementFactureRepository->findLatestBySuccursale($succursale, 2);
+        foreach ($paiements as $paiement) {
+            $facture = $paiement->getFacture();
+            $client = $facture ? $facture->getClient() : null;
+            $transactions[] = [
+                'id' => 'PAI-' . $paiement->getId(),
+                'type' => 'Paiement',
+                'client' => $client ? $client->getNom() . ' ' . $client->getPrenom() : 'Client inconnu',
+                'montant' => (int)$paiement->getMontant(),
+                'statut' => 'payé'
+            ];
+        }
+        
+        return array_slice($transactions, 0, 5);
+    }
+
     private function getAteliyaBoutiqueStats(int $boutiqueId, DateTime $dateDebut, DateTime $dateFin): array
     {
         $boutique = $this->boutiqueRepository->find($boutiqueId);

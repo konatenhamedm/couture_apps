@@ -86,6 +86,69 @@ class MesureRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /**
+     * Compte les mesures en cours par succursale
+     */
+    public function countEnCoursBySuccursale($succursale): int
+    {
+        return $this->createQueryBuilder('m')
+            ->select('COUNT(m.id)')
+            ->leftJoin('m.facture', 'f')
+            ->where('f.succursale = :succursale')
+            ->andWhere('m.isActive = :active')
+            ->andWhere('f.dateRetrait > :today')
+            ->setParameter('succursale', $succursale)
+            ->setParameter('active', true)
+            ->setParameter('today', new \DateTime())
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * Compte les mesures par succursale et période
+     */
+    public function countBySuccursaleAndPeriod($succursale, \DateTime $dateDebut, \DateTime $dateFin): int
+    {
+        $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebut);
+        $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFin);
+        
+        return $this->createQueryBuilder('m')
+            ->select('COUNT(m.id)')
+            ->leftJoin('m.facture', 'f')
+            ->where('f.succursale = :succursale')
+            ->andWhere('m.createdAt >= :dateDebut')
+            ->andWhere('m.createdAt <= :dateFin')
+            ->setParameter('succursale', $succursale)
+            ->setParameter('dateDebut', $dateDebutImmutable)
+            ->setParameter('dateFin', $dateFinImmutable)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * Compte les mesures par jour pour une succursale
+     */
+    public function countBySuccursaleAndDay($succursale, \DateTime $date): int
+    {
+        $nextDay = clone $date;
+        $nextDay->add(new \DateInterval('P1D'));
+        
+        $dateImmutable = \DateTimeImmutable::createFromMutable($date);
+        $nextDayImmutable = \DateTimeImmutable::createFromMutable($nextDay);
+
+        return $this->createQueryBuilder('m')
+            ->select('COUNT(m.id)')
+            ->leftJoin('m.facture', 'f')
+            ->where('f.succursale = :succursale')
+            ->andWhere('m.createdAt >= :date')
+            ->andWhere('m.createdAt < :nextDay')
+            ->setParameter('succursale', $succursale)
+            ->setParameter('date', $dateImmutable)
+            ->setParameter('nextDay', $nextDayImmutable)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     //    /**
     //     * @return Mesure[] Returns an array of Mesure objects
     //     */
