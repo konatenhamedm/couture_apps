@@ -286,10 +286,10 @@ class ApiBoutiqueController extends ApiInterface
         $boutique->setEntreprise($this->getUser()->getEntreprise());
         $boutique->setContact($data['contact']);
         $boutique->setIsActive($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "boutique"));
-        $boutique->setCreatedBy($this->getUser());
-        $boutique->setUpdatedBy($this->getUser());
-        $boutique->setCreatedAtValue(new \DateTime());
-        $boutique->setUpdatedAt(new \DateTime());
+        $boutique->setCreatedBy($this->getManagedUser());
+        $boutique->setUpdatedBy($this->getManagedUser());
+        $boutique->setCreatedAtValue();
+        $boutique->setUpdatedAt();
 
         $errorResponse = $this->errorResponse($boutique);
         if ($errorResponse !== null) {
@@ -305,10 +305,10 @@ class ApiBoutiqueController extends ApiInterface
             $caisse->setReference($utils->generateReference('CAIS'));
             $caisse->setType(Caisse::TYPE['boutique']);
             $caisse->setEntreprise($this->getUser()->getEntreprise());
-            $caisse->setCreatedBy($this->getUser());
-            $caisse->setUpdatedBy($this->getUser());
-            $caisse->setCreatedAtValue(new \DateTime());
-            $caisse->setUpdatedAt(new \DateTime());
+            $caisse->setCreatedBy($this->getManagedUser());
+            $caisse->setUpdatedBy($this->getManagedUser());
+            $caisse->setCreatedAtValue();
+            $caisse->setUpdatedAt();
             $caisseBoutiqueRepository->add($caisse, true);
         }
 
@@ -391,8 +391,8 @@ class ApiBoutiqueController extends ApiInterface
                 $boutique->setSituation($data->situation);
                 $boutique->setEntreprise($this->getUser()->getEntreprise());
                 $boutique->setContact($data->contact);
-                $boutique->setUpdatedBy($this->getUser());
-                $boutique->setUpdatedAt(new \DateTime());
+                $boutique->setUpdatedBy($this->getManagedUser());
+                $boutique->setUpdatedAt();
 
                 $errorResponse = $this->errorResponse($boutique);
                 if ($errorResponse !== null) {

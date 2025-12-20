@@ -280,8 +280,8 @@ class ApiPaysController extends ApiInterface
         $pays->setIndicatif($data['indicatif']);
         $pays->setCreatedBy($user);
         $pays->setUpdatedBy($user);
-        $pays->setCreatedAtValue(new \DateTime());
-        $pays->setUpdatedAt(new \DateTime());
+        $pays->setCreatedAtValue();
+        $pays->setUpdatedAt();
 
         $errorResponse = $this->errorResponse($pays);
         if ($errorResponse !== null) {
@@ -385,8 +385,8 @@ class ApiPaysController extends ApiInterface
                     $pays->setIndicatif($data['indicatif']);
                 }
 
-                $pays->setUpdatedBy($this->getUser());
-                $pays->setUpdatedAt(new \DateTime());
+                $pays->setUpdatedBy($this->getManagedUser());
+                $pays->setUpdatedAt();
 
                 $errorResponse = $this->errorResponse($pays);
                 if ($errorResponse !== null) {

@@ -600,10 +600,10 @@ class ApiReservationController extends ApiInterface
         $reservation->setEntreprise($this->getUser()->getEntreprise());
         $reservation->setMontant($montant);
         $reservation->setReste($reste);
-        $reservation->setCreatedAtValue(new \DateTime());
-        $reservation->setUpdatedAt(new \DateTime());
-        $reservation->setCreatedBy($this->getUser());
-        $reservation->setUpdatedBy($this->getUser());
+        $reservation->setCreatedAtValue();
+        $reservation->setUpdatedAt();
+        $reservation->setCreatedBy($this->getManagedUser());
+        $reservation->setUpdatedBy($this->getManagedUser());
 
         $errorResponse = $this->errorResponse($reservation);
         if ($errorResponse !== null) {
@@ -628,10 +628,10 @@ class ApiReservationController extends ApiInterface
                 $ligne->setQuantite($quantite);
                 $ligne->setModele($modeleBoutique);
                 $ligne->setAvanceModele($ligneData['avanceModele']);
-                $ligne->setCreatedAtValue(new \DateTime());
-                $ligne->setUpdatedAt(new \DateTime());
-                $ligne->setCreatedBy($this->getUser());
-                $ligne->setUpdatedBy($this->getUser());
+                $ligne->setCreatedAtValue();
+                $ligne->setUpdatedAt();
+                $ligne->setCreatedBy($this->getManagedUser());
+                $ligne->setUpdatedBy($this->getManagedUser());
 
                 $reservation->addLigneReservation($ligne);
                 $entityManager->persist($ligne);
@@ -652,10 +652,10 @@ class ApiReservationController extends ApiInterface
                 $paiementReservation->setType(Paiement::TYPE["paiementReservation"]);
                 $paiementReservation->setMontant($avance);
                 $paiementReservation->setReference($utils->generateReference('PMT'));
-                $paiementReservation->setCreatedAtValue(new \DateTime());
-                $paiementReservation->setUpdatedAt(new \DateTime());
-                $paiementReservation->setCreatedBy($this->getUser());
-                $paiementReservation->setUpdatedBy($this->getUser());
+                $paiementReservation->setCreatedAtValue();
+                $paiementReservation->setUpdatedAt();
+                $paiementReservation->setCreatedBy($this->getManagedUser());
+                $paiementReservation->setUpdatedBy($this->getManagedUser());
 
                 $entityManager->persist($paiementReservation);
 
@@ -663,8 +663,8 @@ class ApiReservationController extends ApiInterface
                 $caisseBoutique = $caisseBoutiqueRepository->findOneByInEnvironment(['boutique' => $boutique->getId()]);
                 if ($caisseBoutique) {
                     $caisseBoutique->setMontant($caisseBoutique->getMontant() + $avance);
-                    $caisseBoutique->setUpdatedBy($this->getUser());
-                    $caisseBoutique->setUpdatedAt(new \DateTime());
+                    $caisseBoutique->setUpdatedBy($this->getManagedUser());
+                    $caisseBoutique->setUpdatedAt();
                 } else {
                     $entityManager->rollback();
                     return $this->json([
@@ -848,8 +848,8 @@ class ApiReservationController extends ApiInterface
                     $reservation->setMontant($data['montant']);
                 }
 
-                $reservation->setUpdatedBy($this->getUser());
-                $reservation->setUpdatedAt(new \DateTime());
+                $reservation->setUpdatedBy($this->getManagedUser());
+                $reservation->setUpdatedAt();
 
                 // Mise à jour des lignes de réservation si fournies
                 if (isset($data['ligne']) && is_array($data['ligne'])) {
@@ -866,10 +866,10 @@ class ApiReservationController extends ApiInterface
                             $ligne->setQuantite($value['quantite']);
                             $ligne->setModele($modeleBoutique);
                             $ligne->setIsActive(true);
-                            $ligne->setCreatedAtValue(new \DateTime());
-                            $ligne->setUpdatedAt(new \DateTime());
-                            $ligne->setCreatedBy($this->getUser());
-                            $ligne->setUpdatedBy($this->getUser());
+                            $ligne->setCreatedAtValue();
+                            $ligne->setUpdatedAt();
+                            $ligne->setCreatedBy($this->getManagedUser());
+                            $ligne->setUpdatedBy($this->getManagedUser());
                             $reservation->addLigneReservation($ligne);
                         }
                     }
@@ -1016,10 +1016,10 @@ class ApiReservationController extends ApiInterface
         $paiementReservation->setType(Paiement::TYPE["paiementReservation"]);
         $paiementReservation->setMontant($montantPaiement);
         $paiementReservation->setReference($utils->generateReference('PMT'));
-        $paiementReservation->setCreatedAtValue(new \DateTime());
-        $paiementReservation->setUpdatedAt(new \DateTime());
-        $paiementReservation->setCreatedBy($this->getUser());
-        $paiementReservation->setUpdatedBy($this->getUser());
+        $paiementReservation->setCreatedAtValue();
+        $paiementReservation->setUpdatedAt();
+        $paiementReservation->setCreatedBy($this->getManagedUser());
+        $paiementReservation->setUpdatedBy($this->getManagedUser());
 
         $paiementReservationRepository->add($paiementReservation, true);
 
@@ -1029,16 +1029,16 @@ class ApiReservationController extends ApiInterface
 
         $reservation->setAvance($nouvelleAvance);
         $reservation->setReste($nouveauReste);
-        $reservation->setUpdatedAt(new \DateTime());
-        $reservation->setUpdatedBy($this->getUser());
+        $reservation->setUpdatedAt();
+        $reservation->setUpdatedBy($this->getManagedUser());
         $reservationRepository->add($reservation, true);
 
         // Mettre à jour la caisse boutique
         $caisseBoutique = $caisseBoutiqueRepository->findOneByInEnvironment(['boutique' => $reservation->getBoutique()->getId()]);
         if ($caisseBoutique) {
             $caisseBoutique->setMontant((int)$caisseBoutique->getMontant() + (int)$montantPaiement);
-            $caisseBoutique->setUpdatedBy($this->getUser());
-            $caisseBoutique->setUpdatedAt(new \DateTime());
+            $caisseBoutique->setUpdatedBy($this->getManagedUser());
+            $caisseBoutique->setUpdatedAt();
             $caisseBoutiqueRepository->add($caisseBoutique, true);
         }
 

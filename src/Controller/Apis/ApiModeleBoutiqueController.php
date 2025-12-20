@@ -602,10 +602,10 @@ class ApiModeleBoutiqueController extends ApiInterface
         $modeleBoutique->setBoutique($boutique);
         $modeleBoutique->setModele($modele);
         $modeleBoutique->setTaille($data['taille']);
-        $modeleBoutique->setCreatedBy($this->getUser());
-        $modeleBoutique->setUpdatedBy($this->getUser());
-        $modeleBoutique->setCreatedAtValue(new \DateTime());
-        $modeleBoutique->setUpdatedAt(new \DateTime());
+        $modeleBoutique->setCreatedBy($this->getManagedUser());
+        $modeleBoutique->setUpdatedBy($this->getManagedUser());
+        $modeleBoutique->setCreatedAtValue();
+        $modeleBoutique->setUpdatedAt();
 
         $errorResponse = $this->errorResponse($modeleBoutique);
         if ($errorResponse !== null) {
@@ -728,8 +728,8 @@ class ApiModeleBoutiqueController extends ApiInterface
                     $modeleBoutique->setBoutique($boutique);
                 }
 
-                $modeleBoutique->setUpdatedBy($this->getUser());
-                $modeleBoutique->setUpdatedAt(new \DateTime());
+                $modeleBoutique->setUpdatedBy($this->getManagedUser());
+                $modeleBoutique->setUpdatedAt();
 
                 $errorResponse = $this->errorResponse($modeleBoutique);
                 if ($errorResponse !== null) {

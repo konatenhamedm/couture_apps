@@ -273,10 +273,10 @@ class ApiOperateurController extends ApiInterface
         $operateur->setCode($code);
         $operateur->setActif(true);
         $operateur->setIsActive(true);
-        $operateur->setCreatedBy($this->getUser());
-        $operateur->setUpdatedBy($this->getUser());
-        $operateur->setCreatedAtValue(new \DateTime());
-        $operateur->setUpdatedAt(new \DateTime());
+        $operateur->setCreatedBy($this->getManagedUser());
+        $operateur->setUpdatedBy($this->getManagedUser());
+        $operateur->setCreatedAtValue();
+        $operateur->setUpdatedAt();
 
         // Upload du logo si fourni
         $uploadedFile = $request->files->get('photo');
@@ -401,8 +401,8 @@ class ApiOperateurController extends ApiInterface
                     }
                 }
 
-                $operateur->setUpdatedBy($this->getUser());
-                $operateur->setUpdatedAt(new \DateTime());
+                $operateur->setUpdatedBy($this->getManagedUser());
+                $operateur->setUpdatedAt();
 
                 // Upload du nouveau logo si fourni
                 $uploadedFile = $request->files->get('photo');

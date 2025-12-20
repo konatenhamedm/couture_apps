@@ -252,11 +252,11 @@ class ApiCategorieMesureController extends ApiInterface
         $categorieMesure = new CategorieMesure();
         $categorieMesure->setLibelle($data['libelle']);
         $categorieMesure->setEntreprise($this->getUser()->getEntreprise());
-        $categorieMesure->setCreatedBy($this->getUser());
-        $categorieMesure->setUpdatedBy($this->getUser());
+        $categorieMesure->setCreatedBy($this->getManagedUser());
+        $categorieMesure->setUpdatedBy($this->getManagedUser());
         $categorieMesure->setIsActive(true);
-        $categorieMesure->setCreatedAtValue(new \DateTime());
-        $categorieMesure->setUpdatedAt(new \DateTime());
+        $categorieMesure->setCreatedAtValue();
+        $categorieMesure->setUpdatedAt();
 
         $errorResponse = $this->errorResponse($categorieMesure);
         if ($errorResponse !== null) {
@@ -334,8 +334,8 @@ class ApiCategorieMesureController extends ApiInterface
             if ($categorieMesure != null) {
                 $categorieMesure->setLibelle($data->libelle);
 
-                $categorieMesure->setUpdatedBy($this->getUser());
-                $categorieMesure->setUpdatedAt(new \DateTime());
+                $categorieMesure->setUpdatedBy($this->getManagedUser());
+                $categorieMesure->setUpdatedAt();
 
                 $errorResponse = $this->errorResponse($categorieMesure);
                 if ($errorResponse !== null) {
@@ -401,8 +401,8 @@ class ApiCategorieMesureController extends ApiInterface
 
             if ($categorieMesure != null) {
                 $categorieMesure->setIsActive(false);
-                $categorieMesure->setUpdatedBy($this->getUser());
-                $categorieMesure->setUpdatedAt(new \DateTime());
+                $categorieMesure->setUpdatedBy($this->getManagedUser());
+                $categorieMesure->setUpdatedAt();
                 $categorieMesureRepository->add($categorieMesure, true);
                 $this->setMessage("Operation effectuées avec succès");
                 $response = $this->response($categorieMesure);

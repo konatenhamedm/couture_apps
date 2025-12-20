@@ -175,7 +175,7 @@ class ApiTypeUserController extends ApiInterface
                 $typeUser->setLibelle($data->libelle);
                 $typeUser->setCode($data->code);
                 $typeUser->setUpdatedBy($this->getuser());
-                $typeUser->setUpdatedAt(new \DateTime());
+                $typeUser->setUpdatedAt();
                 $errorResponse = $this->errorResponse($typeUser);
 
                 if ($errorResponse !== null) {

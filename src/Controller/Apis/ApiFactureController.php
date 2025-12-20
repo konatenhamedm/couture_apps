@@ -414,10 +414,10 @@ class ApiFactureController extends ApiInterface
         $facture->setMontantTotal($request->get('montantTotal'));
         $facture->setResteArgent($request->get('resteArgent'));
         $facture->setDateRetrait($request->get('dateRetrait') ? new \DateTime($request->get('dateRetrait')) : null);
-        $facture->setCreatedBy($this->getUser());
-        $facture->setUpdatedBy($this->getUser());
-        $facture->setCreatedAtValue(new \DateTime());
-        $facture->setUpdatedAt(new \DateTime());
+        $facture->setCreatedBy($this->getManagedUser());
+        $facture->setUpdatedBy($this->getManagedUser());
+        $facture->setCreatedAtValue();
+        $facture->setUpdatedAt();
 
         // Gestion des mesures depuis formData
         $mesuresJson = $request->get('mesures');
@@ -478,10 +478,10 @@ class ApiFactureController extends ApiInterface
         $paiement->setMontant($facture->getAvance() ?? 0);
         $paiement->setType('paiementFacture');
         $paiement->setReference($utils->generateReference('PMT'));
-        $paiement->setCreatedBy($this->getUser());
-        $paiement->setUpdatedBy($this->getUser());
-        $paiement->setCreatedAtValue(new \DateTime());
-        $paiement->setUpdatedAt(new \DateTime());
+        $paiement->setCreatedBy($this->getManagedUser());
+        $paiement->setUpdatedBy($this->getManagedUser());
+        $paiement->setCreatedAtValue();
+        $paiement->setUpdatedAt();
         $paiement->setFacture($facture);
 
         $entityManager->persist($paiement);
@@ -681,8 +681,8 @@ class ApiFactureController extends ApiInterface
             $facture->setMontantTotal($data['montantTotal'] ?? $facture->getMontantTotal());
             $facture->setResteArgent($data['resteArgent'] ?? $facture->getResteArgent());
             $facture->setDateRetrait(isset($data['dateRetrait']) ? new \DateTime($data['dateRetrait']) : $facture->getDateRetrait());
-            $facture->setUpdatedBy($this->getUser());
-            $facture->setUpdatedAt(new \DateTime());
+            $facture->setUpdatedBy($this->getManagedUser());
+            $facture->setUpdatedAt();
 
             // Gestion des mesures
             if (isset($data['mesures']) && is_array($data['mesures'])) {
@@ -777,10 +777,10 @@ class ApiFactureController extends ApiInterface
                 $paiement->setMontant($differenceAvance);
                 $paiement->setType('paiementFacture');
                 $paiement->setReference($utils->generateReference('PMT'));
-                $paiement->setCreatedBy($this->getUser());
-                $paiement->setUpdatedBy($this->getUser());
-                $paiement->setCreatedAtValue(new \DateTime());
-                $paiement->setUpdatedAt(new \DateTime());
+                $paiement->setCreatedBy($this->getManagedUser());
+                $paiement->setUpdatedBy($this->getManagedUser());
+                $paiement->setCreatedAtValue();
+                $paiement->setUpdatedAt();
                 $paiement->setFacture($facture);
 
                 $entityManager->persist($paiement);

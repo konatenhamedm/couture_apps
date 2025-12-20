@@ -249,9 +249,9 @@ class ApiTypeMesureController extends ApiInterface
         $typeMesure = new TypeMesure();
         $typeMesure->setLibelle($data['libelle']);
         $typeMesure->setEntreprise($this->getUser()->getEntreprise());
-        $typeMesure->setCreatedBy($this->getUser());
+        $typeMesure->setCreatedBy($this->getManagedUser());
         $typeMesure->setIsActive(true);
-        $typeMesure->setUpdatedBy($this->getUser());
+        $typeMesure->setUpdatedBy($this->getManagedUser());
         $errorResponse = $this->errorResponse($typeMesure);
         // On vérifie si l'entreprise existe
         $lignesCategoriesMesure = $data['lignes'];
@@ -309,8 +309,8 @@ class ApiTypeMesureController extends ApiInterface
             if ($typeMesure != null) {
 
                 $typeMesure->setLibelle($data->libelle);
-                $typeMesure->setUpdatedBy($this->getUser());
-                $typeMesure->setUpdatedAt(new \DateTime());
+                $typeMesure->setUpdatedBy($this->getManagedUser());
+                $typeMesure->setUpdatedAt();
                 $errorResponse = $this->errorResponse($typeMesure);
 
                 // On vérifie si lignesCategoriesMesure n'est pas vide
@@ -322,14 +322,14 @@ class ApiTypeMesureController extends ApiInterface
                             $categorieMesure = new CategorieMesure();
                             $categorieMesure->setLibelle($ligneCategorieMesure->libelle);
                             $categorieMesure->setEntreprise($this->getUser()->getEntreprise());
-                            $categorieMesure->setCreatedBy($this->getUser());
-                            $categorieMesure->setUpdatedBy($this->getUser());
+                            $categorieMesure->setCreatedBy($this->getManagedUser());
+                            $categorieMesure->setUpdatedBy($this->getManagedUser());
                             $categorieMesureRepository->add($categorieMesure, true);
                         } else {
                             $categorieMesure = $categorieMesureRepository->findInEnvironment($ligneCategorieMesure->id);
                             $categorieMesure->setLibelle($ligneCategorieMesure->libelle);
-                            $categorieMesure->setCreatedBy($this->getUser());
-                            $categorieMesure->setUpdatedBy($this->getUser());
+                            $categorieMesure->setCreatedBy($this->getManagedUser());
+                            $categorieMesure->setUpdatedBy($this->getManagedUser());
                             $categorieMesureRepository->add($categorieMesure, true);
                         }
                     }

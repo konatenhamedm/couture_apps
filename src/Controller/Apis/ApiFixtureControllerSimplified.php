@@ -58,14 +58,14 @@ class ApiFixtureControllerSimplified extends ApiInterface
                                 $modeleBoutique->setTaille($tailles[array_rand($tailles)]);
                                 
                                 // Get managed user for persistence
-                                $managedUser = $this->getManagedUser($em);
+                                $managedUser = $this->getManagedUser();
                                 if ($managedUser) {
                                     $modeleBoutique->setCreatedBy($managedUser);
                                     $modeleBoutique->setUpdatedBy($managedUser);
                                 }
                                 
-                                $modeleBoutique->setCreatedAtValue(new \DateTime());
-                                $modeleBoutique->setUpdatedAt(new \DateTime());
+                                $modeleBoutique->setCreatedAtValue();
+                                $modeleBoutique->setUpdatedAt();
 
                                 // Validate entity before persistence
                                 if (!$this->validateEntityBeforePersist($modeleBoutique, $em)) {
@@ -140,14 +140,14 @@ class ApiFixtureControllerSimplified extends ApiInterface
                             $modeleBoutique->setTaille('M');
                             
                             // Get managed user for persistence
-                            $managedUser = $this->getManagedUser($this->getEntityManager());
+                            $managedUser = $this->getManagedUser();
                             if ($managedUser) {
                                 $modeleBoutique->setCreatedBy($managedUser);
                                 $modeleBoutique->setUpdatedBy($managedUser);
                             }
                             
-                            $modeleBoutique->setCreatedAtValue(new \DateTime());
-                            $modeleBoutique->setUpdatedAt(new \DateTime());
+                            $modeleBoutique->setCreatedAtValue();
+                            $modeleBoutique->setUpdatedAt();
 
                             // Validate entity before persistence
                             if (!$this->validateEntityBeforePersist($modeleBoutique, $this->getEntityManager())) {
@@ -194,28 +194,5 @@ class ApiFixtureControllerSimplified extends ApiInterface
         return true;
     }
 
-    /**
-     * Get a managed user entity for persistence
-     */
-    private function getManagedUser($entityManager): ?User
-    {
-        /** @var User|null $currentUser */
-        $currentUser = $this->getUser();
-        if (!$currentUser) {
-            return null;
-        }
 
-        // If the user is already managed by the EntityManager, return it
-        if ($entityManager->contains($currentUser)) {
-            return $currentUser;
-        }
-
-        // Otherwise, fetch the user from the database to get a managed instance
-        $userId = $currentUser->getId();
-        if ($userId) {
-            return $entityManager->find(User::class, $userId);
-        }
-
-        return null;
-    }
 }

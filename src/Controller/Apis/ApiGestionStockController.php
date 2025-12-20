@@ -591,10 +591,10 @@ class ApiGestionStockController extends ApiInterface
         $entreStock->setType('Entree');
         $entreStock->setStatut('EN_ATTENTE'); // Statut initial
         $entreStock->setEntreprise($this->getUser()->getEntreprise());
-        $entreStock->setCreatedBy($this->getUser());
-        $entreStock->setUpdatedBy($this->getUser());
-        $entreStock->setCreatedAtValue(new \DateTime());
-        $entreStock->setUpdatedAt(new \DateTime());
+        $entreStock->setCreatedBy($this->getManagedUser());
+        $entreStock->setUpdatedBy($this->getManagedUser());
+        $entreStock->setCreatedAtValue();
+        $entreStock->setUpdatedAt();
         $entreStock->setQuantite(0);
 
         $errorResponse = $this->errorResponse($entreStock);
@@ -731,8 +731,8 @@ class ApiGestionStockController extends ApiInterface
             $entreStock->setBoutique($boutiqueRepository->findInEnvironment($data['boutiqueId']));
         }
 
-        $entreStock->setUpdatedBy($this->getUser());
-        $entreStock->setUpdatedAt(new \DateTime());
+        $entreStock->setUpdatedBy($this->getManagedUser());
+        $entreStock->setUpdatedAt();
 
         // Suppression des anciennes lignes
         foreach ($entreStock->getLigneEntres() as $oldLigne) {
@@ -987,10 +987,10 @@ class ApiGestionStockController extends ApiInterface
         $entreStock->setType('Sortie');
         $entreStock->setStatut('EN_ATTENTE'); // Statut initial
         $entreStock->setEntreprise($this->getUser()->getEntreprise());
-        $entreStock->setCreatedBy($this->getUser());
-        $entreStock->setUpdatedBy($this->getUser());
-        $entreStock->setCreatedAtValue(new \DateTime());
-        $entreStock->setUpdatedAt(new \DateTime());
+        $entreStock->setCreatedBy($this->getManagedUser());
+        $entreStock->setUpdatedBy($this->getManagedUser());
+        $entreStock->setCreatedAtValue();
+        $entreStock->setUpdatedAt();
 
         $errorResponse = $this->errorResponse($entreStock);
         if ($errorResponse !== null) {
@@ -1120,8 +1120,8 @@ class ApiGestionStockController extends ApiInterface
 
             $entreStock->setStatut('CONFIRME');
             $entreStock->setCommentaire($data['commentaire'] ?? null);
-            $entreStock->setUpdatedBy($this->getUser());
-            $entreStock->setUpdatedAt(new \DateTime());
+            $entreStock->setUpdatedBy($this->getManagedUser());
+            $entreStock->setUpdatedAt();
 
             $entityManager->flush();
             $entityManager->commit();
@@ -1206,8 +1206,8 @@ class ApiGestionStockController extends ApiInterface
         try {
             $entreStock->setStatut('REJETE');
             $entreStock->setCommentaire($data['commentaire']);
-            $entreStock->setUpdatedBy($this->getUser());
-            $entreStock->setUpdatedAt(new \DateTime());
+            $entreStock->setUpdatedBy($this->getManagedUser());
+            $entreStock->setUpdatedAt();
 
             $entityManager->flush();
 

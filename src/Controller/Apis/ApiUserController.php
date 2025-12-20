@@ -395,8 +395,8 @@ class ApiUserController extends ApiInterface
                 return $this->createCustomErrorResponse("Pays non trouvé", 404);
             }
             $entreprise->setPays($pays);
-            $entreprise->setCreatedAtValue(new \DateTime());
-            $entreprise->setUpdatedAt(new \DateTime());
+            $entreprise->setCreatedAtValue();
+            $entreprise->setUpdatedAt();
 
             // Création de l'utilisateur administrateur
             $user = new User();
@@ -406,8 +406,8 @@ class ApiUserController extends ApiInterface
             $user->setPassword($this->hasher->hashPassword($user, $data['password']));
             $user->setRoles(['ROLE_ADMIN']);
             $user->setType($typeUserRepository->findOneByInEnvironment(['code' => 'SADM']));
-            /* $user->setCreatedAtValue(new \DateTime());
-            $user->setUpdatedAt(new \DateTime()); */
+            /* $user->setCreatedAtValue();
+            $user->setUpdatedAt(); */
 
             // Récupération du plan gratuit FREE
             $module = $moduleAbonnementRepository->findOneByInEnvironment(['code' => 'FREE']);
@@ -438,8 +438,8 @@ class ApiUserController extends ApiInterface
             // Création de l'abonnement gratuit
             $abonnement = new Abonnement();
             $abonnement->setEntreprise($entreprise);
-            $abonnement->setCreatedAtValue(new \DateTime());
-            $abonnement->setUpdatedAt(new \DateTime());
+            $abonnement->setCreatedAtValue();
+            $abonnement->setUpdatedAt();
             $abonnement->setModuleAbonnement($module);
             $abonnement->setEtat("actif");
             $abonnement->setDateFin((new \DateTime())->modify('+' . $module->getDuree() . ' month'));
@@ -705,8 +705,8 @@ class ApiUserController extends ApiInterface
             }
             $user->setType($typeUser);
             $user->setEntreprise($currentUser->getEntreprise());
-            //$user->setCreatedAtValue(new \DateTime());
-            //$user->setUpdatedAt(new \DateTime());
+            //$user->setCreatedAtValue();
+            //$user->setUpdatedAt();
 
             // Validation mot de passe
             /* if ($data['password'] !== $data['confirmPassword']) {
@@ -822,7 +822,7 @@ class ApiUserController extends ApiInterface
                 $user->setType($typeUser);
             }
 
-            //$user->setUpdatedAt(new \DateTime());
+            //$user->setUpdatedAt();
 
             $errorResponse = $this->errorResponse($user);
             if ($errorResponse !== null) {
@@ -959,7 +959,7 @@ class ApiUserController extends ApiInterface
                 $user->setLogin($data['email']);
             } */
 
-            //$user->setUpdatedAt(new \DateTime());
+            //$user->setUpdatedAt();
             $userRepository->add($user, true);
 
             $context = [AbstractNormalizer::GROUPS => 'group1'];
@@ -1057,7 +1057,7 @@ class ApiUserController extends ApiInterface
                 return $errorResponse;
             }
 
-            //$user->setUpdatedAt(new \DateTime());
+            //$user->setUpdatedAt();
             $userRepository->add($user, true);
 
             return $this->responseData($user, 'group1', ['Content-Type' => 'application/json']);

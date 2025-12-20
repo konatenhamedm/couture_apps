@@ -468,4 +468,63 @@ $this->setStatusCode(500);
             'errors' => [$message]
         ], $statusCode);
     }
+
+    /**
+     * Obtient un utilisateur géré par Doctrine pour éviter les problèmes de cascade persist
+     */
+    protected function getManagedUser(): ?\App\Entity\User
+    {
+        $currentUser = $this->getUser();
+        if (!$currentUser) {
+            return null;
+        }
+
+        // Si l'utilisateur est déjà géré par l'EntityManager, le retourner
+        $entityManager = $this->em; // Utiliser l'EntityManager injecté
+        if ($entityManager->contains($currentUser)) {
+            return $currentUser;
+        }
+
+        // Sinon, récupérer l'utilisateur depuis la base de données pour avoir une instance gérée
+        if ($currentUser instanceof \App\Entity\User) {
+            $userId = $currentUser->getId();
+            if ($userId) {
+                return $entityManager->find(\App\Entity\User::class, $userId);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Configure correctement une entité avec TraitEntity (dates et utilisateur)
+     */
+    protected function configureTraitEntity($entity): void
+    {
+        if (!$entity) {
+            return;
+        }
+
+        // Configurer l'utilisateur géré
+        $managedUser = $this->getManagedUser();
+        if ($managedUser && method_exists($entity, 'setCreatedBy')) {
+            $entity->setCreatedBy($managedUser);
+        }
+        if ($managedUser && method_exists($entity, 'setUpdatedBy')) {
+            $entity->setUpdatedBy($managedUser);
+        }
+
+        // Configurer les dates correctement
+        if (method_exists($entity, 'setCreatedAtValue')) {
+            $entity->setCreatedAtValue(); // Pas de paramètre - la méthode gère elle-même
+        }
+        if (method_exists($entity, 'setUpdatedAt')) {
+            $entity->setUpdatedAt(); // Pas de paramètre - la méthode gère elle-même
+        }
+
+        // S'assurer que isActive est défini
+        if (method_exists($entity, 'setIsActive')) {
+            $entity->setIsActive(true);
+        }
+    }
 }

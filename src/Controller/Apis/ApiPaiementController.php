@@ -310,10 +310,10 @@ class ApiPaiementController extends ApiInterface
         $paiement->setIsActive(true);
         $paiement->setType(Paiement::TYPE["paiementFacture"]);
         $paiement->setReference($utils->generateReference('PMT'));
-        $paiement->setCreatedBy($this->getUser());
-        $paiement->setUpdatedBy($this->getUser());
-        $paiement->setCreatedAtValue(new \DateTime());
-        $paiement->setUpdatedAt(new \DateTime());
+        $paiement->setCreatedBy($this->getManagedUser());
+        $paiement->setUpdatedBy($this->getManagedUser());
+        $paiement->setCreatedAtValue();
+        $paiement->setUpdatedAt();
 
         // Mise à jour du reste à payer de la facture
         $facture->setResteArgent((int)$facture->getResteArgent() - (int)$data['montant']);
@@ -549,11 +549,11 @@ class ApiPaiementController extends ApiInterface
         $paiement->setBoutique($boutique);
         $paiement->setReference($utils->generateReference('PMT'));
         $paiement->setQuantite($quantite);
-        $paiement->setCreatedBy($this->getUser());
-        $paiement->setUpdatedBy($this->getUser());
+        $paiement->setCreatedBy($this->getManagedUser());
+        $paiement->setUpdatedBy($this->getManagedUser());
         $paiement->setIsActive(true);
-        $paiement->setCreatedAtValue(new \DateTime());
-        $paiement->setUpdatedAt(new \DateTime());
+        $paiement->setCreatedAtValue();
+        $paiement->setUpdatedAt();
 
         $errorResponse = $this->errorResponse($paiement);
         if ($errorResponse !== null) {
@@ -873,10 +873,10 @@ class ApiPaiementController extends ApiInterface
             }
         }
 
-        $paiement->setCreatedBy($this->getUser());
-        $paiement->setUpdatedBy($this->getUser());
-        $paiement->setCreatedAtValue(new \DateTime());
-        $paiement->setUpdatedAt(new \DateTime());
+        $paiement->setCreatedBy($this->getManagedUser());
+        $paiement->setUpdatedBy($this->getManagedUser());
+        $paiement->setCreatedAtValue();
+        $paiement->setUpdatedAt();
 
         // 🔒 Transaction pour garantir la cohérence atomique
         $entityManager->beginTransaction();

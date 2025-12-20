@@ -127,11 +127,11 @@ class ApiCategorieTypeMesureController extends ApiInterface
             $categorieTypeMesure->setEntreprise($this->getUser()->getEntreprise());
             $categorieTypeMesure->setTypeMesure($typeMesureRepository->findInEnvironment($data['typeMesure']));
             $categorieTypeMesure->setCategorieMesure($categorieMesureRepository->findInEnvironment($categorieMesure));
-            $categorieTypeMesure->setCreatedBy($this->getUser());
-            $categorieTypeMesure->setUpdatedBy($this->getUser());
+            $categorieTypeMesure->setCreatedBy($this->getManagedUser());
+            $categorieTypeMesure->setUpdatedBy($this->getManagedUser());
             $categorieTypeMesure->setIsActive(true);
-            $categorieTypeMesure->setCreatedAtValue(new \DateTime());
-            $categorieTypeMesure->setUpdatedAt(new \DateTime());
+            $categorieTypeMesure->setCreatedAtValue();
+            $categorieTypeMesure->setUpdatedAt();
             $categorieTypeMesureRepository->add($categorieTypeMesure, true);
         }
 
@@ -207,8 +207,8 @@ class ApiCategorieTypeMesureController extends ApiInterface
                 }
                 
 
-                $categorieTypeMesure->setUpdatedBy($this->getUser());
-                $categorieTypeMesure->setUpdatedAt(new \DateTime());
+                $categorieTypeMesure->setUpdatedBy($this->getManagedUser());
+                $categorieTypeMesure->setUpdatedAt();
 
                 $errorResponse = $this->errorResponse($categorieTypeMesure);
                 if ($errorResponse !== null) {
@@ -268,8 +268,8 @@ class ApiCategorieTypeMesureController extends ApiInterface
             $categorieTypeMesure = $categorieTypeMesureRepository->findInEnvironment($id);
             if ($categorieTypeMesure != null) {
                 $categorieTypeMesure->setIsActive(false);
-                $categorieTypeMesure->setUpdatedBy($this->getUser());
-                $categorieTypeMesure->setUpdatedAt(new \DateTime());
+                $categorieTypeMesure->setUpdatedBy($this->getManagedUser());
+                $categorieTypeMesure->setUpdatedAt();
                 $categorieTypeMesureRepository->add($categorieTypeMesure, true);
                 $this->setMessage("Operation effectuées avec succès");
                 $response = $this->response($categorieTypeMesure);

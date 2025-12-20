@@ -316,10 +316,8 @@ class ApiClientController extends ApiInterface
             }
         }
 
-        $client->setCreatedBy($this->getUser());
-        $client->setUpdatedBy($this->getUser());
-        $client->setCreatedAtValue(); // Pas de paramètre - la méthode gère elle-même la création de DateTimeImmutable
-        $client->setUpdatedAt();
+        // Configurer l'entité avec les bonnes valeurs (utilisateur géré, dates, isActive)
+        $this->configureTraitEntity($client);
 
         $errorResponse = $this->errorResponse($client);
         if ($errorResponse !== null) {
@@ -440,10 +438,8 @@ class ApiClientController extends ApiInterface
             }
         }
 
-        $client->setCreatedBy($this->getUser());
-        $client->setUpdatedBy($this->getUser());
-        $client->setCreatedAtValue(); // Pas de paramètre - la méthode gère elle-même la création de DateTimeImmutable
-        $client->setUpdatedAt();
+        // Configurer l'entité avec les bonnes valeurs (utilisateur géré, dates, isActive)
+        $this->configureTraitEntity($client);
 
         $errorResponse = $this->errorResponse($client);
         if ($errorResponse !== null) {
@@ -574,8 +570,12 @@ class ApiClientController extends ApiInterface
                     }
                 }
 
-                $client->setUpdatedBy($this->getUser());
-                $client->setUpdatedAt(new \DateTime());
+                // Configurer seulement les champs de mise à jour pour une entité existante
+                $managedUser = $this->getManagedUser();
+                if ($managedUser) {
+                    $client->setUpdatedBy($managedUser);
+                }
+                $client->setUpdatedAt(); // Pas de paramètre
 
                 $errorResponse = $this->errorResponse($client);
                 if ($errorResponse !== null) {

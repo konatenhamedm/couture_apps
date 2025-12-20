@@ -280,10 +280,10 @@ class ApiModeleController extends ApiInterface
             }
         }
 
-        $modele->setCreatedBy($this->getUser());
-        $modele->setUpdatedBy($this->getUser());
-        $modele->setCreatedAtValue(new \DateTime());
-        $modele->setUpdatedAt(new \DateTime());
+        $modele->setCreatedBy($this->getManagedUser());
+        $modele->setUpdatedBy($this->getManagedUser());
+        $modele->setCreatedAtValue();
+        $modele->setUpdatedAt();
 
         $errorResponse = $this->errorResponse($modele);
         if ($errorResponse !== null) {
@@ -387,8 +387,8 @@ class ApiModeleController extends ApiInterface
                     }
                 }
 
-                $modele->setUpdatedBy($this->getUser());
-                $modele->setUpdatedAt(new \DateTime());
+                $modele->setUpdatedBy($this->getManagedUser());
+                $modele->setUpdatedAt();
 
                 $errorResponse = $this->errorResponse($modele);
                 if ($errorResponse !== null) {

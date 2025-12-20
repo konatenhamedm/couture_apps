@@ -327,10 +327,10 @@ class ApiSurccursaleController extends ApiInterface
         $surccursale->setContact($data['contact']);
         $surccursale->setIsActive($subscriptionChecker->getSettingByUser($this->getUser()->getEntreprise(), "succursale"));
         $surccursale->setEntreprise($this->getUser()->getEntreprise());
-        $surccursale->setCreatedBy($this->getUser());
-        $surccursale->setUpdatedBy($this->getUser());
-        $surccursale->setCreatedAtValue(new \DateTime());
-        $surccursale->setUpdatedAt(new \DateTime());
+        $surccursale->setCreatedBy($this->getManagedUser());
+        $surccursale->setUpdatedBy($this->getManagedUser());
+        $surccursale->setCreatedAtValue();
+        $surccursale->setUpdatedAt();
 
         $errorResponse = $this->errorResponse($surccursale);
         if ($errorResponse !== null) {
@@ -346,10 +346,10 @@ class ApiSurccursaleController extends ApiInterface
             $caisse->setReference($utils->generateReference('CAIS'));
             $caisse->setType(Caisse::TYPE['succursale']);
             $caisse->setEntreprise($this->getUser()->getEntreprise());
-            $caisse->setCreatedBy($this->getUser());
-            $caisse->setUpdatedBy($this->getUser());
-            $caisse->setCreatedAtValue(new \DateTime());
-            $caisse->setUpdatedAt(new \DateTime());
+            $caisse->setCreatedBy($this->getManagedUser());
+            $caisse->setUpdatedBy($this->getManagedUser());
+            $caisse->setCreatedAtValue();
+            $caisse->setUpdatedAt();
             $caisseSuccursaleRepository->add($caisse, true);
         }
 
@@ -434,8 +434,8 @@ class ApiSurccursaleController extends ApiInterface
                 }
 
                 $surccursale->setEntreprise($this->getUser()->getEntreprise());
-                $surccursale->setUpdatedBy($this->getUser());
-                $surccursale->setUpdatedAt(new \DateTime());
+                $surccursale->setUpdatedBy($this->getManagedUser());
+                $surccursale->setUpdatedAt();
 
                 $errorResponse = $this->errorResponse($surccursale);
                 if ($errorResponse !== null) {

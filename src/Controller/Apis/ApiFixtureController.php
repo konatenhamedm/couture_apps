@@ -49,30 +49,7 @@ class ApiFixtureController extends ApiInterface
         return true;
     }
 
-    /**
-     * Get a managed user entity for persistence
-     */
-    private function getManagedUser(EntityManagerInterface $entityManager): ?User
-    {
-        /** @var User|null $currentUser */
-        $currentUser = $this->getUser();
-        if (!$currentUser) {
-            return null;
-        }
 
-        // If the user is already managed by the EntityManager, return it
-        if ($entityManager->contains($currentUser)) {
-            return $currentUser;
-        }
-
-        // Otherwise, fetch the user from the database to get a managed instance
-        $userId = $currentUser->getId();
-        if ($userId) {
-            return $entityManager->find(User::class, $userId);
-        }
-
-        return null;
-    }
     /**
      * Génère des modèles de boutique de test
      */
@@ -138,14 +115,14 @@ class ApiFixtureController extends ApiInterface
                             $modeleBoutique->setTaille($tailles[array_rand($tailles)]);
 
                             // Get managed user for persistence
-                            $managedUser = $this->getManagedUser($entityManager);
+                            $managedUser = $this->getManagedUser();
                             if ($managedUser) {
                                 $modeleBoutique->setCreatedBy($managedUser);
                                 $modeleBoutique->setUpdatedBy($managedUser);
                             }
 
-                            $modeleBoutique->setCreatedAtValue(new \DateTime());
-                            $modeleBoutique->setUpdatedAt(new \DateTime());
+                            $modeleBoutique->setCreatedAtValue();
+                            $modeleBoutique->setUpdatedAt();
 
                             // Validate entity before persistence
                             if (!$this->validateEntityBeforePersist($modeleBoutique)) {
@@ -288,11 +265,11 @@ class ApiFixtureController extends ApiInterface
                     }
                     $reservation->setMontant($montant);
                     $reservation->setReste($reste);
-                    $reservation->setCreatedAtValue(new \DateTime());
-                    $reservation->setUpdatedAt(new \DateTime());
+                    $reservation->setCreatedAtValue();
+                    $reservation->setUpdatedAt();
 
                     // Get managed user for persistence
-                    $managedUser = $this->getManagedUser($entityManager);
+                    $managedUser = $this->getManagedUser();
                     if ($managedUser) {
                         $reservation->setCreatedBy($managedUser);
                         $reservation->setUpdatedBy($managedUser);
@@ -336,8 +313,8 @@ class ApiFixtureController extends ApiInterface
                         $ligne->setModele($modeleBoutique);
                         $ligne->setIsActive(true);
                         $ligne->setAvanceModele($avanceModele);
-                        $ligne->setCreatedAtValue(new \DateTime());
-                        $ligne->setUpdatedAt(new \DateTime());
+                        $ligne->setCreatedAtValue();
+                        $ligne->setUpdatedAt();
 
                         // Use the same managed user for ligne entities
                         if ($managedUser) {
@@ -370,8 +347,8 @@ class ApiFixtureController extends ApiInterface
                         $paiementReservation->setMontant($avance);
                                 $paiementReservation->setIsActive(true);
                         $paiementReservation->setReference($utils->generateReference('PMT'));
-                        $paiementReservation->setCreatedAtValue(new \DateTime());
-                        $paiementReservation->setUpdatedAt(new \DateTime());
+                        $paiementReservation->setCreatedAtValue();
+                        $paiementReservation->setUpdatedAt();
 
                         // Use the same managed user for paiement entities
                         if ($managedUser) {
@@ -389,7 +366,7 @@ class ApiFixtureController extends ApiInterface
                             if ($managedUser) {
                                 $caisseBoutique->setUpdatedBy($managedUser);
                             }
-                            $caisseBoutique->setUpdatedAt(new \DateTime());
+                            $caisseBoutique->setUpdatedAt();
 
                             // Sauvegarder la caisse (sans flush)
                             $caisseBoutiqueRepository->saveInEnvironment($caisseBoutique, false);
@@ -489,13 +466,13 @@ class ApiFixtureController extends ApiInterface
                     }
 
                     // Get managed user for persistence
-                    $managedUser = $this->getManagedUser($entityManager);
+                    $managedUser = $this->getManagedUser();
                     if ($managedUser) {
                         $entreStock->setCreatedBy($managedUser);
                         $entreStock->setUpdatedBy($managedUser);
                     }
-                    $entreStock->setCreatedAtValue(new \DateTime());
-                    $entreStock->setUpdatedAt(new \DateTime());
+                    $entreStock->setCreatedAtValue();
+                    $entreStock->setUpdatedAt();
 
                     // Validate entity before persistence
                     if (!$this->validateEntityBeforePersist($entreStock)) {

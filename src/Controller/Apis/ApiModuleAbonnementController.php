@@ -283,10 +283,10 @@ class ApiModuleAbonnementController extends ApiInterface
         $moduleAbonnement->setMontant($data['montant']);
         $moduleAbonnement->setDuree($data['duree']);
         $moduleAbonnement->setNumero($data['numero']);
-        $moduleAbonnement->setCreatedBy($this->getUser());
-        $moduleAbonnement->setUpdatedBy($this->getUser());
-        $moduleAbonnement->setCreatedAtValue(new \DateTime());
-        $moduleAbonnement->setUpdatedAt(new \DateTime());
+        $moduleAbonnement->setCreatedBy($this->getManagedUser());
+        $moduleAbonnement->setUpdatedBy($this->getManagedUser());
+        $moduleAbonnement->setCreatedAtValue();
+        $moduleAbonnement->setUpdatedAt();
 
         $errorResponse = $this->errorResponse($moduleAbonnement);
         if ($errorResponse !== null) {
@@ -413,8 +413,8 @@ class ApiModuleAbonnementController extends ApiInterface
                 $moduleAbonnement->setMontant($data['montant']);
                 $moduleAbonnement->setNumero($data['numero']);
                 $moduleAbonnement->setDuree($data['duree']);
-                $moduleAbonnement->setUpdatedBy($this->getUser());
-                $moduleAbonnement->setUpdatedAt(new \DateTime());
+                $moduleAbonnement->setUpdatedBy($this->getManagedUser());
+                $moduleAbonnement->setUpdatedAt();
 
                 // Gestion des lignes de modules (ajout et mise à jour)
                 $ligneModules = $data['ligneModules'] ?? [];
