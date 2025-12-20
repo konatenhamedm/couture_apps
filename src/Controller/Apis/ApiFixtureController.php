@@ -10,6 +10,20 @@ use App\Entity\PaiementReservation;
 use App\Entity\EntreStock;
 use App\Entity\LigneEntre;
 use App\Entity\User;
+use App\Entity\Entreprise;
+use App\Entity\Pays;
+use App\Entity\TypeUser;
+use App\Entity\Boutique;
+use App\Entity\Surccursale;
+use App\Entity\Client;
+use App\Entity\Modele;
+use App\Entity\Operateur;
+use App\Entity\Caisse;
+use App\Entity\CaisseBoutique;
+use App\Entity\CaisseSuccursale;
+use App\Entity\Setting;
+use App\Entity\Abonnement;
+use App\Entity\ModuleAbonnement;
 use App\Repository\ModeleRepository;
 use App\Repository\BoutiqueRepository;
 use App\Repository\ModeleBoutiqueRepository;
@@ -17,6 +31,16 @@ use App\Repository\ClientRepository;
 use App\Repository\CaisseBoutiqueRepository;
 use App\Repository\EntrepriseRepository;
 use App\Repository\EntreStockRepository;
+use App\Repository\UserRepository;
+use App\Repository\PaysRepository;
+use App\Repository\TypeUserRepository;
+use App\Repository\SurccursaleRepository;
+use App\Repository\OperateurRepository;
+use App\Repository\CaisseRepository;
+use App\Repository\CaisseSuccursaleRepository;
+use App\Repository\SettingRepository;
+use App\Repository\AbonnementRepository;
+use App\Repository\ModuleAbonnementRepository;
 use App\Service\EntityManagerProvider;
 use App\Service\Utils;
 use Doctrine\ORM\EntityManagerInterface;
@@ -33,6 +57,719 @@ use OpenApi\Attributes as OA;
 class ApiFixtureController extends ApiInterface
 {
 
+
+    /**
+     * Initialise la base de données avec les données de base (sans authentification)
+     */
+    #[Route('/init-database', methods: ['POST'])]
+    #[OA\Post(
+        path: "/api/fixture/init-database",
+        summary: "Initialiser la base de données",
+        description: "Crée les données de base nécessaires pour démarrer l'application (pays, entreprise, utilisateur admin, etc.)",
+        tags: ['fixture']
+    )]
+    public function initDatabase(): Response
+    {
+        try {
+            $results = [];
+            
+            // 1. Créer les pays
+            $paysResult = $this->createPaysFixtures();
+            $results['pays'] = $paysResult;
+            
+            // 2. Créer l'entreprise
+            $entrepriseResult = $this->createEntrepriseFixtures();
+            $results['entreprise'] = $entrepriseResult;
+            
+            // 3. Créer les types d'utilisateurs
+            $typeUserResult = $this->createTypeUserFixtures();
+            $results['type_users'] = $typeUserResult;
+            
+            // 4. Créer les utilisateurs (admin)
+            $userResult = $this->createUserFixtures();
+            $results['users'] = $userResult;
+
+            return $this->responseData([
+                'message' => 'Base de données initialisée avec succès',
+                'results' => $results,
+                'credentials' => [
+                    'admin' => ['login' => 'admin@ateliya.com', 'password' => 'admin123'],
+                    'manager' => ['login' => 'manager@ateliya.com', 'password' => 'manager123']
+                ]
+            ], 'group1', ['Content-Type' => 'application/json']);
+
+        } catch (\Exception $e) {
+            error_log("Erreur lors de l'initialisation de la base de données: " . $e->getMessage());
+            return $this->createCustomErrorResponse("Erreur lors de l'initialisation: " . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Crée toutes les fixtures nécessaires pour remplir la base de données
+     */
+    #[Route('/create-all', methods: ['POST'])]
+    #[OA\Post(
+        path: "/api/fixture/create-all",
+        summary: "Créer toutes les fixtures",
+        description: "Crée un jeu complet de données de test : pays, entreprise, utilisateurs, boutiques, succursales, modèles, clients, etc.",
+        tags: ['fixture']
+    )]
+    public function createAllFixtures(): Response
+    {
+        try {
+            $results = [];
+            
+            // 1. Créer les pays
+            $paysResult = $this->createPaysFixtures();
+            $results['pays'] = $paysResult;
+            
+            // 2. Créer l'entreprise
+            $entrepriseResult = $this->createEntrepriseFixtures();
+            $results['entreprise'] = $entrepriseResult;
+            
+            // 3. Créer les types d'utilisateurs
+            $typeUserResult = $this->createTypeUserFixtures();
+            $results['type_users'] = $typeUserResult;
+            
+            // 4. Créer les utilisateurs
+            $userResult = $this->createUserFixtures();
+            $results['users'] = $userResult;
+            
+            // 5. Créer les boutiques
+            $boutiqueResult = $this->createBoutiqueFixtures();
+            $results['boutiques'] = $boutiqueResult;
+            
+            // 6. Créer les succursales
+            $succursaleResult = $this->createSuccursaleFixtures();
+            $results['succursales'] = $succursaleResult;
+            
+            // 7. Créer les opérateurs
+            $operateurResult = $this->createOperateurFixtures();
+            $results['operateurs'] = $operateurResult;
+            
+            // 8. Créer les caisses
+            $caisseResult = $this->createCaisseFixtures();
+            $results['caisses'] = $caisseResult;
+            
+            // 9. Créer les modèles
+            $modeleResult = $this->createModeleFixtures();
+            $results['modeles'] = $modeleResult;
+            
+            // 10. Créer les clients
+            $clientResult = $this->createClientFixtures();
+            $results['clients'] = $clientResult;
+            
+            // 11. Créer les settings
+            $settingResult = $this->createSettingFixtures();
+            $results['settings'] = $settingResult;
+            
+            // 12. Créer les abonnements
+            $abonnementResult = $this->createAbonnementFixtures();
+            $results['abonnements'] = $abonnementResult;
+
+            return $this->responseData([
+                'message' => 'Toutes les fixtures ont été créées avec succès',
+                'results' => $results
+            ], 'group1', ['Content-Type' => 'application/json']);
+
+        } catch (\Exception $e) {
+            error_log("Erreur lors de la création de toutes les fixtures: " . $e->getMessage());
+            return $this->createCustomErrorResponse("Erreur lors de la création des fixtures: " . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Crée les pays de base
+     */
+    private function createPaysFixtures(): array
+    {
+        try {
+            $paysRepository = $this->em->getRepository(Pays::class);
+            $createdCount = 0;
+            
+            $paysData = [
+                ['libelle' => 'Côte d\'Ivoire', 'code' => 'CI', 'indicatif' => '+225'],
+                ['libelle' => 'France', 'code' => 'FR', 'indicatif' => '+33'],
+                ['libelle' => 'Sénégal', 'code' => 'SN', 'indicatif' => '+221'],
+                ['libelle' => 'Mali', 'code' => 'ML', 'indicatif' => '+223'],
+                ['libelle' => 'Burkina Faso', 'code' => 'BF', 'indicatif' => '+226']
+            ];
+
+            foreach ($paysData as $data) {
+                $existing = $paysRepository->findOneBy(['code' => $data['code']]);
+                if (!$existing) {
+                    $pays = new Pays();
+                    $pays->setLibelle($data['libelle']);
+                    $pays->setCode($data['code']);
+                    $pays->setIndicatif($data['indicatif']);
+                    $pays->setActif(true); // Ajouter cette ligne
+                    
+                    $this->configureTraitEntity($pays);
+                    $this->em->persist($pays);
+                    $this->em->flush();
+                    $createdCount++;
+                }
+            }
+
+            return ['count' => $createdCount, 'message' => "$createdCount pays créés"];
+        } catch (\Exception $e) {
+            error_log("Erreur création pays: " . $e->getMessage());
+            return ['count' => 0, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Crée l'entreprise de base
+     */
+    private function createEntrepriseFixtures(): array
+    {
+        try {
+            $entrepriseRepository = $this->em->getRepository(Entreprise::class);
+            $paysRepository = $this->em->getRepository(Pays::class);
+            $createdCount = 0;
+            
+            $existing = $entrepriseRepository->findOneBy(['libelle' => 'Ateliya Couture']);
+            if (!$existing) {
+                $pays = $paysRepository->findOneBy(['code' => 'CI']);
+                
+                $entreprise = new Entreprise();
+                $entreprise->setLibelle('Ateliya Couture');
+                $entreprise->setNumero('+225 0123456789');
+                $entreprise->setEmail('contact@ateliya.com');
+                if ($pays) {
+                    $entreprise->setPays($this->getManagedPays($pays));
+                }
+                
+                $this->configureTraitEntity($entreprise);
+                $this->em->persist($entreprise);
+                $this->em->flush();
+                $createdCount++;
+            }
+
+            return ['count' => $createdCount, 'message' => "$createdCount entreprise créée"];
+        } catch (\Exception $e) {
+            error_log("Erreur création entreprise: " . $e->getMessage());
+            return ['count' => 0, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Crée les types d'utilisateurs
+     */
+    private function createTypeUserFixtures(): array
+    {
+        try {
+            $typeUserRepository = $this->em->getRepository(TypeUser::class);
+            $createdCount = 0;
+            
+            $typesData = [
+                ['libelle' => 'Super Administrateur', 'code' => 'SADM'],
+                ['libelle' => 'Administrateur Boutique', 'code' => 'ADB'],
+                ['libelle' => 'Employé Succursale', 'code' => 'EMP'],
+                ['libelle' => 'Caissier', 'code' => 'CAIS']
+            ];
+
+            foreach ($typesData as $data) {
+                $existing = $typeUserRepository->findOneBy(['code' => $data['code']]);
+                if (!$existing) {
+                    $typeUser = new TypeUser();
+                    $typeUser->setLibelle($data['libelle']);
+                    $typeUser->setCode($data['code']);
+                    
+                    $this->configureTraitEntity($typeUser);
+                    $this->em->persist($typeUser);
+                    $this->em->flush();
+                    $createdCount++;
+                }
+            }
+
+            return ['count' => $createdCount, 'message' => "$createdCount types d'utilisateurs créés"];
+        } catch (\Exception $e) {
+            error_log("Erreur création types utilisateurs: " . $e->getMessage());
+            return ['count' => 0, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Crée les utilisateurs de base
+     */
+    private function createUserFixtures(): array
+    {
+        try {
+            $userRepository = $this->em->getRepository(User::class);
+            $entrepriseRepository = $this->em->getRepository(Entreprise::class);
+            $typeUserRepository = $this->em->getRepository(TypeUser::class);
+            $createdCount = 0;
+            
+            $entreprise = $entrepriseRepository->findOneBy(['libelle' => 'Ateliya Couture']);
+            $typeSuperAdmin = $typeUserRepository->findOneBy(['code' => 'SADM']);
+            $typeAdmin = $typeUserRepository->findOneBy(['code' => 'ADB']);
+            
+            $usersData = [
+                [
+                    'login' => 'admin@ateliya.com',
+                    'nom' => 'Admin',
+                    'prenoms' => 'Super',
+                    'password' => 'admin123',
+                    'type' => $typeSuperAdmin
+                ],
+                [
+                    'login' => 'manager@ateliya.com',
+                    'nom' => 'Manager',
+                    'prenoms' => 'Boutique',
+                    'password' => 'manager123',
+                    'type' => $typeAdmin
+                ]
+            ];
+
+            foreach ($usersData as $data) {
+                $existing = $userRepository->findOneBy(['login' => $data['login']]);
+                if (!$existing) {
+                    $user = new User();
+                    $user->setLogin($data['login']);
+                    $user->setNom($data['nom']);
+                    $user->setPrenoms($data['prenoms']);
+                    $user->setPassword($this->hasher->hashPassword($user, $data['password']));
+                    $user->setRoles(['ROLE_USER']);
+                    $user->setIsActive(true);
+                    
+                    if ($entreprise) {
+                        $user->setEntreprise($this->getManagedEntity($entreprise));
+                    }
+                    if ($data['type']) {
+                        $user->setType($this->getManagedEntity($data['type']));
+                    }
+                    
+                    $this->em->persist($user);
+                    $this->em->flush();
+                    $createdCount++;
+                }
+            }
+
+            return ['count' => $createdCount, 'message' => "$createdCount utilisateurs créés"];
+        } catch (\Exception $e) {
+            error_log("Erreur création utilisateurs: " . $e->getMessage());
+            return ['count' => 0, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Crée les boutiques
+     */
+    private function createBoutiqueFixtures(): array
+    {
+        try {
+            $boutiqueRepository = $this->em->getRepository(Boutique::class);
+            $entrepriseRepository = $this->em->getRepository(Entreprise::class);
+            $createdCount = 0;
+            
+            $entreprise = $entrepriseRepository->findOneBy(['libelle' => 'Ateliya Couture']);
+            
+            $boutiquesData = [
+                ['libelle' => 'Boutique Cocody', 'contact' => '+225 0123456789', 'situation' => 'Cocody, Riviera'],
+                ['libelle' => 'Boutique Plateau', 'contact' => '+225 0123456790', 'situation' => 'Plateau, Centre-ville'],
+                ['libelle' => 'Boutique Yopougon', 'contact' => '+225 0123456791', 'situation' => 'Yopougon, Marché']
+            ];
+
+            foreach ($boutiquesData as $data) {
+                $existing = $boutiqueRepository->findOneBy(['libelle' => $data['libelle']]);
+                if (!$existing) {
+                    $boutique = new Boutique();
+                    $boutique->setLibelle($data['libelle']);
+                    $boutique->setContact($data['contact']);
+                    $boutique->setSituation($data['situation']);
+                    
+                    if ($entreprise) {
+                        $boutique->setEntreprise($this->getManagedEntity($entreprise));
+                    }
+                    
+                    $this->configureTraitEntity($boutique);
+                    $this->em->persist($boutique);
+                    $this->em->flush();
+                    $createdCount++;
+                }
+            }
+
+            return ['count' => $createdCount, 'message' => "$createdCount boutiques créées"];
+        } catch (\Exception $e) {
+            error_log("Erreur création boutiques: " . $e->getMessage());
+            return ['count' => 0, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Crée les succursales
+     */
+    private function createSuccursaleFixtures(): array
+    {
+        try {
+            $succursaleRepository = $this->em->getRepository(Surccursale::class);
+            $entrepriseRepository = $this->em->getRepository(Entreprise::class);
+            $createdCount = 0;
+            
+            $entreprise = $entrepriseRepository->findOneBy(['libelle' => 'Ateliya Couture']);
+            
+            $succursalesData = [
+                ['libelle' => 'Succursale Adjamé', 'contact' => '+225 0123456792'],
+                ['libelle' => 'Succursale Treichville', 'contact' => '+225 0123456793'],
+                ['libelle' => 'Succursale Marcory', 'contact' => '+225 0123456794']
+            ];
+
+            foreach ($succursalesData as $data) {
+                $existing = $succursaleRepository->findOneBy(['libelle' => $data['libelle']]);
+                if (!$existing) {
+                    $succursale = new Surccursale();
+                    $succursale->setLibelle($data['libelle']);
+                    $succursale->setContact($data['contact']);
+                    
+                    if ($entreprise) {
+                        $succursale->setEntreprise($this->getManagedEntity($entreprise));
+                    }
+                    
+                    $this->configureTraitEntity($succursale);
+                    $this->em->persist($succursale);
+                    $this->em->flush();
+                    $createdCount++;
+                }
+            }
+
+            return ['count' => $createdCount, 'message' => "$createdCount succursales créées"];
+        } catch (\Exception $e) {
+            error_log("Erreur création succursales: " . $e->getMessage());
+            return ['count' => 0, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Crée les opérateurs
+     */
+    private function createOperateurFixtures(): array
+    {
+        try {
+            $operateurRepository = $this->em->getRepository(Operateur::class);
+            $paysRepository = $this->em->getRepository(Pays::class);
+            $createdCount = 0;
+            
+            $pays = $paysRepository->findOneBy(['code' => 'CI']);
+            
+            $operateursData = [
+                ['libelle' => 'Orange Money', 'code' => 'OM'],
+                ['libelle' => 'MTN Mobile Money', 'code' => 'MOMO'],
+                ['libelle' => 'Moov Money', 'code' => 'MM'],
+                ['libelle' => 'Wave', 'code' => 'WAVE']
+            ];
+
+            foreach ($operateursData as $data) {
+                $existing = $operateurRepository->findOneBy(['code' => $data['code']]);
+                if (!$existing) {
+                    $operateur = new Operateur();
+                    $operateur->setLibelle($data['libelle']);
+                    $operateur->setCode($data['code']);
+                    $operateur->setActif(true); // Ajouter cette ligne
+                    
+                    if ($pays) {
+                        $operateur->setPays($this->getManagedPays($pays));
+                    }
+                    
+                    $this->configureTraitEntity($operateur);
+                    $this->em->persist($operateur);
+                    $this->em->flush();
+                    $createdCount++;
+                }
+            }
+
+            return ['count' => $createdCount, 'message' => "$createdCount opérateurs créés"];
+        } catch (\Exception $e) {
+            error_log("Erreur création opérateurs: " . $e->getMessage());
+            return ['count' => 0, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Crée les caisses pour les boutiques et succursales
+     */
+    private function createCaisseFixtures(): array
+    {
+        try {
+            $caisseRepository = $this->em->getRepository(Caisse::class);
+            $caisseBoutiqueRepository = $this->em->getRepository(CaisseBoutique::class);
+            $caisseSuccursaleRepository = $this->em->getRepository(CaisseSuccursale::class);
+            $boutiqueRepository = $this->em->getRepository(Boutique::class);
+            $succursaleRepository = $this->em->getRepository(Surccursale::class);
+            $createdCount = 0;
+
+            // Créer une caisse principale
+            $existing = $caisseRepository->findOneBy(['reference' => 'CAISSE_PRINCIPALE']);
+            if (!$existing) {
+                $caisse = new Caisse();
+                $caisse->setReference('CAISSE_PRINCIPALE');
+                $caisse->setMontant('100000'); // 100,000 FCFA de départ
+                $caisse->setType('principale');
+                
+                $this->configureTraitEntity($caisse);
+                $this->em->persist($caisse);
+                $this->em->flush();
+                $createdCount++;
+            }
+
+            // Créer des caisses pour chaque boutique
+            $boutiques = $boutiqueRepository->findAllInEnvironment();
+            foreach ($boutiques as $boutique) {
+                $existing = $caisseBoutiqueRepository->findOneBy(['boutique' => $boutique]);
+                if (!$existing) {
+                    $caisseBoutique = new CaisseBoutique();
+                    $caisseBoutique->setBoutique($this->getManagedEntity($boutique));
+                    $caisseBoutique->setReference('CAISSE_BOUTIQUE_' . $boutique->getId());
+                    $caisseBoutique->setType('boutique');
+                    $caisseBoutique->setMontant((string)rand(50000, 200000)); // Montant aléatoire
+                    
+                    $this->configureTraitEntity($caisseBoutique);
+                    $this->em->persist($caisseBoutique);
+                    $this->em->flush();
+                    $createdCount++;
+                }
+            }
+
+            // Créer des caisses pour chaque succursale
+            $succursales = $succursaleRepository->findAllInEnvironment();
+            foreach ($succursales as $succursale) {
+                $existing = $caisseSuccursaleRepository->findOneBy(['succursale' => $succursale]);
+                if (!$existing) {
+                    $caisseSuccursale = new CaisseSuccursale();
+                    $caisseSuccursale->setSuccursale($this->getManagedEntity($succursale));
+                    $caisseSuccursale->setReference('CAISSE_SUCCURSALE_' . $succursale->getId());
+                    $caisseSuccursale->setType('succursale');
+                    $caisseSuccursale->setMontant((string)rand(30000, 150000)); // Montant aléatoire
+                    
+                    $this->configureTraitEntity($caisseSuccursale);
+                    $this->em->persist($caisseSuccursale);
+                    $this->em->flush();
+                    $createdCount++;
+                }
+            }
+
+            return ['count' => $createdCount, 'message' => "$createdCount caisses créées"];
+        } catch (\Exception $e) {
+            error_log("Erreur création caisses: " . $e->getMessage());
+            return ['count' => 0, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Crée les modèles de vêtements
+     */
+    private function createModeleFixtures(): array
+    {
+        try {
+            $modeleRepository = $this->em->getRepository(Modele::class);
+            $entrepriseRepository = $this->em->getRepository(Entreprise::class);
+            $createdCount = 0;
+            
+            $entreprise = $entrepriseRepository->findOneBy(['libelle' => 'Ateliya Couture']);
+            
+            $modelesData = [
+                ['libelle' => 'Robe Africaine Traditionnelle'],
+                ['libelle' => 'Costume Homme Moderne'],
+                ['libelle' => 'Boubou Grand Boubou'],
+                ['libelle' => 'Robe de Soirée Élégante'],
+                ['libelle' => 'Ensemble Pagne Wax'],
+                ['libelle' => 'Chemise Brodée'],
+                ['libelle' => 'Pantalon Tailleur'],
+                ['libelle' => 'Veste Blazer']
+            ];
+
+            foreach ($modelesData as $data) {
+                $existing = $modeleRepository->findOneBy(['libelle' => $data['libelle']]);
+                if (!$existing) {
+                    $modele = new Modele();
+                    $modele->setLibelle($data['libelle']);
+                    $modele->setQuantiteGlobale(0); // Sera mis à jour lors de la création des ModeleBoutique
+                    
+                    if ($entreprise) {
+                        $modele->setEntreprise($this->getManagedEntity($entreprise));
+                    }
+                    
+                    $this->configureTraitEntity($modele);
+                    $this->em->persist($modele);
+                    $this->em->flush();
+                    $createdCount++;
+                }
+            }
+
+            return ['count' => $createdCount, 'message' => "$createdCount modèles créés"];
+        } catch (\Exception $e) {
+            error_log("Erreur création modèles: " . $e->getMessage());
+            return ['count' => 0, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Crée les clients
+     */
+    private function createClientFixtures(): array
+    {
+        try {
+            $clientRepository = $this->em->getRepository(Client::class);
+            $boutiqueRepository = $this->em->getRepository(Boutique::class);
+            $succursaleRepository = $this->em->getRepository(Surccursale::class);
+            $entrepriseRepository = $this->em->getRepository(Entreprise::class);
+            $createdCount = 0;
+            
+            $entreprise = $entrepriseRepository->findOneBy(['libelle' => 'Ateliya Couture']);
+            $boutiques = $boutiqueRepository->findAll();
+            $succursales = $succursaleRepository->findAll();
+            
+            $clientsData = [
+                ['nom' => 'Kouassi', 'prenom' => 'Yao Jean', 'numero' => '+225 0701234567'],
+                ['nom' => 'Traoré', 'prenom' => 'Aminata', 'numero' => '+225 0701234568'],
+                ['nom' => 'Bamba', 'prenom' => 'Seydou', 'numero' => '+225 0701234569'],
+                ['nom' => 'Ouattara', 'prenom' => 'Fatoumata', 'numero' => '+225 0701234570'],
+                ['nom' => 'Koné', 'prenom' => 'Ibrahim', 'numero' => '+225 0701234571'],
+                ['nom' => 'Diabaté', 'prenom' => 'Mariam', 'numero' => '+225 0701234572'],
+                ['nom' => 'Sanogo', 'prenom' => 'Moussa', 'numero' => '+225 0701234573'],
+                ['nom' => 'Doumbia', 'prenom' => 'Aïcha', 'numero' => '+225 0701234574'],
+                ['nom' => 'Camara', 'prenom' => 'Mamadou', 'numero' => '+225 0701234575'],
+                ['nom' => 'Fofana', 'prenom' => 'Kadiatou', 'numero' => '+225 0701234576']
+            ];
+
+            foreach ($clientsData as $data) {
+                $existing = $clientRepository->findOneBy(['numero' => $data['numero']]);
+                if (!$existing) {
+                    $client = new Client();
+                    $client->setNom($data['nom']);
+                    $client->setPrenom($data['prenom']);
+                    $client->setNumero($data['numero']);
+                    
+                    if ($entreprise) {
+                        $client->setEntreprise($this->getManagedEntity($entreprise));
+                    }
+                    
+                    // Assigner aléatoirement à une boutique ou succursale
+                    if (rand(0, 1) && !empty($boutiques)) {
+                        $boutique = $boutiques[array_rand($boutiques)];
+                        $client->setBoutique($this->getManagedEntity($boutique));
+                    } elseif (!empty($succursales)) {
+                        $succursale = $succursales[array_rand($succursales)];
+                        $client->setSurccursale($this->getManagedEntity($succursale));
+                    }
+                    
+                    $this->configureTraitEntity($client);
+                    $this->em->persist($client);
+                    $this->em->flush();
+                    $createdCount++;
+                }
+            }
+
+            return ['count' => $createdCount, 'message' => "$createdCount clients créés"];
+        } catch (\Exception $e) {
+            error_log("Erreur création clients: " . $e->getMessage());
+            return ['count' => 0, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Crée les paramètres de l'entreprise
+     */
+    private function createSettingFixtures(): array
+    {
+        try {
+            $settingRepository = $this->em->getRepository(Setting::class);
+            $entrepriseRepository = $this->em->getRepository(Entreprise::class);
+            $createdCount = 0;
+            
+            $entreprise = $entrepriseRepository->findOneBy(['libelle' => 'Ateliya Couture']);
+            
+            $existing = $settingRepository->findOneBy(['entreprise' => $entreprise]);
+            if (!$existing) {
+                $setting = new Setting();
+                $setting->setNombreUser(50);
+                $setting->setNombreBoutique(10);
+                $setting->setNombreSuccursale(20);
+                
+                if ($entreprise) {
+                    $setting->setEntreprise($this->getManagedEntity($entreprise));
+                }
+                
+                $this->configureTraitEntity($setting);
+                $this->em->persist($setting);
+                $this->em->flush();
+                $createdCount++;
+            }
+
+            return ['count' => $createdCount, 'message' => "$createdCount paramètre créé"];
+        } catch (\Exception $e) {
+            error_log("Erreur création settings: " . $e->getMessage());
+            return ['count' => 0, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Crée les abonnements
+     */
+    private function createAbonnementFixtures(): array
+    {
+        try {
+            $abonnementRepository = $this->em->getRepository(Abonnement::class);
+            $moduleAbonnementRepository = $this->em->getRepository(ModuleAbonnement::class);
+            $entrepriseRepository = $this->em->getRepository(Entreprise::class);
+            $createdCount = 0;
+            
+            $entreprise = $entrepriseRepository->findOneBy(['libelle' => 'Ateliya Couture']);
+            
+            // Créer les modules d'abonnement
+            $modulesData = [
+                ['description' => 'Gestion des Stocks', 'code' => 'STOCK', 'montant' => '15000', 'duree' => '12'],
+                ['description' => 'Gestion des Clients', 'code' => 'CLIENT', 'montant' => '10000', 'duree' => '12'],
+                ['description' => 'Gestion des Réservations', 'code' => 'RESERVATION', 'montant' => '12000', 'duree' => '12'],
+                ['description' => 'Gestion Financière', 'code' => 'FINANCE', 'montant' => '20000', 'duree' => '12']
+            ];
+
+            foreach ($modulesData as $data) {
+                $existing = $moduleAbonnementRepository->findOneBy(['code' => $data['code']]);
+                if (!$existing) {
+                    $module = new ModuleAbonnement();
+                    $module->setDescription($data['description']);
+                    $module->setCode($data['code']);
+                    $module->setMontant($data['montant']);
+                    $module->setDuree($data['duree']);
+                    $module->setEtat(true);
+                    
+                    $this->configureTraitEntity($module);
+                    $this->em->persist($module);
+                    $this->em->flush();
+                    $createdCount++;
+                }
+            }
+
+            // Créer un abonnement actif pour l'entreprise
+            $existing = $abonnementRepository->findOneBy(['entreprise' => $entreprise]);
+            if (!$existing) {
+                $moduleStock = $moduleAbonnementRepository->findOneBy(['code' => 'STOCK']);
+                
+                $abonnement = new Abonnement();
+                $abonnement->setEtat('actif');
+                $abonnement->setType('premium');
+                $abonnement->setDateFin(new \DateTime('+11 months'));
+                
+                if ($entreprise) {
+                    $abonnement->setEntreprise($this->getManagedEntity($entreprise));
+                }
+                if ($moduleStock) {
+                    $abonnement->setModuleAbonnement($this->getManagedEntity($moduleStock));
+                }
+                
+                $this->configureTraitEntity($abonnement);
+                $this->em->persist($abonnement);
+                $this->em->flush();
+                $createdCount++;
+            }
+
+            return ['count' => $createdCount, 'message' => "$createdCount abonnements/modules créés"];
+        } catch (\Exception $e) {
+            error_log("Erreur création abonnements: " . $e->getMessage());
+            return ['count' => 0, 'error' => $e->getMessage()];
+        }
+    }
 
     /**
      * Validate and prepare entity before persistence

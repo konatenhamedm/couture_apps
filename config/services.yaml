@@ -16,8 +16,8 @@ parameters:
     super_admin: '%env(SUPER_ADMIN)%'
     
     # Configuration des bases de données pour le switch dynamique
-    database.dev.url: "mysql://niqj4716_ateliya:pythouche93K@127.0.0.1:3306/niqj4716_ateliya_dev?serverVersion=8.0.32&charset=utf8mb4"
-    database.prod.url: "mysql://niqj4716_ateliya:pythouche93K@127.0.0.1:3306/niqj4716_ateliya_prod?serverVersion=8.0.32&charset=utf8mb4"
+    database.dev.url: "mysql://root:@127.0.0.1:3306/app_couture_dev?serverVersion=mariadb-10.4.28&charset=utf8mb4"
+    database.prod.url: "mysql://root:@127.0.0.1:3306/app_couture_prod?serverVersion=mariadb-10.4.28&charset=utf8mb4"
 
 # Import de la configuration des repositories
 imports:

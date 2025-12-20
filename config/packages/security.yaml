@@ -50,6 +50,7 @@ security:
             - { path: ^/api/reset-password/request, roles: PUBLIC_ACCESS }
             - { path: ^/api/reset-password/reset, roles: PUBLIC_ACCESS }
             - { path: ^/api/user/create, roles: PUBLIC_ACCESS }
+            - { path: ^/api/fixture/init-database, roles: PUBLIC_ACCESS }
             - { path: ^/login, roles: PUBLIC_ACCESS }
             - { path: ^/$, roles: PUBLIC_ACCESS }  
             - { path: ^/public/, roles: PUBLIC_ACCESS }
