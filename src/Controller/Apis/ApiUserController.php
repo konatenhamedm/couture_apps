@@ -689,16 +689,16 @@ class ApiUserController extends ApiInterface
             // Affectation à une succursale (optionnel)
             if (isset($data['succursale']) && $data['succursale'] != null) {
                 $succursale = $surccursaleRepository->findInEnvironment($data['succursale']);
-                if ($succursale) {
-                    $user->setSurccursale($succursale);
+            if ($succursale) {
+                $user->setSurccursale($this->getManagedEntity($succursale));
                 }
             }
 
             // Affectation à une boutique (optionnel)
             if (isset($data['boutique']) && $data['boutique'] != null) {
                 $boutique = $boutiqueRepository->findInEnvironment($data['boutique']);
-                if ($boutique) {
-                    $user->setBoutique($boutique);
+            if ($boutique) {
+                $user->setBoutique($this->getManagedEntity($boutique));
                 }
             }
 

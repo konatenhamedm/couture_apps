@@ -2,14 +2,14 @@
 
 namespace App\Controller\Apis;
 
+use App\Controller\Apis\Config\ApiInterface;
 use App\Service\DynamicDatabaseService;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 
 use App\Trait\DatabaseEnvironmentTrait;
 #[Route('/api/test')]
-class ApiDatabaseTestController extends AbstractController
+class ApiDatabaseTestController extends ApiInterface
 {
     use DatabaseEnvironmentTrait;
 

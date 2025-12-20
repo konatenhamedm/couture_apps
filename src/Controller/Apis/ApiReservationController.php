@@ -834,14 +834,14 @@ class ApiReservationController extends ApiInterface
                 }
                 if (isset($data['client'])) {
                     $client = $clientRepository->findInEnvironment($data['client']);
-                    if ($client) {
-                        $reservation->setClient($client);
+            if ($client) {
+                $reservation->setClient($this->getManagedEntity($client));
                     }
                 }
                 if (isset($data['boutique'])) {
                     $boutique = $boutiqueRepository->findInEnvironment($data['boutique']);
-                    if ($boutique) {
-                        $reservation->setBoutique($boutique);
+            if ($boutique) {
+                $reservation->setBoutique($this->getManagedEntity($boutique));
                     }
                 }
                 if (isset($data['montant'])) {

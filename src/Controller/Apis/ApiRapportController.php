@@ -2,19 +2,19 @@
 
 namespace App\Controller\Apis;
 
+use App\Controller\Apis\Config\ApiInterface;
 use App\Repository\FactureRepository;
 use App\Repository\VenteRepository;
 use App\Repository\PaiementReservationRepository;
 use App\Repository\PaiementFactureRepository;
 use App\Repository\BoutiqueRepository;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use OpenApi\Attributes as OA;
 
 #[Route('/api')]
-class ApiRapportController extends AbstractController
+class ApiRapportController extends ApiInterface
 {
     /**
      * Données pour les rapports financiers
