@@ -6,6 +6,7 @@ use App\Repository\CaisseBoutiqueRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: CaisseBoutiqueRepository::class)]
+#[ORM\Table(name: 'caisse_boutique')]
 class CaisseBoutique extends Caisse
 {
    

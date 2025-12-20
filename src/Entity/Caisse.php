@@ -8,6 +8,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: CaisseRepository::class)]
+#[ORM\Table(name: 'caisse')]
 #[ORM\InheritanceType("JOINED")]
 #[ORM\DiscriminatorColumn(name:"discr", type:"string")]
 #[UniqueEntity(fields: 'reference', message: 'Ce code est déjà associé à un autre paiement.')]

@@ -93,26 +93,111 @@ class StandardRepositoryTraitTest extends TestCase
         $this->assertEquals('TestEntity', $this->repository->getEntityClass());
     }
 
-    public function testPaginate(): void
+    public function testPaginateWithSorting(): void
     {
         $items = ['item1', 'item2'];
         $totalCount = 100;
         
         $this->queryBuilder->method('setFirstResult')->willReturnSelf();
         $this->queryBuilder->method('setMaxResults')->willReturnSelf();
+        $this->queryBuilder->method('orderBy')->willReturnSelf();
         $this->queryBuilder->method('getQuery')->willReturn($this->query);
         $this->query->method('getResult')->willReturn($items);
         
         $this->repository->setQueryBuilder($this->queryBuilder);
         $this->repository->setTotalCount($totalCount);
         
-        $result = $this->repository->paginate(2, 10, []);
+        $criteria = ['_sort' => 'name', '_order' => 'DESC'];
+        $result = $this->repository->paginate(2, 10, $criteria);
         
         $this->assertInstanceOf(PaginationResult::class, $result);
         $this->assertEquals($items, $result->getItems());
         $this->assertEquals($totalCount, $result->getTotalCount());
         $this->assertEquals(2, $result->getCurrentPage());
         $this->assertEquals(10, $result->getItemsPerPage());
+    }
+
+    public function testFindByWithOptions(): void
+    {
+        $this->queryBuilder->method('addOrderBy')->willReturnSelf();
+        $this->queryBuilder->method('setMaxResults')->willReturnSelf();
+        $this->queryBuilder->method('setFirstResult')->willReturnSelf();
+        $this->queryBuilder->method('andWhere')->willReturnSelf();
+        $this->queryBuilder->method('setParameter')->willReturnSelf();
+        $this->queryBuilder->method('getQuery')->willReturn($this->query);
+        $this->query->method('getResult')->willReturn(['result']);
+        
+        $this->repository->setQueryBuilder($this->queryBuilder);
+        
+        $result = $this->repository->findByWithOptions(
+            ['status' => 'active'],
+            ['name' => 'ASC'],
+            10,
+            5
+        );
+        
+        $this->assertEquals(['result'], $result);
+    }
+
+    public function testFindWithFilters(): void
+    {
+        $this->queryBuilder->method('andWhere')->willReturnSelf();
+        $this->queryBuilder->method('setParameter')->willReturnSelf();
+        $this->queryBuilder->method('getQuery')->willReturn($this->query);
+        $this->query->method('getResult')->willReturn(['filtered_result']);
+        
+        $this->repository->setQueryBuilder($this->queryBuilder);
+        
+        $filters = [
+            'status' => ['operator' => 'eq', 'value' => 'active'],
+            'age' => ['operator' => 'gt', 'value' => 18]
+        ];
+        
+        $result = $this->repository->findWithFilters($filters);
+        
+        $this->assertEquals(['filtered_result'], $result);
+    }
+
+    public function testCountWithFilters(): void
+    {
+        $this->queryBuilder->method('select')->willReturnSelf();
+        $this->queryBuilder->method('andWhere')->willReturnSelf();
+        $this->queryBuilder->method('setParameter')->willReturnSelf();
+        $this->queryBuilder->method('getQuery')->willReturn($this->query);
+        $this->query->method('getSingleScalarResult')->willReturn(42);
+        
+        $this->repository->setQueryBuilder($this->queryBuilder);
+        
+        $filters = ['status' => 'active'];
+        $result = $this->repository->countWithFilters($filters);
+        
+        $this->assertEquals(42, $result);
+    }
+
+    public function testValidateQueryParameters(): void
+    {
+        $parameters = [
+            'validField' => 'value',
+            'field_with_underscore' => 'value',
+            'field.with.dot' => 'value',
+            'invalid-field' => 'value', // Should be removed
+            'field;DROP TABLE' => 'value' // Should be removed
+        ];
+        
+        // Test the validation logic through reflection
+        $reflection = new \ReflectionClass($this->repository);
+        $method = $reflection->getMethod('validateQueryParameters');
+        $method->setAccessible(true);
+        
+        $validated = $method->invoke($this->repository, $parameters);
+        
+        $expected = [
+            'validField' => 'value',
+            'field_with_underscore' => 'value',
+            'field.with.dot' => 'value'
+        ];
+        
+        $this->assertEquals($expected, $validated);
     }
 }
 
@@ -163,5 +248,11 @@ class TestRepository extends ServiceEntityRepository
     public function count(array $criteria = []): int
     {
         return $this->testTotalCount;
+    }
+
+    // Expose protected methods for testing
+    public function testValidateQueryParametersPublic(array $parameters): array
+    {
+        return $this->validateQueryParameters($parameters);
     }
 }
