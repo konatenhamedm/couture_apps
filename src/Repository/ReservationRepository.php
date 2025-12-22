@@ -303,6 +303,37 @@ class ReservationRepository extends ServiceEntityRepository
     //    }
 
     /**
+     * Trouve les réservations d'une boutique avec filtres simplifiés
+     */
+    public function findByBoutiqueWithSimpleFilters(
+        int $boutiqueId,
+        \DateTime $dateDebut,
+        \DateTime $dateFin,
+        array $statusFilters = []
+    ): array {
+        $qb = $this->createQueryBuilder('r')
+            ->leftJoin('r.client', 'c')
+            ->leftJoin('r.boutique', 'b')
+            ->leftJoin('r.entreprise', 'e')
+            ->where('r.boutique = :boutiqueId')
+            ->andWhere('r.createdAt BETWEEN :dateDebut AND :dateFin')
+            ->setParameter('boutiqueId', $boutiqueId)
+            ->setParameter('dateDebut', $dateDebut)
+            ->setParameter('dateFin', $dateFin);
+
+        // Filtre par statut
+        if (!empty($statusFilters)) {
+            $qb->andWhere('r.status IN (:statuses)')
+               ->setParameter('statuses', $statusFilters);
+        }
+
+        // Tri par défaut par date de création décroissante
+        $qb->orderBy('r.createdAt', 'DESC');
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /**
      * Trouve les réservations d'une boutique avec filtres avancés
      */
     public function findByBoutiqueWithAdvancedFilters(

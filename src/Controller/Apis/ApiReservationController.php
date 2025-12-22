@@ -379,7 +379,7 @@ class ApiReservationController extends ApiInterface
     )]
     #[OA\RequestBody(
         required: false,
-        description: "Filtres avancés pour les réservations",
+        description: "Filtres pour les réservations",
         content: new OA\JsonContent(
             type: "object",
             properties: [
@@ -387,12 +387,7 @@ class ApiReservationController extends ApiInterface
                 new OA\Property(property: "dateFin", type: "string", format: "date", example: "2025-01-31", description: "Date de fin (optionnel si filtre est utilisé)"),
                 new OA\Property(property: "filtre", type: "string", enum: ["jour", "mois", "annee", "periode"], example: "mois", description: "Type de filtre de date"),
                 new OA\Property(property: "valeur", type: "string", example: "2025-01", description: "Valeur du filtre (YYYY-MM-DD pour jour, YYYY-MM pour mois, YYYY pour année)"),
-                new OA\Property(property: "status", type: "string", example: "en_attente,confirmee", description: "Filtrer par statut (valeurs séparées par virgules)"),
-                new OA\Property(property: "clientId", type: "integer", example: 5, description: "Filtrer par client spécifique"),
-                new OA\Property(property: "montantMin", type: "number", example: 10000, description: "Montant minimum"),
-                new OA\Property(property: "montantMax", type: "number", example: 100000, description: "Montant maximum"),
-                new OA\Property(property: "orderBy", type: "string", enum: ["id", "montant", "dateRetrait", "createdAt"], example: "createdAt", description: "Champ de tri"),
-                new OA\Property(property: "orderDirection", type: "string", enum: ["ASC", "DESC"], example: "DESC", description: "Direction du tri")
+                new OA\Property(property: "status", type: "string", example: "en_attente,confirmee", description: "Filtrer par statut (valeurs séparées par virgules)")
             ]
         )
     )]
@@ -422,10 +417,7 @@ class ApiReservationController extends ApiInterface
                             property: "filtres_appliques",
                             type: "object",
                             properties: [
-                                new OA\Property(property: "status", type: "array", items: new OA\Items(type: "string")),
-                                new OA\Property(property: "clientId", type: "integer"),
-                                new OA\Property(property: "montantMin", type: "number"),
-                                new OA\Property(property: "montantMax", type: "number")
+                                new OA\Property(property: "status", type: "array", items: new OA\Items(type: "string"))
                             ]
                         ),
                         new OA\Property(
@@ -522,43 +514,12 @@ class ApiReservationController extends ApiInterface
                 $statusFilters = $requestedStatuses;
             }
             
-            // Filtre par client
-            if (!empty($data['clientId'])) {
-                $criteria['client'] = $data['clientId'];
-                $additionalFilters['clientId'] = $data['clientId'];
-            }
-            
-            // Filtres de montant
-            $montantMin = isset($data['montantMin']) ? (float)$data['montantMin'] : null;
-            $montantMax = isset($data['montantMax']) ? (float)$data['montantMax'] : null;
-            
-            if ($montantMin !== null) {
-                $additionalFilters['montantMin'] = $montantMin;
-            }
-            if ($montantMax !== null) {
-                $additionalFilters['montantMax'] = $montantMax;
-            }
-            
-            // Tri
-            $orderBy = $data['orderBy'] ?? 'createdAt';
-            $orderDirection = strtoupper($data['orderDirection'] ?? 'DESC');
-            
-            if (!in_array($orderBy, ['id', 'montant', 'dateRetrait', 'createdAt'])) {
-                $orderBy = 'createdAt';
-            }
-            if (!in_array($orderDirection, ['ASC', 'DESC'])) {
-                $orderDirection = 'DESC';
-            }
-            
-            // Récupérer les réservations avec tous les filtres
-            $reservations = $reservationRepository->findByBoutiqueWithAdvancedFilters(
+            // Récupérer les réservations avec les filtres simplifiés
+            $reservations = $reservationRepository->findByBoutiqueWithSimpleFilters(
                 $id,
                 $dateDebut,
                 $dateFin,
-                $statusFilters,
-                $additionalFilters,
-                $orderBy,
-                $orderDirection
+                $statusFilters
             );
             
             // Calculer les statistiques
@@ -572,19 +533,14 @@ class ApiReservationController extends ApiInterface
                 'success' => true,
                 'data' => [
                     'boutique_id' => $id,
-                    'boutique_nom' => $boutique->getNom(),
+                    'boutique_nom' => $boutique->getLibelle(),
                     'periode' => [
                         'debut' => $dateDebut->format('Y-m-d'),
                         'fin' => $dateFin->format('Y-m-d'),
                         'nbJours' => $dateDebut->diff($dateFin)->days + 1
                     ],
                     'filtres_appliques' => [
-                        'status' => $statusFilters,
-                        'clientId' => $additionalFilters['clientId'] ?? null,
-                        'montantMin' => $additionalFilters['montantMin'] ?? null,
-                        'montantMax' => $additionalFilters['montantMax'] ?? null,
-                        'orderBy' => $orderBy,
-                        'orderDirection' => $orderDirection
+                        'status' => $statusFilters
                     ],
                     'statistiques' => $stats
                 ]
