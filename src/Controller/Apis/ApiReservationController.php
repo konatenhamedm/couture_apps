@@ -522,7 +522,7 @@ class ApiReservationController extends ApiInterface
                 $statusFilters
             );
 
-            dd($reservations);
+        /*     dd($reservations); */
             
             // Calculer les statistiques
             $stats = $this->calculateReservationStats($reservations);
