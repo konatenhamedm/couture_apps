@@ -70,7 +70,7 @@ class ReservationRepository extends ServiceEntityRepository
     {
         $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebut);
         $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFin);
-        
+
         return $this->createQueryBuilder('r')
             ->select('COUNT(r.id)')
             ->where('r.entreprise = :entreprise')
@@ -91,7 +91,7 @@ class ReservationRepository extends ServiceEntityRepository
     {
         $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebut);
         $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFin);
-        
+
         return $this->createQueryBuilder('r')
             ->select('COUNT(r.id)')
             ->where('r.boutique = :boutique')
@@ -109,7 +109,7 @@ class ReservationRepository extends ServiceEntityRepository
     {
         $dateDebutImmutable = \DateTimeImmutable::createFromMutable($dateDebut);
         $dateFinImmutable = \DateTimeImmutable::createFromMutable($dateFin);
-        
+
         return $this->createQueryBuilder('r')
             ->select('SUM(r.montant)')
             ->where('r.boutique = :boutique')
@@ -162,7 +162,7 @@ class ReservationRepository extends ServiceEntityRepository
     {
         $nextDay = clone $date;
         $nextDay->add(new \DateInterval('P1D'));
-        
+
         $dateImmutable = \DateTimeImmutable::createFromMutable($date);
         $nextDayImmutable = \DateTimeImmutable::createFromMutable($nextDay);
 
@@ -185,7 +185,7 @@ class ReservationRepository extends ServiceEntityRepository
     {
         $nextDay = clone $date;
         $nextDay->add(new \DateInterval('P1D'));
-        
+
         $dateImmutable = \DateTimeImmutable::createFromMutable($date);
         $nextDayImmutable = \DateTimeImmutable::createFromMutable($nextDay);
 
@@ -324,7 +324,7 @@ class ReservationRepository extends ServiceEntityRepository
         // Filtre par statut
         if (!empty($statusFilters)) {
             $qb->andWhere('r.status IN (:statuses)')
-               ->setParameter('statuses', $statusFilters);
+                ->setParameter('statuses', $statusFilters);
         }
 
         // Tri par défaut par date de création décroissante
@@ -358,25 +358,25 @@ class ReservationRepository extends ServiceEntityRepository
         // Filtre par statut
         if (!empty($statusFilters)) {
             $qb->andWhere('r.status IN (:statuses)')
-               ->setParameter('statuses', $statusFilters);
+                ->setParameter('statuses', $statusFilters);
         }
 
         // Filtre par client
         if (isset($additionalFilters['clientId'])) {
             $qb->andWhere('r.client = :clientId')
-               ->setParameter('clientId', $additionalFilters['clientId']);
+                ->setParameter('clientId', $additionalFilters['clientId']);
         }
 
         // Filtre par montant minimum
         if (isset($additionalFilters['montantMin'])) {
             $qb->andWhere('CAST(r.montant AS DECIMAL(10,2)) >= :montantMin')
-               ->setParameter('montantMin', $additionalFilters['montantMin']);
+                ->setParameter('montantMin', $additionalFilters['montantMin']);
         }
 
         // Filtre par montant maximum
         if (isset($additionalFilters['montantMax'])) {
             $qb->andWhere('CAST(r.montant AS DECIMAL(10,2)) <= :montantMax')
-               ->setParameter('montantMax', $additionalFilters['montantMax']);
+                ->setParameter('montantMax', $additionalFilters['montantMax']);
         }
 
         // Tri

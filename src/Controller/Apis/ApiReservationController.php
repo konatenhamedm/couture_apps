@@ -521,12 +521,15 @@ class ApiReservationController extends ApiInterface
                 $dateFin,
                 $statusFilters
             );
+
+            dd($reservations);
             
             // Calculer les statistiques
             $stats = $this->calculateReservationStats($reservations);
             
             // Paginer les résultats
             $paginatedReservations = $this->paginationService->paginate($reservations);
+        
             
             // Préparer la réponse
             $response = [
