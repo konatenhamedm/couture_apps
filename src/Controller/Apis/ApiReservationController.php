@@ -5,6 +5,7 @@ namespace App\Controller\Apis;
 use App\Controller\Apis\Config\ApiInterface;
 use App\DTO\ReservationDTO;
 use App\Entity\Boutique;
+use App\Enum\ReservationStatus;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use App\Entity\Reservation;
 use App\Entity\Caisse;
@@ -26,6 +27,7 @@ use App\Repository\PaiementReservationRepository;
 use App\Repository\TypeUserRepository;
 use App\Repository\UserRepository;
 use App\Service\Utils;
+use App\Service\ReservationWorkflowService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -50,8 +52,19 @@ class ApiReservationController extends ApiInterface
     #[OA\Get(
         path: "/api/reservation/",
         summary: "Lister toutes les réservations",
-        description: "Retourne la liste paginée de toutes les réservations du système, incluant les détails des clients, montants, acomptes et dates de retrait.",
+        description: "Retourne la liste paginée de toutes les réservations du système, incluant les détails des clients, montants, acomptes et dates de retrait. Supporte le filtrage par statut.",
         tags: ['reservation']
+    )]
+    #[OA\Parameter(
+        name: 'status',
+        in: 'query',
+        required: false,
+        description: "Filtrer par statut de réservation. Valeurs possibles: en_attente, confirmee, annulee. Peut être une valeur unique ou plusieurs valeurs séparées par des virgules.",
+        schema: new OA\Schema(type: 'string', example: 'en_attente'),
+        examples: [
+            new OA\Examples(example: 'single', summary: 'Un seul statut', value: 'en_attente'),
+            new OA\Examples(example: 'multiple', summary: 'Plusieurs statuts', value: 'en_attente,confirmee')
+        ]
     )]
     #[OA\Response(
         response: 200,
@@ -62,6 +75,7 @@ class ApiReservationController extends ApiInterface
                 type: "object",
                 properties: [
                     new OA\Property(property: "id", type: "integer", example: 1, description: "Identifiant unique de la réservation"),
+                    new OA\Property(property: "status", type: "string", example: "en_attente", description: "Statut de la réservation"),
                     new OA\Property(property: "montant", type: "number", format: "float", example: 50000, description: "Montant total de la réservation en FCFA"),
                     new OA\Property(property: "avance", type: "number", format: "float", example: 20000, description: "Acompte versé en FCFA"),
                     new OA\Property(property: "reste", type: "number", format: "float", example: 30000, description: "Reste à payer en FCFA"),
@@ -96,11 +110,63 @@ class ApiReservationController extends ApiInterface
             )
         )
     )]
+    #[OA\Response(
+        response: 400,
+        description: "Valeur de statut invalide",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "status", type: "string", example: "ERROR"),
+                new OA\Property(property: "message", type: "string", example: "Statut invalide: 'invalid'. Valeurs autorisées: en_attente, confirmee, annulee")
+            ]
+        )
+    )]
     #[OA\Response(response: 500, description: "Erreur serveur lors de la récupération")]
-    public function index(ReservationRepository $reservationRepository): Response
+    public function index(Request $request, ReservationRepository $reservationRepository): Response
     {
         try {
-            $reservations = $this->paginationService->paginate($reservationRepository->findAll());
+            // Récupérer le paramètre de filtrage par statut
+            $statusFilter = $request->query->get('status');
+            
+            // Construire les critères de recherche
+            $criteria = [];
+            
+            // Si un filtre de statut est fourni, valider et l'ajouter aux critères
+            if ($statusFilter !== null && $statusFilter !== '') {
+                $validStatuses = [
+                    ReservationStatus::EN_ATTENTE->value,
+                    ReservationStatus::CONFIRMEE->value,
+                    ReservationStatus::ANNULEE->value
+                ];
+                
+                // Support de plusieurs statuts séparés par des virgules
+                $requestedStatuses = array_map('trim', explode(',', $statusFilter));
+                
+                // Valider chaque statut
+                foreach ($requestedStatuses as $status) {
+                    if (!in_array($status, $validStatuses)) {
+                        return $this->json([
+                            'status' => 'ERROR',
+                            'message' => "Statut invalide: '{$status}'. Valeurs autorisées: " . implode(', ', $validStatuses)
+                        ], 400);
+                    }
+                }
+                
+                // Si un seul statut, utiliser une égalité simple
+                if (count($requestedStatuses) === 1) {
+                    $criteria['status'] = $requestedStatuses[0];
+                    $reservations = $this->paginationService->paginate($reservationRepository->findBy($criteria));
+                } else {
+                    // Si plusieurs statuts, utiliser une requête IN
+                    $reservations = $this->paginationService->paginate(
+                        $reservationRepository->findByMultipleStatuses($requestedStatuses)
+                    );
+                }
+            } else {
+                // Pas de filtre, retourner toutes les réservations
+                $reservations = $this->paginationService->paginate($reservationRepository->findAll());
+            }
+            
             $response = $this->responseData($reservations, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
@@ -118,8 +184,19 @@ class ApiReservationController extends ApiInterface
     #[OA\Get(
         path: "/api/reservation/entreprise",
         summary: "Lister les réservations selon les droits utilisateur",
-        description: "Retourne la liste des réservations filtrée selon le type d'utilisateur : Super-admin voit toutes les réservations de l'entreprise, autres utilisateurs voient uniquement les réservations de leur boutique.",
+        description: "Retourne la liste des réservations filtrée selon le type d'utilisateur : Super-admin voit toutes les réservations de l'entreprise, autres utilisateurs voient uniquement les réservations de leur boutique. Supporte le filtrage par statut.",
         tags: ['reservation']
+    )]
+    #[OA\Parameter(
+        name: 'status',
+        in: 'query',
+        required: false,
+        description: "Filtrer par statut de réservation. Valeurs possibles: en_attente, confirmee, annulee. Peut être une valeur unique ou plusieurs valeurs séparées par des virgules.",
+        schema: new OA\Schema(type: 'string', example: 'en_attente'),
+        examples: [
+            new OA\Examples(example: 'single', summary: 'Un seul statut', value: 'en_attente'),
+            new OA\Examples(example: 'multiple', summary: 'Plusieurs statuts', value: 'en_attente,confirmee')
+        ]
     )]
     #[OA\Response(
         response: 200,
@@ -130,6 +207,7 @@ class ApiReservationController extends ApiInterface
                 type: "object",
                 properties: [
                     new OA\Property(property: "id", type: "integer", example: 1),
+                    new OA\Property(property: "status", type: "string", example: "en_attente", description: "Statut de la réservation"),
                     new OA\Property(property: "montant", type: "number", example: 50000),
                     new OA\Property(property: "avance", type: "number", example: 20000),
                     new OA\Property(property: "reste", type: "number", example: 30000),
@@ -141,22 +219,87 @@ class ApiReservationController extends ApiInterface
             )
         )
     )]
+    #[OA\Response(
+        response: 400,
+        description: "Valeur de statut invalide",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "status", type: "string", example: "ERROR"),
+                new OA\Property(property: "message", type: "string", example: "Statut invalide: 'invalid'. Valeurs autorisées: en_attente, confirmee, annulee")
+            ]
+        )
+    )]
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
-    public function indexAll(ReservationRepository $reservationRepository, TypeUserRepository $typeUserRepository): Response
+    public function indexAll(Request $request, ReservationRepository $reservationRepository, TypeUserRepository $typeUserRepository): Response
     {
         try {
+            // Récupérer le paramètre de filtrage par statut
+            $statusFilter = $request->query->get('status');
+            
+            // Construire les critères de base selon les droits utilisateur
+            $baseCriteria = [];
             if ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'SADM'])) {
-                $reservations = $this->paginationService->paginate($reservationRepository->findBy(
-                    ['entreprise' => $this->getUser()->getEntreprise()],
-                    ['id' => 'DESC']
-                ));
+                $baseCriteria['entreprise'] = $this->getUser()->getEntreprise();
             } else {
+                $baseCriteria['boutique'] = $this->getUser()->getBoutique();
+            }
+            
+            // Si un filtre de statut est fourni, valider et l'ajouter aux critères
+            if ($statusFilter !== null && $statusFilter !== '') {
+                $validStatuses = [
+                    ReservationStatus::EN_ATTENTE->value,
+                    ReservationStatus::CONFIRMEE->value,
+                    ReservationStatus::ANNULEE->value
+                ];
+                
+                // Support de plusieurs statuts séparés par des virgules
+                $requestedStatuses = array_map('trim', explode(',', $statusFilter));
+                
+                // Valider chaque statut
+                foreach ($requestedStatuses as $status) {
+                    if (!in_array($status, $validStatuses)) {
+                        return $this->json([
+                            'status' => 'ERROR',
+                            'message' => "Statut invalide: '{$status}'. Valeurs autorisées: " . implode(', ', $validStatuses)
+                        ], 400);
+                    }
+                }
+                
+                // Si un seul statut, utiliser une égalité simple
+                if (count($requestedStatuses) === 1) {
+                    $baseCriteria['status'] = $requestedStatuses[0];
+                    $reservations = $this->paginationService->paginate($reservationRepository->findBy(
+                        $baseCriteria,
+                        ['id' => 'DESC']
+                    ));
+                } else {
+                    // Si plusieurs statuts, utiliser une requête personnalisée
+                    if ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'SADM'])) {
+                        $reservations = $this->paginationService->paginate(
+                            $reservationRepository->findByEntrepriseAndStatuses(
+                                $this->getUser()->getEntreprise(),
+                                $requestedStatuses
+                            )
+                        );
+                    } else {
+                        $reservations = $this->paginationService->paginate(
+                            $reservationRepository->findByBoutiqueAndStatuses(
+                                $this->getUser()->getBoutique(),
+                                $requestedStatuses
+                            )
+                        );
+                    }
+                }
+            } else {
+                // Pas de filtre de statut, utiliser les critères de base
                 $reservations = $this->paginationService->paginate($reservationRepository->findBy(
-                    ['boutique' => $this->getUser()->getBoutique()],
+                    $baseCriteria,
                     ['id' => 'DESC']
                 ));
             }
+            
             $response = $this->responseData($reservations, 'group_reservation', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
@@ -167,13 +310,13 @@ class ApiReservationController extends ApiInterface
         return $response;
     }
     /**
-     * Liste les réservations selon les droits de l'utilisateur (entreprise ou boutique)
+     * Liste les réservations d'une boutique spécifique (GET - version simple)
      */
     #[Route('/entreprise/by/boutique/{id}', methods: ['GET'])]
     #[OA\Get(
         path: "/api/reservation/entreprise/by/boutique/{id}",
-        summary: "Lister les réservations selon les droits utilisateur",
-        description: "Retourne la liste des réservations filtrée selon le type d'utilisateur : Super-admin voit toutes les réservations de l'entreprise, autres utilisateurs voient uniquement les réservations de leur boutique.",
+        summary: "Lister les réservations d'une boutique (version simple)",
+        description: "Retourne la liste des réservations d'une boutique spécifique sans filtres avancés.",
         tags: ['reservation']
     )]
     #[OA\Response(
@@ -215,6 +358,255 @@ class ApiReservationController extends ApiInterface
         }
 
         return $response;
+    }
+
+    /**
+     * Liste les réservations d'une boutique avec filtres avancés (POST)
+     */
+    #[Route('/entreprise/by/boutique/{id}/advanced', methods: ['POST'])]
+    #[OA\Post(
+        path: "/api/reservation/entreprise/by/boutique/{id}/advanced",
+        summary: "Lister les réservations d'une boutique avec filtres avancés",
+        description: "Retourne la liste des réservations d'une boutique spécifique avec des filtres avancés de date et de statut, similaires aux statistiques du dashboard.",
+        tags: ['reservation']
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: "ID de la boutique",
+        schema: new OA\Schema(type: 'integer', example: 1)
+    )]
+    #[OA\RequestBody(
+        required: false,
+        description: "Filtres avancés pour les réservations",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "dateDebut", type: "string", format: "date", example: "2025-01-01", description: "Date de début (optionnel si filtre est utilisé)"),
+                new OA\Property(property: "dateFin", type: "string", format: "date", example: "2025-01-31", description: "Date de fin (optionnel si filtre est utilisé)"),
+                new OA\Property(property: "filtre", type: "string", enum: ["jour", "mois", "annee", "periode"], example: "mois", description: "Type de filtre de date"),
+                new OA\Property(property: "valeur", type: "string", example: "2025-01", description: "Valeur du filtre (YYYY-MM-DD pour jour, YYYY-MM pour mois, YYYY pour année)"),
+                new OA\Property(property: "status", type: "string", example: "en_attente,confirmee", description: "Filtrer par statut (valeurs séparées par virgules)"),
+                new OA\Property(property: "clientId", type: "integer", example: 5, description: "Filtrer par client spécifique"),
+                new OA\Property(property: "montantMin", type: "number", example: 10000, description: "Montant minimum"),
+                new OA\Property(property: "montantMax", type: "number", example: 100000, description: "Montant maximum"),
+                new OA\Property(property: "orderBy", type: "string", enum: ["id", "montant", "dateRetrait", "createdAt"], example: "createdAt", description: "Champ de tri"),
+                new OA\Property(property: "orderDirection", type: "string", enum: ["ASC", "DESC"], example: "DESC", description: "Direction du tri")
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Liste des réservations récupérée avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "success", type: "boolean", example: true),
+                new OA\Property(
+                    property: "data",
+                    type: "object",
+                    properties: [
+                        new OA\Property(property: "boutique_id", type: "integer", example: 1),
+                        new OA\Property(property: "boutique_nom", type: "string", example: "Boutique Centre-ville"),
+                        new OA\Property(
+                            property: "periode",
+                            type: "object",
+                            properties: [
+                                new OA\Property(property: "debut", type: "string", example: "2025-01-01"),
+                                new OA\Property(property: "fin", type: "string", example: "2025-01-31"),
+                                new OA\Property(property: "nbJours", type: "integer", example: 31)
+                            ]
+                        ),
+                        new OA\Property(
+                            property: "filtres_appliques",
+                            type: "object",
+                            properties: [
+                                new OA\Property(property: "status", type: "array", items: new OA\Items(type: "string")),
+                                new OA\Property(property: "clientId", type: "integer"),
+                                new OA\Property(property: "montantMin", type: "number"),
+                                new OA\Property(property: "montantMax", type: "number")
+                            ]
+                        ),
+                        new OA\Property(
+                            property: "statistiques",
+                            type: "object",
+                            properties: [
+                                new OA\Property(property: "total_reservations", type: "integer", example: 24),
+                                new OA\Property(property: "montant_total", type: "number", example: 1200000),
+                                new OA\Property(property: "montant_avances", type: "number", example: 480000),
+                                new OA\Property(property: "montant_reste", type: "number", example: 720000)
+                            ]
+                        ),
+                        new OA\Property(
+                            property: "reservations",
+                            type: "array",
+                            items: new OA\Items(
+                                type: "object",
+                                properties: [
+                                    new OA\Property(property: "id", type: "integer", example: 1),
+                                    new OA\Property(property: "status", type: "string", example: "en_attente"),
+                                    new OA\Property(property: "montant", type: "number", example: 50000),
+                                    new OA\Property(property: "avance", type: "number", example: 20000),
+                                    new OA\Property(property: "reste", type: "number", example: 30000),
+                                    new OA\Property(property: "dateRetrait", type: "string", format: "date-time"),
+                                    new OA\Property(property: "client", type: "object"),
+                                    new OA\Property(property: "createdAt", type: "string", format: "date-time")
+                                ]
+                            )
+                        )
+                    ]
+                )
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 400,
+        description: "Paramètres invalides",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "success", type: "boolean", example: false),
+                new OA\Property(property: "message", type: "string", example: "Boutique non trouvée ou paramètres invalides")
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 500, description: "Erreur serveur")]
+    public function indexAllByBoutiqueAdvanced(
+        int $id,
+        Request $request,
+        ReservationRepository $reservationRepository,
+        BoutiqueRepository $boutiqueRepository
+    ): Response {
+        try {
+            // Vérifier que la boutique existe
+            $boutique = $boutiqueRepository->find($id);
+            if (!$boutique) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Boutique non trouvée'
+                ], 404);
+            }
+
+            // Décoder les données de la requête
+            $data = json_decode($request->getContent(), true) ?? [];
+            
+            // Parser les filtres de date (utilise la même logique que les statistiques)
+            [$dateDebut, $dateFin] = $this->parseAdvancedFilters($data);
+            
+            // Construire les critères de recherche
+            $criteria = ['boutique' => $id];
+            $additionalFilters = [];
+            
+            // Filtre par statut
+            $statusFilters = [];
+            if (!empty($data['status'])) {
+                $validStatuses = [
+                    ReservationStatus::EN_ATTENTE->value,
+                    ReservationStatus::CONFIRMEE->value,
+                    ReservationStatus::ANNULEE->value
+                ];
+                
+                $requestedStatuses = array_map('trim', explode(',', $data['status']));
+                
+                foreach ($requestedStatuses as $status) {
+                    if (!in_array($status, $validStatuses)) {
+                        return $this->json([
+                            'success' => false,
+                            'message' => "Statut invalide: '{$status}'. Valeurs autorisées: " . implode(', ', $validStatuses)
+                        ], 400);
+                    }
+                }
+                
+                $statusFilters = $requestedStatuses;
+            }
+            
+            // Filtre par client
+            if (!empty($data['clientId'])) {
+                $criteria['client'] = $data['clientId'];
+                $additionalFilters['clientId'] = $data['clientId'];
+            }
+            
+            // Filtres de montant
+            $montantMin = isset($data['montantMin']) ? (float)$data['montantMin'] : null;
+            $montantMax = isset($data['montantMax']) ? (float)$data['montantMax'] : null;
+            
+            if ($montantMin !== null) {
+                $additionalFilters['montantMin'] = $montantMin;
+            }
+            if ($montantMax !== null) {
+                $additionalFilters['montantMax'] = $montantMax;
+            }
+            
+            // Tri
+            $orderBy = $data['orderBy'] ?? 'createdAt';
+            $orderDirection = strtoupper($data['orderDirection'] ?? 'DESC');
+            
+            if (!in_array($orderBy, ['id', 'montant', 'dateRetrait', 'createdAt'])) {
+                $orderBy = 'createdAt';
+            }
+            if (!in_array($orderDirection, ['ASC', 'DESC'])) {
+                $orderDirection = 'DESC';
+            }
+            
+            // Récupérer les réservations avec tous les filtres
+            $reservations = $reservationRepository->findByBoutiqueWithAdvancedFilters(
+                $id,
+                $dateDebut,
+                $dateFin,
+                $statusFilters,
+                $additionalFilters,
+                $orderBy,
+                $orderDirection
+            );
+            
+            // Calculer les statistiques
+            $stats = $this->calculateReservationStats($reservations);
+            
+            // Paginer les résultats
+            $paginatedReservations = $this->paginationService->paginate($reservations);
+            
+            // Préparer la réponse
+            $response = [
+                'success' => true,
+                'data' => [
+                    'boutique_id' => $id,
+                    'boutique_nom' => $boutique->getNom(),
+                    'periode' => [
+                        'debut' => $dateDebut->format('Y-m-d'),
+                        'fin' => $dateFin->format('Y-m-d'),
+                        'nbJours' => $dateDebut->diff($dateFin)->days + 1
+                    ],
+                    'filtres_appliques' => [
+                        'status' => $statusFilters,
+                        'clientId' => $additionalFilters['clientId'] ?? null,
+                        'montantMin' => $additionalFilters['montantMin'] ?? null,
+                        'montantMax' => $additionalFilters['montantMax'] ?? null,
+                        'orderBy' => $orderBy,
+                        'orderDirection' => $orderDirection
+                    ],
+                    'statistiques' => $stats
+                ]
+            ];
+            
+            // Ajouter les réservations sérialisées
+            // Utiliser la méthode response pour obtenir les données sérialisées
+            $serializedReservations = json_decode(
+                $this->responseData($paginatedReservations, 'group_reservation', ['Content-Type' => 'application/json'])->getContent(),
+                true
+            );
+            
+            $response['data']['reservations'] = $serializedReservations;
+            
+            return $this->json($response);
+            
+        } catch (\Exception $exception) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Erreur lors de la récupération des réservations: ' . $exception->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -598,6 +990,8 @@ class ApiReservationController extends ApiInterface
         $reservation->setEntreprise($this->getUser()->getEntreprise());
         $reservation->setMontant($montant);
         $reservation->setReste($reste);
+        // ✅ NOUVEAU : Définir le statut initial à "en_attente"
+        $reservation->setStatus(ReservationStatus::EN_ATTENTE->value);
         $reservation->setCreatedAtValue(new \DateTime());
         $reservation->setUpdatedAt(new \DateTime());
         $reservation->setCreatedBy($this->getUser());
@@ -615,10 +1009,9 @@ class ApiReservationController extends ApiInterface
             // ✅ Persister la réservation d'abord (parent)
             $entityManager->persist($reservation);
 
-            // Ajouter les lignes de réservation ET réduire les stocks
+            // Ajouter les lignes de réservation SANS déduire le stock
             foreach ($lignes as $ligneData) {
                 $modeleBoutique = $modeleBoutiquesMap[$ligneData['modele']];
-                $modele = $modeleBoutique->getModele();
                 $quantite = (int)$ligneData['quantite'];
 
                 // Créer la ligne de réservation
@@ -634,13 +1027,15 @@ class ApiReservationController extends ApiInterface
                 $reservation->addLigneReservation($ligne);
                 $entityManager->persist($ligne);
 
-                // 🔥 RÉDUIRE LE STOCK (articles réservés = bloqués)
-                $modeleBoutique->setQuantite($modeleBoutique->getQuantite() - $quantite);
-
-                // Mise à jour de la quantité globale avec vérification (cohérent avec le code de vente)
-                if ($modele && $modele->getQuantiteGlobale() >= $quantite) {
-                    $modele->setQuantiteGlobale($modele->getQuantiteGlobale() - $quantite);
-                }
+                // ✅ MODIFICATION CRITIQUE : NE PLUS déduire le stock lors de la création
+                // Le stock sera déduit uniquement lors de la confirmation de la réservation
+                // Cette approche permet d'éviter les blocages inutiles en cas d'annulation
+                
+                // ❌ ANCIEN CODE (supprimé) :
+                // $modeleBoutique->setQuantite($modeleBoutique->getQuantite() - $quantite);
+                // if ($modele && $modele->getQuantiteGlobale() >= $quantite) {
+                //     $modele->setQuantiteGlobale($modele->getQuantiteGlobale() - $quantite);
+                // }
             }
 
             // Créer un paiement seulement si l'avance est supérieure à zéro
@@ -741,6 +1136,220 @@ class ApiReservationController extends ApiInterface
             ], 500);
         }
     }
+
+    /**
+     * Confirme une réservation et déduit le stock
+     */
+    #[Route('/confirm/{id}', methods: ['POST'])]
+    #[OA\Post(
+        path: "/api/reservation/confirm/{id}",
+        summary: "Confirmer une réservation",
+        description: "Confirme une réservation en attente et déduit automatiquement le stock des articles réservés. Cette action est irréversible et change le statut de la réservation à 'confirmée'. Nécessite un abonnement actif.",
+        tags: ['reservation']
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: "Identifiant unique de la réservation à confirmer",
+        schema: new OA\Schema(type: 'integer', example: 1)
+    )]
+    #[OA\RequestBody(
+        required: false,
+        description: "Notes optionnelles sur la confirmation",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(
+                    property: "notes",
+                    type: "string",
+                    example: "Confirmation après vérification des articles",
+                    description: "Notes optionnelles sur la confirmation"
+                )
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Réservation confirmée avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "success", type: "boolean", example: true),
+                new OA\Property(property: "message", type: "string", example: "Réservation confirmée avec succès"),
+                new OA\Property(
+                    property: "reservation",
+                    type: "object",
+                    properties: [
+                        new OA\Property(property: "id", type: "integer", example: 1),
+                        new OA\Property(property: "status", type: "string", example: "confirmee"),
+                        new OA\Property(property: "confirmedAt", type: "string", format: "date-time"),
+                        new OA\Property(property: "confirmedBy", type: "object", description: "Utilisateur ayant confirmé")
+                    ]
+                ),
+                new OA\Property(
+                    property: "stock_deductions",
+                    type: "array",
+                    description: "Détail des déductions de stock effectuées",
+                    items: new OA\Items(type: "object")
+                )
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 400,
+        description: "Réservation ne peut pas être confirmée ou stock insuffisant",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "success", type: "boolean", example: false),
+                new OA\Property(property: "message", type: "string", example: "Stock insuffisant pour certains articles"),
+                new OA\Property(property: "insufficient_items", type: "array", items: new OA\Items(type: "object"))
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 404, description: "Réservation non trouvée")]
+    #[OA\Response(response: 500, description: "Erreur serveur lors de la confirmation")]
+    public function confirm(
+        int $id,
+        Request $request,
+        ReservationWorkflowService $workflowService
+    ): Response {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+            return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
+        }
+
+        try {
+            $data = json_decode($request->getContent(), true);
+            $notes = $data['notes'] ?? null;
+
+            $result = $workflowService->confirmReservation($id, $this->getUser(), $notes);
+
+            return $this->json($result, 200);
+
+        } catch (\InvalidArgumentException $e) {
+            return $this->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+
+        } catch (\RuntimeException $e) {
+            return $this->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+
+        } catch (\Exception $e) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Erreur lors de la confirmation de la réservation: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Annule une réservation
+     */
+    #[Route('/cancel/{id}', methods: ['POST'])]
+    #[OA\Post(
+        path: "/api/reservation/cancel/{id}",
+        summary: "Annuler une réservation",
+        description: "Annule une réservation en attente. Cette action change le statut de la réservation à 'annulée' sans affecter le stock (puisque le stock n'a pas encore été déduit). Les paiements d'acompte restent enregistrés pour la comptabilité. Nécessite un abonnement actif.",
+        tags: ['reservation']
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: "Identifiant unique de la réservation à annuler",
+        schema: new OA\Schema(type: 'integer', example: 1)
+    )]
+    #[OA\RequestBody(
+        required: false,
+        description: "Raison de l'annulation",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(
+                    property: "reason",
+                    type: "string",
+                    example: "Client ne souhaite plus récupérer les articles",
+                    description: "Raison de l'annulation (optionnel mais recommandé)"
+                )
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Réservation annulée avec succès",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "success", type: "boolean", example: true),
+                new OA\Property(property: "message", type: "string", example: "Réservation annulée avec succès"),
+                new OA\Property(
+                    property: "reservation",
+                    type: "object",
+                    properties: [
+                        new OA\Property(property: "id", type: "integer", example: 1),
+                        new OA\Property(property: "status", type: "string", example: "annulee"),
+                        new OA\Property(property: "cancelledAt", type: "string", format: "date-time"),
+                        new OA\Property(property: "cancelledBy", type: "object", description: "Utilisateur ayant annulé"),
+                        new OA\Property(property: "cancellationReason", type: "string", example: "Client ne souhaite plus récupérer les articles")
+                    ]
+                ),
+                new OA\Property(property: "reason", type: "string", example: "Client ne souhaite plus récupérer les articles")
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 400,
+        description: "Réservation ne peut pas être annulée",
+        content: new OA\JsonContent(
+            type: "object",
+            properties: [
+                new OA\Property(property: "success", type: "boolean", example: false),
+                new OA\Property(property: "message", type: "string", example: "La réservation ne peut pas être annulée. Statut actuel: confirmee")
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 404, description: "Réservation non trouvée")]
+    #[OA\Response(response: 500, description: "Erreur serveur lors de l'annulation")]
+    public function cancel(
+        int $id,
+        Request $request,
+        ReservationWorkflowService $workflowService
+    ): Response {
+        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+            return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
+        }
+
+        try {
+            $data = json_decode($request->getContent(), true);
+            $reason = $data['reason'] ?? null;
+
+            $result = $workflowService->cancelReservation($id, $this->getUser(), $reason);
+
+            return $this->json($result, 200);
+
+        } catch (\InvalidArgumentException $e) {
+            return $this->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+
+        } catch (\Exception $e) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Erreur lors de l\'annulation de la réservation: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     /**
      * Met à jour une réservation existante
      */
@@ -1202,5 +1811,65 @@ class ApiReservationController extends ApiInterface
             $response = $this->response([]);
         }
         return $response;
+    }
+
+    /**
+     * Parse les filtres avancés de date (similaire aux statistiques)
+     */
+    private function parseAdvancedFilters(array $data): array
+    {
+        if (isset($data['filtre'])) {
+            switch ($data['filtre']) {
+                case 'jour':
+                    // Utiliser la valeur fournie ou la date du système
+                    $dateValue = $data['valeur'] ?? (new \DateTime())->format('Y-m-d');
+                    $dateDebut = new \DateTime($dateValue);
+                    $dateFin = new \DateTime($dateValue . ' 23:59:59');
+                    break;
+                case 'mois':
+                    $dateDebut = new \DateTime(($data['valeur'] ?? (new \DateTime())->format('Y-m')) . '-01');
+                    $dateFin = new \DateTime(($data['valeur'] ?? (new \DateTime())->format('Y-m')) . '-01');
+                    $dateFin->modify('last day of this month')->setTime(23, 59, 59);
+                    break;
+                case 'annee':
+                    $dateDebut = new \DateTime(($data['valeur'] ?? (new \DateTime())->format('Y')) . '-01-01');
+                    $dateFin = new \DateTime(($data['valeur'] ?? (new \DateTime())->format('Y')) . '-12-31 23:59:59');
+                    break;
+                case 'periode':
+                default:
+                    $dateDebut = new \DateTime($data['dateDebut'] ?? '-30 days');
+                    $dateFin = new \DateTime($data['dateFin'] ?? 'now');
+                    break;
+            }
+        } else {
+            $dateDebut = new \DateTime($data['dateDebut'] ?? '-30 days');
+            $dateFin = new \DateTime($data['dateFin'] ?? 'now');
+        }
+        
+        return [$dateDebut, $dateFin];
+    }
+
+    /**
+     * Calcule les statistiques des réservations
+     */
+    private function calculateReservationStats(array $reservations): array
+    {
+        $totalReservations = count($reservations);
+        $montantTotal = 0;
+        $montantAvances = 0;
+        $montantReste = 0;
+        
+        foreach ($reservations as $reservation) {
+            $montantTotal += (float)$reservation->getMontant();
+            $montantAvances += (float)$reservation->getAvance();
+            $montantReste += (float)$reservation->getReste();
+        }
+        
+        return [
+            'total_reservations' => $totalReservations,
+            'montant_total' => $montantTotal,
+            'montant_avances' => $montantAvances,
+            'montant_reste' => $montantReste
+        ];
     }
 }

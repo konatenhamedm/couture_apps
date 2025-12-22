@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Enum\ReservationStatus;
 use App\Repository\ReservationRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -51,15 +52,51 @@ class Reservation
     private Collection $paiementReservations;
 
     #[ORM\ManyToOne(inversedBy: 'reservations')]
+    #[Groups(["group1","group_details","group_reservation","group_modeleBoutique","paiement_boutique"])]
     private ?Entreprise $entreprise = null;
 
     #[ORM\ManyToOne(inversedBy: 'reservations')]
+    #[Groups(["group1","group_details","group_reservation","group_modeleBoutique","paiement_boutique"])]
     private ?Boutique $boutique = null;
+
+    // Nouveaux champs pour le workflow de réservation
+    #[ORM\Column(length: 20, options: ['default' => 'en_attente'])]
+    #[Groups(["group1","group_details","group_reservation","group_modeleBoutique","paiement_boutique"])]
+    private string $status = ReservationStatus::EN_ATTENTE->value;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(["group1","group_details","group_reservation","group_modeleBoutique","paiement_boutique"])]
+    private ?\DateTime $confirmedAt = null;
+
+    #[ORM\ManyToOne]
+    #[Groups(["group1","group_details","group_reservation"])]
+    private ?User $confirmedBy = null;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(["group1","group_details","group_reservation","group_modeleBoutique","paiement_boutique"])]
+    private ?\DateTime $cancelledAt = null;
+
+    #[ORM\ManyToOne]
+    #[Groups(["group1","group_details","group_reservation"])]
+    private ?User $cancelledBy = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(["group1","group_details","group_reservation"])]
+    private ?string $cancellationReason = null;
+
+    /**
+     * @var Collection<int, ReservationStatusHistory>
+     */
+    #[ORM\OneToMany(targetEntity: ReservationStatusHistory::class, mappedBy: 'reservation')]
+    #[Groups(["group_details","group_reservation"])]
+    private Collection $statusHistory;
 
     public function __construct()
     {
         $this->ligneReservations = new ArrayCollection();
         $this->paiementReservations = new ArrayCollection();
+        $this->statusHistory = new ArrayCollection();
+        $this->status = ReservationStatus::EN_ATTENTE->value;
     }
 
     public function getId(): ?int
@@ -209,5 +246,148 @@ class Reservation
         $this->boutique = $boutique;
 
         return $this;
+    }
+
+    // Getters et setters pour les nouveaux champs de workflow
+
+    public function getStatus(): string
+    {
+        return $this->status;
+    }
+
+    public function setStatus(string $status): static
+    {
+        $this->status = $status;
+
+        return $this;
+    }
+
+    public function getStatusEnum(): ReservationStatus
+    {
+        return ReservationStatus::from($this->status);
+    }
+
+    public function setStatusEnum(ReservationStatus $status): static
+    {
+        $this->status = $status->value;
+
+        return $this;
+    }
+
+    public function getConfirmedAt(): ?\DateTime
+    {
+        return $this->confirmedAt;
+    }
+
+    public function setConfirmedAt(?\DateTime $confirmedAt): static
+    {
+        $this->confirmedAt = $confirmedAt;
+
+        return $this;
+    }
+
+    public function getConfirmedBy(): ?User
+    {
+        return $this->confirmedBy;
+    }
+
+    public function setConfirmedBy(?User $confirmedBy): static
+    {
+        $this->confirmedBy = $confirmedBy;
+
+        return $this;
+    }
+
+    public function getCancelledAt(): ?\DateTime
+    {
+        return $this->cancelledAt;
+    }
+
+    public function setCancelledAt(?\DateTime $cancelledAt): static
+    {
+        $this->cancelledAt = $cancelledAt;
+
+        return $this;
+    }
+
+    public function getCancelledBy(): ?User
+    {
+        return $this->cancelledBy;
+    }
+
+    public function setCancelledBy(?User $cancelledBy): static
+    {
+        $this->cancelledBy = $cancelledBy;
+
+        return $this;
+    }
+
+    public function getCancellationReason(): ?string
+    {
+        return $this->cancellationReason;
+    }
+
+    public function setCancellationReason(?string $cancellationReason): static
+    {
+        $this->cancellationReason = $cancellationReason;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ReservationStatusHistory>
+     */
+    public function getStatusHistory(): Collection
+    {
+        return $this->statusHistory;
+    }
+
+    public function addStatusHistory(ReservationStatusHistory $statusHistory): static
+    {
+        if (!$this->statusHistory->contains($statusHistory)) {
+            $this->statusHistory->add($statusHistory);
+            $statusHistory->setReservation($this);
+        }
+
+        return $this;
+    }
+
+    public function removeStatusHistory(ReservationStatusHistory $statusHistory): static
+    {
+        if ($this->statusHistory->removeElement($statusHistory)) {
+            // set the owning side to null (unless already changed)
+            if ($statusHistory->getReservation() === $this) {
+                $statusHistory->setReservation(null);
+            }
+        }
+
+        return $this;
+    }
+
+    // Méthodes utilitaires pour le workflow
+
+    public function isConfirmable(): bool
+    {
+        return $this->getStatusEnum()->isConfirmable();
+    }
+
+    public function isCancellable(): bool
+    {
+        return $this->getStatusEnum()->isCancellable();
+    }
+
+    public function isConfirmed(): bool
+    {
+        return $this->getStatusEnum() === ReservationStatus::CONFIRMEE;
+    }
+
+    public function isCancelled(): bool
+    {
+        return $this->getStatusEnum() === ReservationStatus::ANNULEE;
+    }
+
+    public function isPending(): bool
+    {
+        return $this->getStatusEnum() === ReservationStatus::EN_ATTENTE;
     }
 }

@@ -231,6 +231,52 @@ class ReservationRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /**
+     * Trouve les réservations par plusieurs statuts
+     */
+    public function findByMultipleStatuses(array $statuses): array
+    {
+        return $this->createQueryBuilder('r')
+            ->where('r.status IN (:statuses)')
+            ->andWhere('r.isActive = true')
+            ->orderBy('r.id', 'DESC')
+            ->setParameter('statuses', $statuses)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Trouve les réservations par entreprise et plusieurs statuts
+     */
+    public function findByEntrepriseAndStatuses($entreprise, array $statuses): array
+    {
+        return $this->createQueryBuilder('r')
+            ->where('r.entreprise = :entreprise')
+            ->andWhere('r.status IN (:statuses)')
+            ->andWhere('r.isActive = true')
+            ->orderBy('r.id', 'DESC')
+            ->setParameter('entreprise', $entreprise)
+            ->setParameter('statuses', $statuses)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Trouve les réservations par boutique et plusieurs statuts
+     */
+    public function findByBoutiqueAndStatuses($boutique, array $statuses): array
+    {
+        return $this->createQueryBuilder('r')
+            ->where('r.boutique = :boutique')
+            ->andWhere('r.status IN (:statuses)')
+            ->andWhere('r.isActive = true')
+            ->orderBy('r.id', 'DESC')
+            ->setParameter('boutique', $boutique)
+            ->setParameter('statuses', $statuses)
+            ->getQuery()
+            ->getResult();
+    }
+
     //    /**
     //     * @return Reservation[] Returns an array of Reservation objects
     //     */
@@ -255,4 +301,65 @@ class ReservationRepository extends ServiceEntityRepository
     //            ->getOneOrNullResult()
     //        ;
     //    }
+
+    /**
+     * Trouve les réservations d'une boutique avec filtres avancés
+     */
+    public function findByBoutiqueWithAdvancedFilters(
+        int $boutiqueId,
+        \DateTime $dateDebut,
+        \DateTime $dateFin,
+        array $statusFilters = [],
+        array $additionalFilters = [],
+        string $orderBy = 'createdAt',
+        string $orderDirection = 'DESC'
+    ): array {
+        $qb = $this->createQueryBuilder('r')
+            ->leftJoin('r.client', 'c')
+            ->leftJoin('r.boutique', 'b')
+            ->leftJoin('r.entreprise', 'e')
+            ->where('r.boutique = :boutiqueId')
+            ->andWhere('r.createdAt BETWEEN :dateDebut AND :dateFin')
+            ->setParameter('boutiqueId', $boutiqueId)
+            ->setParameter('dateDebut', $dateDebut)
+            ->setParameter('dateFin', $dateFin);
+
+        // Filtre par statut
+        if (!empty($statusFilters)) {
+            $qb->andWhere('r.status IN (:statuses)')
+               ->setParameter('statuses', $statusFilters);
+        }
+
+        // Filtre par client
+        if (isset($additionalFilters['clientId'])) {
+            $qb->andWhere('r.client = :clientId')
+               ->setParameter('clientId', $additionalFilters['clientId']);
+        }
+
+        // Filtre par montant minimum
+        if (isset($additionalFilters['montantMin'])) {
+            $qb->andWhere('CAST(r.montant AS DECIMAL(10,2)) >= :montantMin')
+               ->setParameter('montantMin', $additionalFilters['montantMin']);
+        }
+
+        // Filtre par montant maximum
+        if (isset($additionalFilters['montantMax'])) {
+            $qb->andWhere('CAST(r.montant AS DECIMAL(10,2)) <= :montantMax')
+               ->setParameter('montantMax', $additionalFilters['montantMax']);
+        }
+
+        // Tri
+        $validOrderFields = ['id', 'montant', 'dateRetrait', 'createdAt'];
+        if (in_array($orderBy, $validOrderFields)) {
+            if ($orderBy === 'montant') {
+                $qb->orderBy('CAST(r.montant AS DECIMAL(10,2))', $orderDirection);
+            } else {
+                $qb->orderBy('r.' . $orderBy, $orderDirection);
+            }
+        } else {
+            $qb->orderBy('r.createdAt', 'DESC');
+        }
+
+        return $qb->getQuery()->getResult();
+    }
 }
