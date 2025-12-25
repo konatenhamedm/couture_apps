@@ -292,7 +292,7 @@ class ApiModeleBoutiqueController extends ApiInterface
             )
         )
     )]
-    #[OA\Response(response: 500, description: "Erreur serveur lors de la récupération")]
+    #[OA\Response(response: 500, description: "Erreur serveur lors de lad récupération")]
     public function index(ModeleBoutiqueRepository $modeleBoutiqueRepository): Response
     {
         try {
