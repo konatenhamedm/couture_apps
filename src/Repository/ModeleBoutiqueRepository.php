@@ -15,7 +15,7 @@ class ModeleBoutiqueRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, ModeleBoutique::class);
     }
-  public function add(ModeleBoutique $entity, bool $flush = false): void
+    public function add(ModeleBoutique $entity, bool $flush = false): void
     {
         $this->getEntityManager()->persist($entity);
 
@@ -32,6 +32,21 @@ class ModeleBoutiqueRepository extends ServiceEntityRepository
             $this->getEntityManager()->flush();
         }
     }
+
+
+    public function findAllModeleBoutiqueEntreprise($value): array
+    {
+        return $this->createQueryBuilder('m')
+            ->innerJoin("m.boutique","b")
+            ->innerJoin("b.entreprise","e")
+            ->andWhere('e.id = :val')
+            ->setParameter('val', $value)
+            ->orderBy('m.id', 'ASC')
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+
     //    /**
     //     * @return ModeleBoutique[] Returns an array of ModeleBoutique objects
     //     */

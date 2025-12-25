@@ -296,9 +296,8 @@ class ApiModeleBoutiqueController extends ApiInterface
     public function index(ModeleBoutiqueRepository $modeleBoutiqueRepository): Response
     {
         try {
-            $modeleBoutiques = $this->paginationService->paginate($modeleBoutiqueRepository->findBy(
-                ['entreprise' => $this->getUser()->getEntreprise()],
-                ['id' => 'DESC']
+            $modeleBoutiques = $this->paginationService->paginate($modeleBoutiqueRepository->findAllModeleBoutiqueEntreprise(
+               $this->getUser()->getEntreprise()->getId()
             ));
             $response = $this->responseData($modeleBoutiques, "group_modeleBoutique", ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -581,6 +580,11 @@ class ApiModeleBoutiqueController extends ApiInterface
         }
 
         $data = json_decode($request->getContent(), true);
+
+        if($modeleBoutiqueRepository->findBy(["boutique"=> $data['boutique'],"modele"=>$data['modele']])){
+            $this->setMessage("Cet enregistrement existe deja en base");
+            return $this->response([], 400);
+        }
 
         $modele = $modeleRepository->find($data['modele']);
         if (!$modele) {

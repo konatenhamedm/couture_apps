@@ -1067,13 +1067,17 @@ class ApiReservationController extends ApiInterface
 
                         // Envoyer la notification push avec système de fallback
                         try {
-                            $this->notificationService->sendStockAlertNotification(
-                                $admin,
-                                $this->getUser()->getEntreprise(),
-                                $boutique->getLibelle(),
-                                $stockDeficits,
-                                $reservationInfo
-                            );
+                            if ($this->notificationService) {
+                                $this->notificationService->sendStockAlertNotification(
+                                    $admin,
+                                    $this->getUser()->getEntreprise(),
+                                    $boutique->getLibelle(),
+                                    $stockDeficits,
+                                    $reservationInfo
+                                );
+                            } else {
+                                error_log("⚠️ NotificationService non disponible - notification push ignorée");
+                            }
                         } catch (\Exception $notifError) {
                             // Logger l'erreur mais ne pas bloquer le processus
                             error_log("❌ Erreur envoi notification alerte stock: " . $notifError->getMessage());

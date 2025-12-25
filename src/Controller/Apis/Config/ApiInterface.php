@@ -59,12 +59,12 @@ class ApiInterface extends AbstractController
 
     protected $sendMail ;
     protected $superAdmin ;
+    protected ?NotificationService $notificationService = null;
 
     public function __construct(
         EntityManagerInterface $em,
         SluggerInterface $slugger,
         protected SendMailService $sendMailService,
-        protected NotificationService $notificationService,
         SubscriptionChecker $subscriptionChecker,
         Utils $utils,
         UserPasswordHasherInterface $hasher,
@@ -78,7 +78,8 @@ class ApiInterface extends AbstractController
         protected StatistiquesService $statistiquesService,
         protected PaginationService $paginationService,
        #[Autowire(param: 'SEND_MAIL')] string $sendMail,
-        #[Autowire(param: 'SUPER_ADMIN')] string $superAdmin
+        #[Autowire(param: 'SUPER_ADMIN')] string $superAdmin,
+        ?NotificationService $notificationService = null
     ) {
 
         $this->client = $client;
