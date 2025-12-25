@@ -70,7 +70,7 @@ class ApiOperateurController extends ApiInterface
     public function index(OperateurRepository $operateurRepository): Response
     {
         try {
-            $operateurs = $this->paginationService->paginate($operateurRepository->findAll());
+            $operateurs = $this->paginationService->paginate($operateurRepository->findBy(["pays"=>$this->getUser()->getEntreprise()->getPays()]));
             $response = $this->responseData($operateurs, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);

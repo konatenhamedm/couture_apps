@@ -65,6 +65,9 @@ class ModuleAbonnement
     #[Groups(["group1", "group_type","group_abonnement"])]
     private ?int $numero = null;
 
+    #[ORM\ManyToOne(inversedBy: 'moduleAbonnements')]
+    private ?Pays $pays = null;
+
     public function __construct()
     {
         $this->ligneModules = new ArrayCollection();
@@ -236,6 +239,18 @@ class ModuleAbonnement
     public function setNumero(?int $numero): static
     {
         $this->numero = $numero;
+
+        return $this;
+    }
+
+    public function getPays(): ?Pays
+    {
+        return $this->pays;
+    }
+
+    public function setPays(?Pays $pays): static
+    {
+        $this->pays = $pays;
 
         return $this;
     }

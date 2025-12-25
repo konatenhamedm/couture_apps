@@ -75,7 +75,7 @@ class ApiModuleAbonnementController extends ApiInterface
     public function index(ModuleAbonnementRepository $moduleAbonnementRepository): Response
     {
         try {
-            $moduleAbonnements = $this->paginationService->paginate($moduleAbonnementRepository->findAll());
+            $moduleAbonnements = $this->paginationService->paginate($moduleAbonnementRepository->findBy(["pays"=>$this->getUser()->getEntreprise()->getPays()]));
             $response = $this->responseData($moduleAbonnements, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);

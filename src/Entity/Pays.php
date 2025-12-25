@@ -46,10 +46,17 @@ class Pays
     #[ORM\OneToMany(targetEntity: Entreprise::class, mappedBy: 'pays')]
     private Collection $entreprises;
 
+    /**
+     * @var Collection<int, ModuleAbonnement>
+     */
+    #[ORM\OneToMany(targetEntity: ModuleAbonnement::class, mappedBy: 'pays')]
+    private Collection $moduleAbonnements;
+
     public function __construct()
     {
         $this->operateurs = new ArrayCollection();
         $this->entreprises = new ArrayCollection();
+        $this->moduleAbonnements = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -159,6 +166,36 @@ class Pays
             // set the owning side to null (unless already changed)
             if ($entreprise->getPays() === $this) {
                 $entreprise->setPays(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ModuleAbonnement>
+     */
+    public function getModuleAbonnements(): Collection
+    {
+        return $this->moduleAbonnements;
+    }
+
+    public function addModuleAbonnement(ModuleAbonnement $moduleAbonnement): static
+    {
+        if (!$this->moduleAbonnements->contains($moduleAbonnement)) {
+            $this->moduleAbonnements->add($moduleAbonnement);
+            $moduleAbonnement->setPays($this);
+        }
+
+        return $this;
+    }
+
+    public function removeModuleAbonnement(ModuleAbonnement $moduleAbonnement): static
+    {
+        if ($this->moduleAbonnements->removeElement($moduleAbonnement)) {
+            // set the owning side to null (unless already changed)
+            if ($moduleAbonnement->getPays() === $this) {
+                $moduleAbonnement->setPays(null);
             }
         }
 
