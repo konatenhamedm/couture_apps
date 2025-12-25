@@ -874,8 +874,8 @@ class ApiPaiementController extends ApiInterface
         $paiement->setIsActive(true);
         $paiement->setReference($utils->generateReference('PMT'));
 
-        if (isset($data['client']) && $data['client']) {
-            $client = $clientRepository->find($data['client']);
+        if (isset($data['clientId']) && $data['clientId']) {
+            $client = $clientRepository->find($data['clientId']);
             if ($client) {
                 $paiement->setClient($client);
             }
