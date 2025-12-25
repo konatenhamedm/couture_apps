@@ -63,18 +63,18 @@ class ApiAccueilController extends ApiInterface
         CaisseSuccursaleRepository $caisseSuccursaleRepository,
     ): JsonResponse {
 
-        $abonnements = $abonnementRepository->findBy(["etat" => 'actif'], ['numero' => 'ASC']);
+       // $abonnements = $abonnementRepository->findBy(["etat" => 'actif'], ['numero' => 'ASC']);
         $settings = $settingRepository->findOneBy(['entreprise' => $this->getUser()->getEntreprise()]);
-        $facturesProches = $factureRepository->findUpcomingUnpaidInvoices($id, 10);
-        $ventesBoutique = $paiementBoutiqueRepository->findTopSellingModelsOfWeek($id, 10);
-        $ventesReservation = $paiementReservationRepository->findTopReservedModelsOfWeek($id, 10);
-        $meilleuresVentes = $this->combineAndSortSales($ventesBoutique, $ventesReservation, 10);
+        $facturesProches = $type != 'boutique' ? $factureRepository->findUpcomingUnpaidInvoices($id, 10) : [];
+        $ventesBoutique = $type == 'boutique' ? $paiementBoutiqueRepository->findTopSellingModelsOfWeek($id, 10) :[];
+        $ventesReservation = $type == 'boutique' ? $paiementReservationRepository->findTopReservedModelsOfWeek($id, 10) :[];
+        $meilleuresVentes = $type == 'boutique' ?  $this->combineAndSortSales($ventesBoutique, $ventesReservation, 10) : [];
         
         $response = $this->responseData([
             "caisse"=> $type == 'boutique' ? $caisseBoutiqueRepository->findOneBy(['boutique' => $id])->getMontant() : $caisseSuccursaleRepository->findOneBy(['succursale' => $id])->getMontant(), 
             "depenses"=> 0,
             "settings"=>$settings,
-            "abonnements" => $abonnements,
+           /*  "abonnements" => $abonnements, */
             "commandes" => $facturesProches,
             "meilleuresVentes" =>  $meilleuresVentes
         ], 'group1', ['Content-Type' => 'application/json']);
