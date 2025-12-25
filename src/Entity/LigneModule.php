@@ -13,15 +13,15 @@ class LigneModule
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-     #[Groups(["group1", "group_type"])]
+     #[Groups(["group1", "group_type","group_abonnement"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-     #[Groups(["group1", "group_type"])]
+     #[Groups(["group1", "group_type","group_abonnement"])]
     private ?string $libelle = null;
 
     #[ORM\Column(type: Types::TEXT)]
-     #[Groups(["group1", "group_type"])]
+     #[Groups(["group1", "group_type","group_abonnement"])]
     private ?string $description = null;
 
 
@@ -29,7 +29,7 @@ class LigneModule
     private ?ModuleAbonnement $moduleAbonnement = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-     #[Groups(["group1", "group_type"])]
+     #[Groups(["group1", "group_type","group_abonnement"])]
     private ?string $quantite = null;
 
 
