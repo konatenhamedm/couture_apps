@@ -251,6 +251,11 @@ class ApiPaiementController extends ApiInterface
                     description: "Montant du paiement en FCFA (obligatoire, doit être ≤ reste à payer)"
                 ),
                 new OA\Property(
+                    property: "datePaiment",
+                    type: "date",
+                    description: "Date paiement"
+                ),
+                new OA\Property(
                     property: "succursaleId",
                     type: "integer",
                     nullable: true,
@@ -310,7 +315,7 @@ class ApiPaiementController extends ApiInterface
         $paiement->setReference($utils->generateReference('PMT'));
         $paiement->setCreatedBy($this->getUser());
         $paiement->setUpdatedBy($this->getUser());
-        $paiement->setCreatedAtValue(new \DateTime());
+        $paiement->setCreatedAtValue(new \DateTime($data['datePaiement']));
         $paiement->setUpdatedAt(new \DateTime());
 
         // Mise à jour du reste à payer de la facture
@@ -878,7 +883,7 @@ class ApiPaiementController extends ApiInterface
 
         $paiement->setCreatedBy($this->getUser());
         $paiement->setUpdatedBy($this->getUser());
-        $paiement->setCreatedAtValue($data["datePaiment"]);
+        $paiement->setCreatedAtValue(new \DateTime($data["datePaiment"]));
         $paiement->setUpdatedAt(new \DateTime());
 
         // 🔒 Transaction pour garantir la cohérence atomique
