@@ -36,6 +36,32 @@ class Abonnement
     #[Groups(["group1","group_abonnement"])]
     private ?string $type = null;
 
+    /**
+     * Calcule la date de début de l'abonnement en fonction de la date de fin et de la durée du module
+     * 
+     * @return \DateTime|null
+     */
+    #[Groups(["group1","group_abonnement"])]
+    public function getDateDebut(): ?\DateTime
+    {
+        if ($this->dateFin === null || $this->moduleAbonnement === null) {
+            return null;
+        }
+
+        $dureeEnMois = (int) $this->moduleAbonnement->getDuree();
+        if ($dureeEnMois <= 0) {
+            return null;
+        }
+
+        // Cloner la date de fin pour ne pas la modifier
+        $dateDebut = clone $this->dateFin;
+        
+        // Soustraire la durée en mois
+        $dateDebut->modify("-{$dureeEnMois} months");
+        
+        return $dateDebut;
+    }
+
     public function getId(): ?int
     {
         return $this->id;
