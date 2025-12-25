@@ -674,6 +674,11 @@ class ApiPaiementController extends ApiInterface
                     description: "ID du client (optionnel)"
                 ),
                 new OA\Property(
+                    property: "datePaiment",
+                    type: "date",
+                    description: "date paiement"
+                ),
+                new OA\Property(
                     property: "lignes",
                     type: "array",
                     description: "Liste des produits vendus (obligatoire, minimum 1 ligne)",
@@ -873,7 +878,7 @@ class ApiPaiementController extends ApiInterface
 
         $paiement->setCreatedBy($this->getUser());
         $paiement->setUpdatedBy($this->getUser());
-        $paiement->setCreatedAtValue(new \DateTime());
+        $paiement->setCreatedAtValue($data["datePaiment"]);
         $paiement->setUpdatedAt(new \DateTime());
 
         // 🔒 Transaction pour garantir la cohérence atomique
