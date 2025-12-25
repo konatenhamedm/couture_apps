@@ -63,7 +63,7 @@ class ApiAccueilController extends ApiInterface
         CaisseSuccursaleRepository $caisseSuccursaleRepository,
     ): JsonResponse {
 
-       // $abonnements = $abonnementRepository->findBy(["etat" => 'actif'], ['numero' => 'ASC']);
+       $abonnements = $abonnementRepository->findBy(["etat" => 'actif'], ['numero' => 'ASC']);
         $settings = $settingRepository->findOneBy(['entreprise' => $this->getUser()->getEntreprise()]);
         $facturesProches = $type != 'boutique' ? $factureRepository->findUpcomingUnpaidInvoices($id, 10) : [];
         $ventesBoutique = $type == 'boutique' ? $paiementBoutiqueRepository->findTopSellingModelsOfWeek($id, 10) :[];
@@ -74,7 +74,7 @@ class ApiAccueilController extends ApiInterface
             "caisse"=> $type == 'boutique' ? $caisseBoutiqueRepository->findOneBy(['boutique' => $id])->getMontant() : $caisseSuccursaleRepository->findOneBy(['succursale' => $id])->getMontant(), 
             "depenses"=> 0,
             "settings"=>$settings,
-           /*  "abonnements" => $abonnements, */
+            "abonnements" => $abonnements,
             "commandes" => $facturesProches,
             "meilleuresVentes" =>  $meilleuresVentes
         ], 'group1', ['Content-Type' => 'application/json']);

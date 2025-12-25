@@ -388,6 +388,7 @@ class Reservation
 
     public function isPending(): bool
     {
-        return $this->getStatusEnum() === ReservationStatus::EN_ATTENTE;
+        $status = $this->getStatusEnum();
+        return $status === ReservationStatus::EN_ATTENTE || $status === ReservationStatus::EN_ATTENTE_STOCK;
     }
 }

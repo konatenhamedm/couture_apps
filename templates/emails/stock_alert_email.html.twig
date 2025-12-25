@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚨 Alerte Stock Urgent - {{ boutique_name }}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .priority-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 12px;
+            margin-top: 10px;
+            text-transform: uppercase;
+        }
+        .priority-critique {
+            background-color: #721c24;
+            color: white;
+        }
+        .priority-elevee {
+            background-color: #f39c12;
+            color: white;
+        }
+        .priority-normale {
+            background-color: #28a745;
+            color: white;
+        }
+        .content {
+            padding: 30px;
+        }
+        .alert-summary {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        .alert-summary h2 {
+            color: #856404;
+            margin-top: 0;
+            font-size: 18px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .info-card {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 4px solid #007bff;
+        }
+        .info-card h3 {
+            margin-top: 0;
+            color: #495057;
+            font-size: 16px;
+        }
+        .info-card p {
+            margin: 5px 0;
+            color: #6c757d;
+        }
+        .deficit-section {
+            margin-top: 30px;
+        }
+        .deficit-section h3 {
+            color: #dc3545;
+            border-bottom: 2px solid #dc3545;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .deficit-item {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .deficit-item h4 {
+            margin-top: 0;
+            color: #721c24;
+            font-size: 16px;
+        }
+        .deficit-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .deficit-stat {
+            text-align: center;
+            padding: 10px;
+            background-color: white;
+            border-radius: 5px;
+        }
+        .deficit-stat .number {
+            font-size: 18px;
+            font-weight: bold;
+            color: #dc3545;
+        }
+        .deficit-stat .label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+        }
+        .action-section {
+            background-color: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 30px;
+            text-align: center;
+        }
+        .action-section h3 {
+            color: #0056b3;
+            margin-top: 0;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .amount {
+            font-weight: bold;
+            color: #28a745;
+        }
+        @media (max-width: 600px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            .deficit-details {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚨 Alerte Stock Urgent</h1>
+            <p>{{ boutique_name }}</p>
+            <div class="priority-badge priority-{{ priority_level|lower }}">
+                Priorité {{ priority_level }}
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="alert-summary">
+                <h2>⚠️ Réservation créée avec stock insuffisant</h2>
+                <p>Une nouvelle réservation vient d'être enregistrée mais <strong>{{ total_items_in_shortage }} article{{ total_items_in_shortage > 1 ? 's' : '' }}</strong> 
+                {{ total_items_in_shortage > 1 ? 'sont' : 'est' }} en rupture de stock. Une action de ravitaillement est requise.</p>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-card">
+                    <h3>👤 Informations Client</h3>
+                    <p><strong>Nom :</strong> {{ client_name }}</p>
+                    {% if client_phone %}
+                    <p><strong>Téléphone :</strong> {{ client_phone }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="info-card">
+                    <h3>🏪 Informations Boutique</h3>
+                    <p><strong>Boutique :</strong> {{ boutique_name }}</p>
+                    <p><strong>Entreprise :</strong> {{ entreprise_name }}</p>
+                </div>
+
+                <div class="info-card">
+                    <h3>💰 Détails Financiers</h3>
+                    <p><strong>Montant total :</strong> <span class="amount">{{ total_amount|number_format(0, ',', ' ') }} FCFA</span></p>
+                    <p><strong>Avance versée :</strong> <span class="amount">{{ advance_amount|number_format(0, ',', ' ') }} FCFA</span></p>
+                    <p><strong>Reste à payer :</strong> <span class="amount">{{ remaining_amount|number_format(0, ',', ' ') }} FCFA</span></p>
+                </div>
+
+                <div class="info-card">
+                    <h3>📅 Informations Temporelles</h3>
+                    {% if withdrawal_date %}
+                    <p><strong>Date de retrait :</strong> {{ withdrawal_date }}</p>
+                    {% endif %}
+                    <p><strong>Créé le :</strong> {{ created_at }}</p>
+                    {% if created_by %}
+                    <p><strong>Créé par :</strong> {{ created_by }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="deficit-section">
+                <h3>📦 Articles en Rupture de Stock</h3>
+                {% for deficit in stock_deficits %}
+                <div class="deficit-item">
+                    <h4>{{ deficit.modele_name }}</h4>
+                    <div class="deficit-details">
+                        <div class="deficit-stat">
+                            <div class="number">{{ deficit.quantity_requested }}</div>
+                            <div class="label">Demandé</div>
+                        </div>
+                        <div class="deficit-stat">
+                            <div class="number">{{ deficit.quantity_available }}</div>
+                            <div class="label">Disponible</div>
+                        </div>
+                        <div class="deficit-stat">
+                            <div class="number">{{ deficit.deficit }}</div>
+                            <div class="label">Déficit</div>
+                        </div>
+                        <div class="deficit-stat">
+                            <div class="number">{{ deficit.deficit_percentage|number_format(1) }}%</div>
+                            <div class="label">% Manquant</div>
+                        </div>
+                    </div>
+                    {% if deficit.is_out_of_stock %}
+                    <p style="color: #dc3545; font-weight: bold; margin-top: 10px;">
+                        ⚠️ Article complètement en rupture de stock
+                    </p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="action-section">
+                <h3>🎯 Actions Requises</h3>
+                <p>Cette réservation a été créée avec le statut <strong>"EN_ATTENTE_STOCK"</strong>.</p>
+                <p>Veuillez procéder au ravitaillement des articles manquants pour permettre la finalisation de cette réservation.</p>
+                <p><strong>Réservation #{{ reservation_id }}</strong> - En attente de votre action</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Cet email a été généré automatiquement par votre système de gestion.</p>
+            <p>Pour toute question, contactez votre équipe technique.</p>
+            <p><strong>{{ entreprise_name }}</strong> - Système de gestion des réservations</p>
+        </div>
+    </div>
+</body>
+</html>

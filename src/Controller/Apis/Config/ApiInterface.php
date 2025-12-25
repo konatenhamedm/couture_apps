@@ -9,6 +9,7 @@ use App\Repository\SettingRepository;
 use App\Repository\SurccursaleRepository;
 use App\Repository\UserRepository;
 use App\Service\Menu;
+use App\Service\NotificationService;
 use App\Service\PaginationService;
 use App\Service\SendMailService;
 use App\Service\StatistiquesService;
@@ -63,6 +64,7 @@ class ApiInterface extends AbstractController
         EntityManagerInterface $em,
         SluggerInterface $slugger,
         protected SendMailService $sendMailService,
+        protected NotificationService $notificationService,
         SubscriptionChecker $subscriptionChecker,
         Utils $utils,
         UserPasswordHasherInterface $hasher,
@@ -93,6 +95,7 @@ class ApiInterface extends AbstractController
         $this->settingRepository = $settingRepository;
         $this->sendMail = $sendMail;
         $this->superAdmin = $superAdmin;
+        $this->notificationService = $notificationService;
 
     }
 

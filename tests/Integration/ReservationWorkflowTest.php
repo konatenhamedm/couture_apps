@@ -49,7 +49,7 @@ class ReservationWorkflowTest extends KernelTestCase
     }
 
     /**
-     * Test des transitions de statut
+     * Test des transitions de statut incluant EN_ATTENTE_STOCK
      * 
      * @test
      */
@@ -59,6 +59,18 @@ class ReservationWorkflowTest extends KernelTestCase
         
         // État initial
         $this->assertEquals(ReservationStatus::EN_ATTENTE->value, $reservation->getStatus());
+        
+        // Transition vers en_attente_stock
+        $reservation->setStatus(ReservationStatus::EN_ATTENTE_STOCK->value);
+        $this->assertEquals(ReservationStatus::EN_ATTENTE_STOCK->value, $reservation->getStatus());
+        $this->assertTrue($reservation->isConfirmable());
+        $this->assertTrue($reservation->isCancellable());
+        
+        // Transition de en_attente_stock vers en_attente (après ravitaillement)
+        $reservation->setStatus(ReservationStatus::EN_ATTENTE->value);
+        $this->assertEquals(ReservationStatus::EN_ATTENTE->value, $reservation->getStatus());
+        $this->assertTrue($reservation->isConfirmable());
+        $this->assertTrue($reservation->isCancellable());
         
         // Transition vers confirmée
         $reservation->setStatus(ReservationStatus::CONFIRMEE->value);
@@ -76,7 +88,31 @@ class ReservationWorkflowTest extends KernelTestCase
     }
 
     /**
-     * Test que l'énumération fonctionne correctement
+     * Test spécifique des transitions valides pour EN_ATTENTE_STOCK
+     * 
+     * @test
+     */
+    public function testStockStatusTransitions(): void
+    {
+        $reservation = new Reservation();
+        
+        // Mettre en statut EN_ATTENTE_STOCK
+        $reservation->setStatus(ReservationStatus::EN_ATTENTE_STOCK->value);
+        
+        // Vérifier que les transitions sont possibles
+        $this->assertTrue(ReservationStatus::EN_ATTENTE_STOCK->canTransitionToReady());
+        $this->assertTrue(ReservationStatus::EN_ATTENTE_STOCK->isConfirmable());
+        $this->assertTrue(ReservationStatus::EN_ATTENTE_STOCK->isCancellable());
+        $this->assertTrue(ReservationStatus::EN_ATTENTE_STOCK->hasStockIssue());
+        
+        // Vérifier que les autres statuts ne peuvent pas transitionner vers "ready"
+        $this->assertFalse(ReservationStatus::EN_ATTENTE->canTransitionToReady());
+        $this->assertFalse(ReservationStatus::CONFIRMEE->canTransitionToReady());
+        $this->assertFalse(ReservationStatus::ANNULEE->canTransitionToReady());
+    }
+
+    /**
+     * Test que l'énumération fonctionne correctement avec le nouveau statut EN_ATTENTE_STOCK
      * 
      * @test
      */
@@ -84,30 +120,52 @@ class ReservationWorkflowTest extends KernelTestCase
     {
         // Test des valeurs
         $this->assertEquals('en_attente', ReservationStatus::EN_ATTENTE->value);
+        $this->assertEquals('en_attente_stock', ReservationStatus::EN_ATTENTE_STOCK->value);
         $this->assertEquals('confirmee', ReservationStatus::CONFIRMEE->value);
         $this->assertEquals('annulee', ReservationStatus::ANNULEE->value);
         
         // Test des labels
         $this->assertEquals('En attente', ReservationStatus::EN_ATTENTE->getLabel());
+        $this->assertEquals('En attente de stock', ReservationStatus::EN_ATTENTE_STOCK->getLabel());
         $this->assertEquals('Confirmée', ReservationStatus::CONFIRMEE->getLabel());
         $this->assertEquals('Annulée', ReservationStatus::ANNULEE->getLabel());
         
-        // Test des méthodes de validation
+        // Test des méthodes de validation pour EN_ATTENTE
         $this->assertTrue(ReservationStatus::EN_ATTENTE->isConfirmable());
         $this->assertTrue(ReservationStatus::EN_ATTENTE->isCancellable());
+        $this->assertFalse(ReservationStatus::EN_ATTENTE->hasStockIssue());
+        $this->assertFalse(ReservationStatus::EN_ATTENTE->canTransitionToReady());
         
+        // Test des méthodes de validation pour EN_ATTENTE_STOCK
+        $this->assertTrue(ReservationStatus::EN_ATTENTE_STOCK->isConfirmable());
+        $this->assertTrue(ReservationStatus::EN_ATTENTE_STOCK->isCancellable());
+        $this->assertTrue(ReservationStatus::EN_ATTENTE_STOCK->hasStockIssue());
+        $this->assertTrue(ReservationStatus::EN_ATTENTE_STOCK->canTransitionToReady());
+        
+        // Test des méthodes de validation pour CONFIRMEE
         $this->assertFalse(ReservationStatus::CONFIRMEE->isConfirmable());
         $this->assertFalse(ReservationStatus::CONFIRMEE->isCancellable());
+        $this->assertFalse(ReservationStatus::CONFIRMEE->hasStockIssue());
+        $this->assertFalse(ReservationStatus::CONFIRMEE->canTransitionToReady());
         
+        // Test des méthodes de validation pour ANNULEE
         $this->assertFalse(ReservationStatus::ANNULEE->isConfirmable());
         $this->assertFalse(ReservationStatus::ANNULEE->isCancellable());
+        $this->assertFalse(ReservationStatus::ANNULEE->hasStockIssue());
+        $this->assertFalse(ReservationStatus::ANNULEE->canTransitionToReady());
         
         // Test getValues()
         $values = ReservationStatus::getValues();
-        $this->assertCount(3, $values);
+        $this->assertCount(4, $values);
         $this->assertContains('en_attente', $values);
+        $this->assertContains('en_attente_stock', $values);
         $this->assertContains('confirmee', $values);
         $this->assertContains('annulee', $values);
+        
+        // Test getStockAlertStatuses()
+        $stockAlertStatuses = ReservationStatus::getStockAlertStatuses();
+        $this->assertCount(1, $stockAlertStatuses);
+        $this->assertContains('en_attente_stock', $stockAlertStatuses);
     }
 
     protected function tearDown(): void

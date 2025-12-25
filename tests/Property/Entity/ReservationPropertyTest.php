@@ -131,8 +131,9 @@ class ReservationPropertyTest extends KernelTestCase
     {
         // Test getValues()
         $values = ReservationStatus::getValues();
-        $this->assertCount(3, $values);
+        $this->assertCount(4, $values);
         $this->assertContains('en_attente', $values);
+        $this->assertContains('en_attente_stock', $values);
         $this->assertContains('confirmee', $values);
         $this->assertContains('annulee', $values);
 

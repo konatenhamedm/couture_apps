@@ -4,7 +4,9 @@ namespace App\Service;
 
 use App\Entity\Entreprise;
 use App\Entity\Notification;
+use App\Entity\User;
 use App\Repository\UserRepository;
+use App\Service\StockDeficit;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -66,6 +68,92 @@ class NotificationService
             $this->logger->info("✅ Notification push envoyée à l'utilisateur #{$user->getId()}");
         } catch (\Throwable $e) {
             $this->logger->error("⚠️ Erreur FCM pour l'utilisateur #{$user->getId()}: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Envoie une notification push spécialisée pour les alertes de stock insuffisant
+     * 
+     * @param User $admin L'administrateur à notifier
+     * @param Entreprise $entreprise L'entreprise concernée
+     * @param string $boutiqueName Nom de la boutique concernée
+     * @param array $stockDeficits Tableau d'objets StockDeficit
+     * @param array $reservationInfo Informations sur la réservation (client, montant, etc.)
+     */
+    public function sendStockAlertNotification(
+        User $admin,
+        Entreprise $entreprise,
+        string $boutiqueName,
+        array $stockDeficits,
+        array $reservationInfo
+    ): void {
+        try {
+            // Calculer le nombre d'articles en rupture
+            $itemCount = count($stockDeficits);
+            
+            // Créer le titre de la notification
+            $title = "🚨 Alerte Stock - {$boutiqueName}";
+            
+            // Créer le message concis pour la notification push
+            $message = $this->buildStockAlertMessage($itemCount, $reservationInfo['client_name'] ?? 'Client');
+            
+            // Préparer les données enrichies pour la notification
+            $data = [
+                'type' => 'stock_alert',
+                'boutique_name' => $boutiqueName,
+                'reservation_id' => $reservationInfo['reservation_id'] ?? null,
+                'client_name' => $reservationInfo['client_name'] ?? '',
+                'total_amount' => $reservationInfo['total_amount'] ?? 0,
+                'withdrawal_date' => $reservationInfo['withdrawal_date'] ?? '',
+                'items_count' => $itemCount,
+                'deficits' => array_map(fn(StockDeficit $deficit) => $deficit->toArray(), $stockDeficits),
+                'priority' => 'high',
+                'action_required' => true
+            ];
+            
+            // Enregistrer en base avec priorité élevée
+            $notification = (new Notification())
+                ->setUser($admin)
+                ->setTitre($title)
+                ->setEntreprise($entreprise)
+                ->setLibelle($message)
+                ->setUpdatedBy($admin)
+                ->setCreatedBy($admin)
+                ->setEtat(false); // Non lu initialement
+            
+            $this->em->persist($notification);
+            $this->em->flush();
+            
+            // Envoyer la notification push avec priorité élevée
+            $token = $admin->getFcmToken();
+            if (!$token) {
+                $this->logger->warning("⚠️ Aucun token FCM pour l'admin #{$admin->getId()} - Alerte stock non envoyée en push");
+                return;
+            }
+            
+            try {
+                $this->pushService->sendPush($token, $title, $message, $data);
+                $this->logger->info("✅ Alerte stock envoyée à l'admin #{$admin->getId()} pour la boutique {$boutiqueName}");
+            } catch (\Throwable $e) {
+                $this->logger->error("❌ Erreur envoi alerte stock FCM pour admin #{$admin->getId()}: " . $e->getMessage());
+                // Ne pas lever l'exception pour ne pas bloquer le processus de réservation
+            }
+            
+        } catch (\Throwable $e) {
+            $this->logger->error("❌ Erreur critique lors de l'envoi d'alerte stock: " . $e->getMessage());
+            // Ne pas lever l'exception pour ne pas bloquer le processus de réservation
+        }
+    }
+
+    /**
+     * Construit le message concis pour la notification push d'alerte de stock
+     */
+    private function buildStockAlertMessage(int $itemCount, string $clientName): string
+    {
+        if ($itemCount === 1) {
+            return "Réservation de {$clientName} : 1 article en rupture de stock. Action requise.";
+        } else {
+            return "Réservation de {$clientName} : {$itemCount} articles en rupture de stock. Action requise.";
         }
     }
 }

@@ -4,6 +4,8 @@ namespace App\Service;
 
 use App\Entity\Notification;
 use App\Entity\User;
+use App\Entity\Entreprise;
+use App\Service\StockDeficit;
 use Doctrine\ORM\EntityManagerInterface;
 use Kreait\Firebase\Factory;
 use Kreait\Firebase\Messaging\CloudMessage;
@@ -186,6 +188,95 @@ class SendMailService
         } catch (\Exception $e) {
             error_log('Erreur désabonnement topic: ' . $e->getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Envoie un email d'alerte de stock insuffisant à l'administrateur
+     * 
+     * @param string $fromEmail Email expéditeur
+     * @param User $admin Administrateur destinataire
+     * @param Entreprise $entreprise Entreprise concernée
+     * @param string $boutiqueName Nom de la boutique
+     * @param array $stockDeficits Tableau d'objets StockDeficit
+     * @param array $reservationInfo Informations sur la réservation
+     */
+    public function sendStockAlertEmail(
+        string $fromEmail,
+        User $admin,
+        Entreprise $entreprise,
+        string $boutiqueName,
+        array $stockDeficits,
+        array $reservationInfo
+    ): void {
+        try {
+            // Préparer le contexte pour le template email
+            $context = [
+                'admin_name' => $admin->getNom() && $admin->getPrenoms() 
+                    ? $admin->getNom() . ' ' . $admin->getPrenoms() 
+                    : $admin->getLogin(),
+                'entreprise_name' => $entreprise->getLibelle(),
+                'boutique_name' => $boutiqueName,
+                'client_name' => $reservationInfo['client_name'] ?? 'Client',
+                'client_phone' => $reservationInfo['client_phone'] ?? '',
+                'reservation_id' => $reservationInfo['reservation_id'] ?? null,
+                'total_amount' => $reservationInfo['total_amount'] ?? 0,
+                'advance_amount' => $reservationInfo['advance_amount'] ?? 0,
+                'remaining_amount' => $reservationInfo['remaining_amount'] ?? 0,
+                'withdrawal_date' => $reservationInfo['withdrawal_date'] ?? '',
+                'created_by' => $reservationInfo['created_by'] ?? '',
+                'created_at' => $reservationInfo['created_at'] ?? date('d/m/Y H:i'),
+                'stock_deficits' => array_map(fn(StockDeficit $deficit) => $deficit->toArray(), $stockDeficits),
+                'total_items_in_shortage' => count($stockDeficits),
+                'total_deficit_amount' => $this->calculateTotalDeficitAmount($stockDeficits),
+                'priority_level' => $this->determinePriorityLevel($stockDeficits)
+            ];
+
+            // Créer le sujet de l'email
+            $itemCount = count($stockDeficits);
+            $subject = "🚨 Alerte Stock Urgent - {$boutiqueName} ({$itemCount} article" . ($itemCount > 1 ? 's' : '') . " en rupture)";
+
+            // Envoyer l'email avec le template spécialisé
+            $this->send(
+                $fromEmail,
+                $admin->getLogin(), // Utiliser getLogin() au lieu de getEmail()
+                $subject,
+                'stock_alert_email', // Template à créer
+                $context
+            );
+
+            error_log("✅ Email d'alerte stock envoyé à {$admin->getLogin()} pour la boutique {$boutiqueName}");
+
+        } catch (\Exception $e) {
+            error_log("❌ Erreur envoi email alerte stock: " . $e->getMessage());
+            // Ne pas lever l'exception pour ne pas bloquer le processus de réservation
+        }
+    }
+
+    /**
+     * Calcule le montant total des déficits (estimation)
+     */
+    private function calculateTotalDeficitAmount(array $stockDeficits): int
+    {
+        // Pour l'instant, on retourne 0 car nous n'avons pas les prix unitaires
+        // Cette méthode peut être étendue si les prix sont disponibles
+        return 0;
+    }
+
+    /**
+     * Détermine le niveau de priorité basé sur les déficits
+     */
+    private function determinePriorityLevel(array $stockDeficits): string
+    {
+        $itemCount = count($stockDeficits);
+        $totalDeficit = array_sum(array_map(fn(StockDeficit $deficit) => $deficit->getDeficit(), $stockDeficits));
+
+        if ($itemCount >= 5 || $totalDeficit >= 50) {
+            return 'CRITIQUE';
+        } elseif ($itemCount >= 3 || $totalDeficit >= 20) {
+            return 'ÉLEVÉE';
+        } else {
+            return 'NORMALE';
         }
     }
 }

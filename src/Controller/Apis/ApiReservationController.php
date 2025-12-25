@@ -28,6 +28,7 @@ use App\Repository\TypeUserRepository;
 use App\Repository\UserRepository;
 use App\Service\Utils;
 use App\Service\ReservationWorkflowService;
+use App\Service\StockDeficit;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -127,10 +128,10 @@ class ApiReservationController extends ApiInterface
         try {
             // Récupérer le paramètre de filtrage par statut
             $statusFilter = $request->query->get('status');
-            
+
             // Construire les critères de recherche
             $criteria = [];
-            
+
             // Si un filtre de statut est fourni, valider et l'ajouter aux critères
             if ($statusFilter !== null && $statusFilter !== '') {
                 $validStatuses = [
@@ -138,10 +139,10 @@ class ApiReservationController extends ApiInterface
                     ReservationStatus::CONFIRMEE->value,
                     ReservationStatus::ANNULEE->value
                 ];
-                
+
                 // Support de plusieurs statuts séparés par des virgules
                 $requestedStatuses = array_map('trim', explode(',', $statusFilter));
-                
+
                 // Valider chaque statut
                 foreach ($requestedStatuses as $status) {
                     if (!in_array($status, $validStatuses)) {
@@ -151,7 +152,7 @@ class ApiReservationController extends ApiInterface
                         ], 400);
                     }
                 }
-                
+
                 // Si un seul statut, utiliser une égalité simple
                 if (count($requestedStatuses) === 1) {
                     $criteria['status'] = $requestedStatuses[0];
@@ -166,7 +167,7 @@ class ApiReservationController extends ApiInterface
                 // Pas de filtre, retourner toutes les réservations
                 $reservations = $this->paginationService->paginate($reservationRepository->findAll());
             }
-            
+
             $response = $this->responseData($reservations, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
@@ -237,7 +238,7 @@ class ApiReservationController extends ApiInterface
         try {
             // Récupérer le paramètre de filtrage par statut
             $statusFilter = $request->query->get('status');
-            
+
             // Construire les critères de base selon les droits utilisateur
             $baseCriteria = [];
             if ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'SADM'])) {
@@ -245,7 +246,7 @@ class ApiReservationController extends ApiInterface
             } else {
                 $baseCriteria['boutique'] = $this->getUser()->getBoutique();
             }
-            
+
             // Si un filtre de statut est fourni, valider et l'ajouter aux critères
             if ($statusFilter !== null && $statusFilter !== '') {
                 $validStatuses = [
@@ -253,10 +254,10 @@ class ApiReservationController extends ApiInterface
                     ReservationStatus::CONFIRMEE->value,
                     ReservationStatus::ANNULEE->value
                 ];
-                
+
                 // Support de plusieurs statuts séparés par des virgules
                 $requestedStatuses = array_map('trim', explode(',', $statusFilter));
-                
+
                 // Valider chaque statut
                 foreach ($requestedStatuses as $status) {
                     if (!in_array($status, $validStatuses)) {
@@ -266,7 +267,7 @@ class ApiReservationController extends ApiInterface
                         ], 400);
                     }
                 }
-                
+
                 // Si un seul statut, utiliser une égalité simple
                 if (count($requestedStatuses) === 1) {
                     $baseCriteria['status'] = $requestedStatuses[0];
@@ -299,7 +300,7 @@ class ApiReservationController extends ApiInterface
                     ['id' => 'DESC']
                 ));
             }
-            
+
             $response = $this->responseData($reservations, 'group_reservation', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
@@ -341,15 +342,15 @@ class ApiReservationController extends ApiInterface
     )]
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
-    public function indexAllByBoutique(ReservationRepository $reservationRepository,$id, TypeUserRepository $typeUserRepository): Response
+    public function indexAllByBoutique(ReservationRepository $reservationRepository, $id, TypeUserRepository $typeUserRepository): Response
     {
         try {
-            
-                $reservations = $this->paginationService->paginate($reservationRepository->findBy(
-                    ['boutique'=> $id],
-                    ['id' => 'DESC']
-                ));
-            
+
+            $reservations = $this->paginationService->paginate($reservationRepository->findBy(
+                ['boutique' => $id],
+                ['id' => 'DESC']
+            ));
+
             $response = $this->responseData($reservations, 'group_reservation', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
@@ -483,14 +484,14 @@ class ApiReservationController extends ApiInterface
 
             // Décoder les données de la requête
             $data = json_decode($request->getContent(), true) ?? [];
-            
+
             // Parser les filtres de date (utilise la même logique que les statistiques)
             [$dateDebut, $dateFin] = $this->parseAdvancedFilters($data);
-            
+
             // Construire les critères de recherche
             $criteria = ['boutique' => $id];
             $additionalFilters = [];
-            
+
             // Filtre par statut
             $statusFilters = [];
             if (!empty($data['status'])) {
@@ -499,9 +500,9 @@ class ApiReservationController extends ApiInterface
                     ReservationStatus::CONFIRMEE->value,
                     ReservationStatus::ANNULEE->value
                 ];
-                
+
                 $requestedStatuses = array_map('trim', explode(',', $data['status']));
-                
+
                 foreach ($requestedStatuses as $status) {
                     if (!in_array($status, $validStatuses)) {
                         return $this->json([
@@ -510,10 +511,10 @@ class ApiReservationController extends ApiInterface
                         ], 400);
                     }
                 }
-                
+
                 $statusFilters = $requestedStatuses;
             }
-            
+
             // Récupérer les réservations avec les filtres simplifiés
             $reservations = $reservationRepository->findByBoutiqueWithSimpleFilters(
                 $id,
@@ -522,15 +523,15 @@ class ApiReservationController extends ApiInterface
                 $statusFilters
             );
 
-        /*     dd($reservations); */
-            
+            /*     dd($reservations); */
+
             // Calculer les statistiques
             $stats = $this->calculateReservationStats($reservations);
-            
+
             // Paginer les résultats
             $paginatedReservations = $this->paginationService->paginate($reservations);
-        
-            
+
+
             // Préparer la réponse
             $response = [
                 'success' => true,
@@ -548,18 +549,17 @@ class ApiReservationController extends ApiInterface
                     'statistiques' => $stats
                 ]
             ];
-            
+
             // Ajouter les réservations sérialisées
             // Utiliser la méthode response pour obtenir les données sérialisées
             $serializedReservations = json_decode(
                 $this->responseData($paginatedReservations, 'group_reservation', ['Content-Type' => 'application/json'])->getContent(),
                 true
             );
-            
+
             $response['data']['reservations'] = $serializedReservations;
-            
+
             return $this->json($response);
-            
         } catch (\Exception $exception) {
             return $this->json([
                 'success' => false,
@@ -868,8 +868,11 @@ class ApiReservationController extends ApiInterface
             $modeleBoutiquesMap[$mb->getId()] = $mb;
         }
 
-        // ✅ Validation des lignes et des stocks AVANT toute modification
+        // ✅ Validation des lignes et détection des stocks insuffisants SANS bloquer
         $totalQuantiteReservee = 0;
+        $stockDeficits = []; // Collecter les déficits de stock
+        $hasStockIssues = false;
+
         foreach ($lignes as $index => $ligneData) {
             $modeleId = $ligneData['modele'] ?? null;
             $quantite = $ligneData['quantite'] ?? null;
@@ -881,21 +884,7 @@ class ApiReservationController extends ApiInterface
                 ], 400);
             }
 
-            if ($quantite === null) {
-                return $this->json([
-                    'status' => 'ERROR',
-                    'message' => "quantite manquante à la ligne " . ($index + 1)
-                ], 400);
-            }
 
-            $quantite = (int)$quantite;
-
-            if ($quantite <= 0) {
-                return $this->json([
-                    'status' => 'ERROR',
-                    'message' => "La quantité doit être supérieure à 0 à la ligne " . ($index + 1)
-                ], 400);
-            }
 
             // Vérifier que le ModeleBoutique existe
             if (!isset($modeleBoutiquesMap[$modeleId])) {
@@ -907,31 +896,36 @@ class ApiReservationController extends ApiInterface
 
             $modeleBoutique = $modeleBoutiquesMap[$modeleId];
 
-            // Vérifier que le modèle appartient à la bonne boutique
-            if ($modeleBoutique->getBoutique()->getId() !== $boutique->getId()) {
-                return $this->json([
-                    'status' => 'ERROR',
-                    'message' => "Le modèle ID {$modeleId} n'appartient pas à cette boutique"
-                ], 400);
-            }
 
-            // ✅ Vérification CRITIQUE du stock disponible (pour réservation)
-            if ($modeleBoutique->getQuantite() < $quantite) {
-                return $this->json([
-                    'status' => 'ERROR',
-                    'message' => "Stock insuffisant pour le modèle '{$modeleBoutique->getModele()->getNom()}' " .
-                        "(disponible: {$modeleBoutique->getQuantite()}, demandé: {$quantite})"
-                ], 400);
-            }
-
-            // ✅ Vérifier aussi la quantité globale
+            // ✅ NOUVELLE LOGIQUE : Détecter les ruptures de stock SANS bloquer la création
+            $stockDisponible = $modeleBoutique->getQuantite();
             $modele = $modeleBoutique->getModele();
-            if ($modele->getQuantiteGlobale() < $quantite) {
-                return $this->json([
-                    'status' => 'ERROR',
-                    'message' => "Quantité globale insuffisante pour le modèle '{$modele->getNom()}' " .
-                        "(disponible globalement: {$modele->getQuantiteGlobale()}, demandé: {$quantite})"
-                ], 400);
+
+            // Vérifier le stock local de la boutique
+            if ($stockDisponible < $quantite) {
+                $deficit = new StockDeficit(
+                    $modele->getNom(),
+                    $quantite,
+                    $stockDisponible,
+                    (string)$boutique->getId()
+                );
+                $stockDeficits[] = $deficit;
+                $hasStockIssues = true;
+            }
+
+            // Vérifier aussi la quantité globale (information supplémentaire)
+            $stockGlobal = $modele->getQuantiteGlobale();
+            if ($stockGlobal < $quantite && $stockDisponible >= $quantite) {
+                // Stock local suffisant mais stock global insuffisant
+                // Créer un déficit spécial pour le stock global
+                $globalDeficit = new StockDeficit(
+                    $modele->getNom() . ' (Stock Global)',
+                    $quantite,
+                    $stockGlobal,
+                    'global'
+                );
+                $stockDeficits[] = $globalDeficit;
+                $hasStockIssues = true;
             }
 
             $totalQuantiteReservee += $quantite;
@@ -949,8 +943,14 @@ class ApiReservationController extends ApiInterface
         $reservation->setEntreprise($this->getUser()->getEntreprise());
         $reservation->setMontant($montant);
         $reservation->setReste($reste);
-        // ✅ NOUVEAU : Définir le statut initial à "en_attente"
-        $reservation->setStatus(ReservationStatus::EN_ATTENTE->value);
+
+        // ✅ NOUVELLE LOGIQUE : Assigner le statut selon la disponibilité du stock
+        if ($hasStockIssues) {
+            $reservation->setStatus(ReservationStatus::EN_ATTENTE_STOCK->value);
+        } else {
+            $reservation->setStatus(ReservationStatus::EN_ATTENTE->value);
+        }
+
         $reservation->setCreatedAtValue(new \DateTime());
         $reservation->setUpdatedAt(new \DateTime());
         $reservation->setCreatedBy($this->getUser());
@@ -989,7 +989,7 @@ class ApiReservationController extends ApiInterface
                 // ✅ MODIFICATION CRITIQUE : NE PLUS déduire le stock lors de la création
                 // Le stock sera déduit uniquement lors de la confirmation de la réservation
                 // Cette approche permet d'éviter les blocages inutiles en cas d'annulation
-                
+
                 // ❌ ANCIEN CODE (supprimé) :
                 // $modeleBoutique->setQuantite($modeleBoutique->getQuantite() - $quantite);
                 // if ($modele && $modele->getQuantiteGlobale() >= $quantite) {
@@ -1033,6 +1033,54 @@ class ApiReservationController extends ApiInterface
             // Envoi des notifications (après la transaction réussie)
             if ($admin) {
                 try {
+                    // ✅ NOUVELLE FONCTIONNALITÉ : Envoyer les alertes de stock si nécessaire
+                    if ($hasStockIssues && !empty($stockDeficits)) {
+                        // Préparer les informations de la réservation pour les notifications
+                        $reservationInfo = [
+                            'reservation_id' => $reservation->getId(),
+                            'client_name' => $client->getNom() . ' ' . $client->getPrenom(),
+                            'client_phone' => $client->getTelephone(),
+                            'total_amount' => $montant,
+                            'advance_amount' => $avance,
+                            'remaining_amount' => $reste,
+                            'withdrawal_date' => $dateRetrait->format('d/m/Y'),
+                            'created_by' => $this->getUser()->getNom() && $this->getUser()->getPrenoms()
+                                ? $this->getUser()->getNom() . " " . $this->getUser()->getPrenoms()
+                                : $this->getUser()->getLogin(),
+                            'created_at' => (new \DateTime())->format('d/m/Y H:i')
+                        ];
+
+                        // Envoyer l'email d'alerte de stock avec gestion d'erreur robuste
+                        try {
+                            $this->sendMailService->sendStockAlertEmail(
+                                $this->sendMail,
+                                $admin,
+                                $this->getUser()->getEntreprise(),
+                                $boutique->getLibelle(),
+                                $stockDeficits,
+                                $reservationInfo
+                            );
+                        } catch (\Exception $emailError) {
+                            // Logger l'erreur mais ne pas bloquer le processus
+                            error_log("❌ Erreur envoi email alerte stock: " . $emailError->getMessage());
+                        }
+
+                        // Envoyer la notification push avec système de fallback
+                        try {
+                            $this->notificationService->sendStockAlertNotification(
+                                $admin,
+                                $this->getUser()->getEntreprise(),
+                                $boutique->getLibelle(),
+                                $stockDeficits,
+                                $reservationInfo
+                            );
+                        } catch (\Exception $notifError) {
+                            // Logger l'erreur mais ne pas bloquer le processus
+                            error_log("❌ Erreur envoi notification alerte stock: " . $notifError->getMessage());
+                        }
+                    }
+
+                    // Notifications standard de réservation (existantes)
                     $this->sendMailService->sendNotification([
                         'entreprise' => $this->getUser()->getEntreprise(),
                         "user" => $admin,
@@ -1047,6 +1095,7 @@ class ApiReservationController extends ApiInterface
                                 "- Date de retrait prévue : %s\n" .
                                 "- Effectué par : %s\n" .
                                 "- Date de réservation : %s\n\n" .
+                                ($hasStockIssues ? "⚠️ ATTENTION : Cette réservation contient des articles en rupture de stock. Consultez l'email d'alerte pour plus de détails.\n\n" : "") .
                                 "Cordialement,\nVotre application de gestion.",
                             $admin->getLogin(),
                             $boutique->getLibelle(),
@@ -1061,7 +1110,7 @@ class ApiReservationController extends ApiInterface
                                 : $this->getUser()->getLogin(),
                             (new \DateTime())->format('d/m/Y H:i')
                         ),
-                        "titre" => "Réservation - " . $boutique->getLibelle(),
+                        "titre" => "Réservation - " . $boutique->getLibelle() . ($hasStockIssues ? " (⚠️ Stock insuffisant)" : ""),
                     ]);
 
                     $this->sendMailService->send(
@@ -1176,9 +1225,9 @@ class ApiReservationController extends ApiInterface
         Request $request,
         ReservationWorkflowService $workflowService
     ): Response {
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        /* if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
-        }
+        } */
 
         try {
             $data = json_decode($request->getContent(), true);
@@ -1186,25 +1235,39 @@ class ApiReservationController extends ApiInterface
 
             $result = $workflowService->confirmReservation($id, $this->getUser(), $notes);
 
-            return $this->json($result, 200);
+            if ($result['success']) {
+                // ✅ Utiliser les méthodes d'ApiInterface pour la réponse de succès
+                $this->setStatusCode(200);
+                $this->setMessage($result['message']);
 
+                return $this->responseData([
+                    'reservation' => $result['reservation'],
+                    'stock_deductions' => $result['stock_deductions']
+                ], 'group1', ['Content-Type' => 'application/json']);
+            } else {
+                // ✅ Utiliser les méthodes d'ApiInterface pour la réponse d'erreur
+                $this->setStatusCode(400);
+                $this->setMessage($result['message']);
+
+                return $this->response([
+                    'insufficient_items' => $result['insufficient_items'] ?? []
+                ]);
+            }
         } catch (\InvalidArgumentException $e) {
-            return $this->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 400);
-
+            // ✅ Utiliser les méthodes d'ApiInterface pour les erreurs de validation
+            $this->setStatusCode(400);
+            $this->setMessage($e->getMessage());
+            return $this->response([]);
         } catch (\RuntimeException $e) {
-            return $this->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 400);
-
+            // ✅ Utiliser les méthodes d'ApiInterface pour les erreurs de logique métier
+            $this->setStatusCode(400);
+            $this->setMessage($e->getMessage());
+            return $this->response([]);
         } catch (\Exception $e) {
-            return $this->json([
-                'success' => false,
-                'message' => 'Erreur lors de la confirmation de la réservation: ' . $e->getMessage()
-            ], 500);
+            // ✅ Utiliser les méthodes d'ApiInterface pour les erreurs serveur
+            $this->setStatusCode(500);
+            $this->setMessage('Erreur lors de la confirmation de la réservation: ' . $e->getMessage());
+            return $this->response([]);
         }
     }
 
@@ -1293,19 +1356,31 @@ class ApiReservationController extends ApiInterface
 
             $result = $workflowService->cancelReservation($id, $this->getUser(), $reason);
 
-            return $this->json($result, 200);
+            if ($result['success']) {
+                // ✅ Utiliser les méthodes d'ApiInterface pour la réponse de succès
+                $this->setStatusCode(200);
+                $this->setMessage($result['message']);
 
+                return $this->responseData([
+                    'reservation' => $result['reservation'],
+                    'reason' => $result['reason']
+                ], 'group1', ['Content-Type' => 'application/json']);
+            } else {
+                // ✅ Utiliser les méthodes d'ApiInterface pour la réponse d'erreur
+                $this->setStatusCode(400);
+                $this->setMessage($result['message']);
+                return $this->response([]);
+            }
         } catch (\InvalidArgumentException $e) {
-            return $this->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 400);
-
+            // ✅ Utiliser les méthodes d'ApiInterface pour les erreurs de validation
+            $this->setStatusCode(400);
+            $this->setMessage($e->getMessage());
+            return $this->response([]);
         } catch (\Exception $e) {
-            return $this->json([
-                'success' => false,
-                'message' => 'Erreur lors de l\'annulation de la réservation: ' . $e->getMessage()
-            ], 500);
+            // ✅ Utiliser les méthodes d'ApiInterface pour les erreurs serveur
+            $this->setStatusCode(500);
+            $this->setMessage('Erreur lors de l\'annulation de la réservation: ' . $e->getMessage());
+            return $this->response([]);
         }
     }
 
@@ -1804,7 +1879,7 @@ class ApiReservationController extends ApiInterface
             $dateDebut = new \DateTime($data['dateDebut'] ?? '-30 days');
             $dateFin = new \DateTime($data['dateFin'] ?? 'now');
         }
-        
+
         return [$dateDebut, $dateFin];
     }
 
@@ -1817,13 +1892,13 @@ class ApiReservationController extends ApiInterface
         $montantTotal = 0;
         $montantAvances = 0;
         $montantReste = 0;
-        
+
         foreach ($reservations as $reservation) {
             $montantTotal += (float)$reservation->getMontant();
             $montantAvances += (float)$reservation->getAvance();
             $montantReste += (float)$reservation->getReste();
         }
-        
+
         return [
             'total_reservations' => $totalReservations,
             'montant_total' => $montantTotal,

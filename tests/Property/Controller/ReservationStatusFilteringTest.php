@@ -238,6 +238,7 @@ class ReservationStatusFilteringTest extends TestCase
         // Arrange: Tester avec tous les statuts possibles
         $allValidStatuses = [
             ReservationStatus::EN_ATTENTE->value,
+            ReservationStatus::EN_ATTENTE_STOCK->value,
             ReservationStatus::CONFIRMEE->value,
             ReservationStatus::ANNULEE->value
         ];
@@ -249,7 +250,7 @@ class ReservationStatusFilteringTest extends TestCase
         }
 
         // Vérifier que la combinaison de tous les statuts est valide
-        $this->assertCount(3, $allValidStatuses, "Il doit y avoir exactement 3 statuts valides");
+        $this->assertCount(4, $allValidStatuses, "Il doit y avoir exactement 4 statuts valides");
     }
 
     /**
