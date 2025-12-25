@@ -15,15 +15,15 @@ class Entreprise
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-     #[Groups(["group1"])]
+     #[Groups(["group1","group_abonnement"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-     #[Groups(["group1"])]
+     #[Groups(["group1","group_abonnement"])]
     private ?string $libelle = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-     #[Groups(["group1"])]
+     #[Groups(["group1","group_abonnement"])]
     private ?string $numero = null;
 
 
@@ -34,7 +34,7 @@ class Entreprise
 
 
     #[ORM\Column(length: 255, nullable: true)]
-     #[Groups(["group1"])]
+     #[Groups(["group1","group_abonnement"])]
     private ?string $email = null;
 
     /**

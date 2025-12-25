@@ -17,30 +17,30 @@ class ModuleAbonnement
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-     #[Groups(["group1", "group_type"])]
+     #[Groups(["group1", "group_type","group_abonnement"])]
     private ?int $id = null;
 
     #[ORM\Column]
-     #[Groups(["group1", "group_type"])]
+     #[Groups(["group1", "group_type","group_abonnement"])]
     private ?bool $etat = null;
 
     #[ORM\Column(type: Types::TEXT)]
-     #[Groups(["group1", "group_type"])]
+     #[Groups(["group1", "group_type","group_abonnement"])]
     private ?string $description = null;
 
     #[ORM\Column(length: 255)]
-     #[Groups(["group1", "group_type"])]
+     #[Groups(["group1", "group_type","group_abonnement"])]
     private ?string $montant = null;
 
     #[ORM\Column(length: 255)]
-     #[Groups(["group1", "group_type"])]
+     #[Groups(["group1", "group_type","group_abonnement"])]
     private ?string $duree = null;
 
     /**
      * @var Collection<int, LigneModule>
      */
     #[ORM\OneToMany(targetEntity: LigneModule::class, mappedBy: 'moduleAbonnement')]
-     #[Groups(["group1", "group_type"])]
+     #[Groups(["group1", "group_type","group_abonnement"])]
     private Collection $ligneModules;
 
     /**
@@ -52,7 +52,7 @@ class ModuleAbonnement
 
 
     #[ORM\Column(length: 255)]
-     #[Groups(["group1", "group_type"])]
+     #[Groups(["group1", "group_type","group_abonnement"])]
      private ?string $code = null;
      
      /**
@@ -62,7 +62,7 @@ class ModuleAbonnement
     private Collection $paiementAbonnements;
     
     #[ORM\Column(nullable: true, unique: true)]
-    #[Groups(["group1", "group_type"])]
+    #[Groups(["group1", "group_type","group_abonnement"])]
     private ?int $numero = null;
 
     public function __construct()
