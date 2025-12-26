@@ -22,3 +22,16 @@ nelmio_api_doc:
   areas: # to filter documented areas
     path_patterns:
       - ^/api(?!/doc$)  # Accepts routes under /api except /api/doc
+
+  # Configuration HTML pour Swagger UI avec sections fermées par défaut
+  html_config:
+    assets_mode: cdn
+    swagger_ui_config:
+      docExpansion: "none"          # Sections fermées par défaut
+      defaultModelsExpandDepth: 1   # Profondeur d'expansion des modèles
+      defaultModelExpandDepth: 1    # Profondeur d'expansion des propriétés
+      displayOperationId: false     # Masquer les IDs d'opération
+      displayRequestDuration: true  # Afficher la durée des requêtes
+      filter: true                  # Activer la recherche
+      showExtensions: false         # Masquer les extensions
+      showCommonExtensions: false   # Masquer les extensions communes
