@@ -315,7 +315,8 @@ class ApiPaiementController extends ApiInterface
         $paiement->setReference($utils->generateReference('PMT'));
         $paiement->setCreatedBy($this->getUser());
         $paiement->setUpdatedBy($this->getUser());
-        $paiement->setCreatedAtValue(new \DateTime($data['datePaiement']));
+        $paiement->setCreatedAtValue(new \DateTime());
+        //$paiement->setCreatedAtValue(new \DateTime($data['datePaiement']));
         $paiement->setUpdatedAt(new \DateTime());
 
         // Mise à jour du reste à payer de la facture
@@ -883,7 +884,8 @@ class ApiPaiementController extends ApiInterface
 
         $paiement->setCreatedBy($this->getUser());
         $paiement->setUpdatedBy($this->getUser());
-        $paiement->setCreatedAtValue(new \DateTime($data["datePaiment"]));
+        $paiement->setCreatedAtValue(new \DateTime());
+        //$paiement->setCreatedAtValue(new \DateTime($data["datePaiment"]));
         $paiement->setUpdatedAt(new \DateTime());
 
         // 🔒 Transaction pour garantir la cohérence atomique
@@ -909,7 +911,7 @@ class ApiPaiementController extends ApiInterface
                 $ligne->setModeleBoutique($modeleBoutique);
                 $ligne->setQuantite($quantite);
                 $ligne->setMontant($montant);
-
+               
                 $entityManager->persist($ligne);
 
                 // Mise à jour du stock boutique
