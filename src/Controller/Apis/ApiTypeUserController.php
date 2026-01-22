@@ -37,7 +37,6 @@ class ApiTypeUserController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'typeUser')]
-    // #[Security(name: 'Bearer')]
     public function index(TypeUserRepository $typeUserRepository): Response
     {
         try {
