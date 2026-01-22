@@ -23,7 +23,7 @@ class ApiTypeUserController extends ApiInterface
 
 
 
-    #[Route('/', methods: ['GET'])]
+    #[Route('', methods: ['GET'])]
     /**
      * Retourne la liste des typeUsers.
      * 
