@@ -123,7 +123,14 @@ class ApiClientController extends ApiInterface
                     ['boutique' => $this->getUser()->getBoutique()],
                     ['id' => 'ASC']
                 ));
-            } else {
+            }elseif($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'ADSB'])) 
+            {
+                 $clients = $this->paginationService->paginate($clientRepository->findBy(
+                    ['entreprise' => $this->getUser()->getEntreprise()],
+                    ['id' => 'ASC']
+                ));
+             }
+            else {
                 $clients = $this->paginationService->paginate($clientRepository->findBy(
                     ['surccursale' => $this->getUser()->getSurccursale()],
                     ['id' => 'ASC']
