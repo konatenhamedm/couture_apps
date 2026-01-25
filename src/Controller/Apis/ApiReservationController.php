@@ -432,6 +432,16 @@ class ApiReservationController extends ApiInterface
                             ]
                         ),
                         new OA\Property(
+                            property: "pagination",
+                            type: "object",
+                            properties: [
+                                new OA\Property(property: "currentPage", type: "integer", example: 1, description: "Page actuelle"),
+                                new OA\Property(property: "totalItems", type: "integer", example: 24, description: "Nombre total d'éléments"),
+                                new OA\Property(property: "itemsPerPage", type: "integer", example: 10, description: "Nombre d'éléments par page"),
+                                new OA\Property(property: "totalPages", type: "integer", example: 3, description: "Nombre total de pages")
+                            ]
+                        ),
+                        new OA\Property(
                             property: "reservations",
                             type: "array",
                             items: new OA\Items(
@@ -549,17 +559,19 @@ class ApiReservationController extends ApiInterface
                     'statistiques' => $stats
                 ]
             ];
-
-            // Ajouter les réservations sérialisées
-            // Utiliser la méthode response pour obtenir les données sérialisées
-            $serializedReservations = json_decode(
-                $this->responseData($paginatedReservations, 'group_reservation', ['Content-Type' => 'application/json'])->getContent(),
+            
+            // Utiliser responseData avec pagination pour obtenir les métadonnées
+            $paginatedResponse = json_decode(
+                $this->responseData($paginatedReservations, 'group_reservation', ['Content-Type' => 'application/json'], true)->getContent(),
                 true
             );
-
-            $response['data']['reservations'] = $serializedReservations;
-
+            
+            // Ajouter les réservations et les métadonnées de pagination
+            $response['data']['reservations'] = $paginatedResponse['data'];
+            $response['data']['pagination'] = $paginatedResponse['pagination'];
+            
             return $this->json($response);
+            
         } catch (\Exception $exception) {
             return $this->json([
                 'success' => false,
