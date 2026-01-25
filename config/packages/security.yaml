@@ -54,7 +54,7 @@ security:
             - { path: ^/public/, roles: PUBLIC_ACCESS }
             - { path: ^/assets/, roles: PUBLIC_ACCESS }
             - { path: ^/admin, roles: ROLE_ADMIN }
-            - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
+           # - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
             - { path: ^/, roles: PUBLIC_ACCESS }  
       
 

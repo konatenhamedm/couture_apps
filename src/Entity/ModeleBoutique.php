@@ -61,6 +61,9 @@ class ModeleBoutique
     #[Groups(["group1","group_details","group_modeleBoutique"]) ]
     private ?string $taille = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $prixMinimal = null;
+
 
 
     public function __construct()
@@ -221,6 +224,18 @@ class ModeleBoutique
     public function setTaille(string $taille): static
     {
         $this->taille = $taille;
+
+        return $this;
+    }
+
+    public function getPrixMinimal(): ?string
+    {
+        return $this->prixMinimal;
+    }
+
+    public function setPrixMinimal(?string $prixMinimal): static
+    {
+        $this->prixMinimal = $prixMinimal;
 
         return $this;
     }

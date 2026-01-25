@@ -76,6 +76,12 @@ class Client
      #[ORM\ManyToOne(inversedBy: 'clients')]
      private ?Entreprise $entreprise = null;
 
+     #[ORM\Column(length: 255, nullable: true)]
+     private ?string $adresse = null;
+
+     #[ORM\Column(length: 255, nullable: true)]
+     private ?string $email = null;
+
     public function __construct()
     {
         $this->factures = new ArrayCollection();
@@ -263,6 +269,30 @@ class Client
     public function setEntreprise(?Entreprise $entreprise): static
     {
         $this->entreprise = $entreprise;
+
+        return $this;
+    }
+
+    public function getAdresse(): ?string
+    {
+        return $this->adresse;
+    }
+
+    public function setAdresse(?string $adresse): static
+    {
+        $this->adresse = $adresse;
+
+        return $this;
+    }
+
+    public function getEmail(): ?string
+    {
+        return $this->email;
+    }
+
+    public function setEmail(?string $email): static
+    {
+        $this->email = $email;
 
         return $this;
     }
