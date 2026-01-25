@@ -137,7 +137,7 @@ class ApiClientController extends ApiInterface
                     ['id' => 'ASC']
                 ));
             }
-                dd($clients);
+                /* dd($clients); */
 
             $response = $this->responseData($clients, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
