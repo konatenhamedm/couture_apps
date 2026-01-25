@@ -57,8 +57,8 @@ class ApiInterface extends AbstractController
 
     protected $serializer;
 
-    protected $sendMail ;
-    protected $superAdmin ;
+    protected $sendMail;
+    protected $superAdmin;
     protected ?NotificationService $notificationService = null;
 
     public function __construct(
@@ -77,7 +77,7 @@ class ApiInterface extends AbstractController
         UserRepository $userRepository,
         protected StatistiquesService $statistiquesService,
         protected PaginationService $paginationService,
-       #[Autowire(param: 'SEND_MAIL')] string $sendMail,
+        #[Autowire(param: 'SEND_MAIL')] string $sendMail,
         #[Autowire(param: 'SUPER_ADMIN')] string $superAdmin,
         ?NotificationService $notificationService = null
     ) {
@@ -97,7 +97,6 @@ class ApiInterface extends AbstractController
         $this->sendMail = $sendMail;
         $this->superAdmin = $superAdmin;
         $this->notificationService = $notificationService;
-
     }
 
     public function allParametres($type)
@@ -215,17 +214,17 @@ class ApiInterface extends AbstractController
 
             ]);
             // On instancie la réponse
-            $response = new Response($jsonContent,$this->getStatusCode());
+            $response = new Response($jsonContent, $this->getStatusCode());
             //$response->headers->set('Content-Type', 'application/json');
             $response->headers->set('Access-Control-Allow-Origin', '*');
         }
-       
+
         return $response;
         //return new JsonResponse($response, $this->getStatusCode(), $headers);
     }
     public function responseTrue($data, $headers = [])
     {
-      
+
         $encoders = [new JsonEncoder()];
         $normalizers = [new ObjectNormalizer()];
         $serializer = new Serializer($normalizers, $encoders);
@@ -355,7 +354,7 @@ $this->setStatusCode(500);
 
             $response->headers->set('Access-Control-Allow-Origin', '*');
         } catch (\Exception $e) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $response = new JsonResponse([
                 'code' => 500,
                 'message' => $e->getMessage(),
@@ -391,7 +390,7 @@ $this->setStatusCode(500);
                 $response->headers->set('Access-Control-Allow-Origin', '*');
             }
         } catch (\Exception $e) {
-$this->setStatusCode(500);
+            $this->setStatusCode(500);
             $response = new JsonResponse([
                 'code' => 500,
                 'message' => $e->getMessage(),

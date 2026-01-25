@@ -41,21 +41,37 @@ class ApiClientController extends ApiInterface
         response: 200,
         description: "Liste des clients récupérée avec succès",
         content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(
-                type: "object",
-                properties: [
-                    new OA\Property(property: "id", type: "integer", example: 1, description: "Identifiant unique du client"),
-                    new OA\Property(property: "nom", type: "string", example: "Kouassi", description: "Nom du client"),
-                    new OA\Property(property: "prenom", type: "string", example: "Yao", description: "Prénom du client"),
-                    new OA\Property(property: "numero", type: "string", example: "+225 0123456789", description: "Numéro de téléphone"),
-                    new OA\Property(property: "photo", type: "string", nullable: true, example: "/uploads/clients/photo_001.jpg", description: "Chemin de la photo"),
-                    new OA\Property(property: "boutique", type: "object", nullable: true, description: "Boutique associée"),
-                    new OA\Property(property: "succursale", type: "object", nullable: true, description: "Succursale associée"),
-                    new OA\Property(property: "entreprise", type: "object", description: "Entreprise associée"),
-                    new OA\Property(property: "createdAt", type: "string", format: "date-time", example: "2025-01-15T10:30:00+00:00")
-                ]
-            )
+            type: 'object',
+            properties: [
+                new OA\Property(
+                    property: "data",
+                    type: "array",
+                    items: new OA\Items(
+                        type: "object",
+                        properties: [
+                            new OA\Property(property: "id", type: "integer", example: 1, description: "Identifiant unique du client"),
+                            new OA\Property(property: "nom", type: "string", example: "Kouassi", description: "Nom du client"),
+                            new OA\Property(property: "prenom", type: "string", example: "Yao", description: "Prénom du client"),
+                            new OA\Property(property: "numero", type: "string", example: "+225 0123456789", description: "Numéro de téléphone"),
+                            new OA\Property(property: "photo", type: "string", nullable: true, example: "/uploads/clients/photo_001.jpg", description: "Chemin de la photo"),
+                            new OA\Property(property: "boutique", type: "object", nullable: true, description: "Boutique associée"),
+                            new OA\Property(property: "succursale", type: "object", nullable: true, description: "Succursale associée"),
+                            new OA\Property(property: "entreprise", type: "object", description: "Entreprise associée"),
+                            new OA\Property(property: "createdAt", type: "string", format: "date-time", example: "2025-01-15T10:30:00+00:00")
+                        ]
+                    )
+                ),
+                new OA\Property(
+                    property: "pagination",
+                    type: "object",
+                    properties: [
+                        new OA\Property(property: "currentPage", type: "integer", example: 1, description: "Page actuelle"),
+                        new OA\Property(property: "totalItems", type: "integer", example: 50, description: "Nombre total d'éléments"),
+                        new OA\Property(property: "itemsPerPage", type: "integer", example: 10, description: "Nombre d'éléments par page"),
+                        new OA\Property(property: "totalPages", type: "integer", example: 5, description: "Nombre total de pages")
+                    ]
+                )
+            ]
         )
     )]
     #[OA\Response(response: 500, description: "Erreur serveur lors de la récupération")]
@@ -63,7 +79,7 @@ class ApiClientController extends ApiInterface
     {
         try {
             $clients = $this->paginationService->paginate($clientRepository->findAll());
-            $response = $this->responseData($clients, 'group1', ['Content-Type' => 'application/json']);
+            $response = $this->responseData($clients, 'group1', ['Content-Type' => 'application/json'], true);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des clients");
@@ -87,20 +103,36 @@ class ApiClientController extends ApiInterface
         response: 200,
         description: "Liste des clients récupérée avec succès",
         content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(
-                type: "object",
-                properties: [
-                    new OA\Property(property: "id", type: "integer", example: 1),
-                    new OA\Property(property: "nom", type: "string", example: "Kouassi"),
-                    new OA\Property(property: "prenom", type: "string", example: "Yao"),
-                    new OA\Property(property: "numero", type: "string", example: "+225 0123456789"),
-                    new OA\Property(property: "photo", type: "string", nullable: true, example: "/uploads/clients/photo_001.jpg"),
-                    new OA\Property(property: "boutique", type: "object", nullable: true),
-                    new OA\Property(property: "succursale", type: "object", nullable: true),
-                    new OA\Property(property: "entreprise", type: "object")
-                ]
-            )
+            type: 'object',
+            properties: [
+                new OA\Property(
+                    property: "data",
+                    type: "array",
+                    items: new OA\Items(
+                        type: "object",
+                        properties: [
+                            new OA\Property(property: "id", type: "integer", example: 1),
+                            new OA\Property(property: "nom", type: "string", example: "Kouassi"),
+                            new OA\Property(property: "prenom", type: "string", example: "Yao"),
+                            new OA\Property(property: "numero", type: "string", example: "+225 0123456789"),
+                            new OA\Property(property: "photo", type: "string", nullable: true, example: "/uploads/clients/photo_001.jpg"),
+                            new OA\Property(property: "boutique", type: "object", nullable: true),
+                            new OA\Property(property: "succursale", type: "object", nullable: true),
+                            new OA\Property(property: "entreprise", type: "object")
+                        ]
+                    )
+                ),
+                new OA\Property(
+                    property: "pagination",
+                    type: "object",
+                    properties: [
+                        new OA\Property(property: "currentPage", type: "integer", example: 1, description: "Page actuelle"),
+                        new OA\Property(property: "totalItems", type: "integer", example: 50, description: "Nombre total d'éléments"),
+                        new OA\Property(property: "itemsPerPage", type: "integer", example: 10, description: "Nombre d'éléments par page"),
+                        new OA\Property(property: "totalPages", type: "integer", example: 5, description: "Nombre total de pages")
+                    ]
+                )
+            ]
         )
     )]
     #[OA\Response(response: 401, description: "Non authentifié")]
@@ -141,7 +173,7 @@ class ApiClientController extends ApiInterface
                 ));
             }
 
-            $response = $this->responseData($clients, 'group1', ['Content-Type' => 'application/json']);
+            $response = $this->responseData($clients, 'group1', ['Content-Type' => 'application/json'], true);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des clients");
