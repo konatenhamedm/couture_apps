@@ -118,7 +118,6 @@ class ApiClientController extends ApiInterface
                     ['entreprise' => $this->getUser()->getEntreprise()],
                     ['id' => 'ASC']
                 ));
-
             } elseif ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'ADB'])) {
                 $clients = $this->paginationService->paginate($clientRepository->findBy(
                     ['boutique' => $this->getUser()->getBoutique()],
@@ -137,7 +136,6 @@ class ApiClientController extends ApiInterface
                     ['id' => 'ASC']
                 ));
             }
-                /* dd($clients); */
 
             $response = $this->responseData($clients, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
