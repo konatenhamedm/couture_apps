@@ -56,8 +56,8 @@ class ApiCategorieMesureController extends ApiInterface
     public function index(CategorieMesureRepository $moduleRepository): Response
     {
         try {
-            $categories = $this->paginationService->paginate($moduleRepository->findAll());
-            $response = $this->responseData($categories, 'group1', ['Content-Type' => 'application/json'], true);
+            $categories = $moduleRepository->findAll() ;//$this->paginationService->paginate($moduleRepository->findAll());
+            $response = $this->responseData($categories, 'group1', ['Content-Type' => 'application/json'], false);
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des catégories de mesure");
