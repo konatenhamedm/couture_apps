@@ -148,6 +148,8 @@ class ApiClientController extends ApiInterface
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
+        dd($request->get('with_pagination'));
+
         try {
 
             if ($request->get('with_pagination') == true) {
