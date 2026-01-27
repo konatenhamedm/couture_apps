@@ -148,7 +148,7 @@ class ApiClientController extends ApiInterface
         try {
             $user = $this->getUser();
             $userTypeCode = $user->getType()->getCode();
-            $withPagination = $request->get('with_pagination', "false");
+            $withPagination = $request->get('with_pagination', true);
 
             // Détermination des critères de filtrage selon le type d'utilisateur
             $criteria = $this->getClientCriteria($user, $userTypeCode);
