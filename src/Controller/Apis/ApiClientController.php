@@ -601,8 +601,8 @@ class ApiClientController extends ApiInterface
                 if ($request->get('numero')) {
                     $client->setNumero($request->get('numero'));
                 }
-                if ($request->get('surccursale')) {
-                    $client->setSurccursale($surccursaleRepository->find($request->get('surccursale')));
+                if ($request->get('succursale')) {
+                    $client->setSurccursale($surccursaleRepository->find($request->get('succursale')));
                 }
                 if ($request->get('boutique')) {
                     $client->setBoutique($boutiqueRepository->find($request->get('boutique')));
