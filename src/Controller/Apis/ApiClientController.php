@@ -138,49 +138,51 @@ class ApiClientController extends ApiInterface
     #[OA\Response(response: 401, description: "Non authentifié")]
     #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
     #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
-    public function indexAll(ClientRepository $clientRepository, TypeUserRepository $typeUserRepository): Response
+    public function indexAll(Request $request, ClientRepository $clientRepository, TypeUserRepository $typeUserRepository): Response
     {
-
-      // dd($this->paginationService->paginate($clientRepository->findAll()));
-//dd($clientRepository->findAll());
-        //return $this->responseData($this->paginationService->paginate($clientRepository->findAll()), 'group1', ['Content-Type' => 'application/json']);
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        // Vérification de l'abonnement
+        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) === null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
         try {
-            if ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'SADM'])) {
-                $clients = $this->paginationService->paginate($clientRepository->findBy(
-                    ['entreprise' => $this->getUser()->getEntreprise()],
-                    ['id' => 'ASC']
-                ));
-            } elseif ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'ADB'])) {
-                $clients = $this->paginationService->paginate($clientRepository->findBy(
-                    ['boutique' => $this->getUser()->getBoutique()],
-                    ['id' => 'ASC']
-                ));
-            }elseif($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'ADSB'])) 
-            {
-                 $clients = $this->paginationService->paginate($clientRepository->findBy(
-                    ['entreprise' => $this->getUser()->getEntreprise()],
-                    ['id' => 'ASC']
-                ));
-             }
-            else {
-                $clients = $this->paginationService->paginate($clientRepository->findBy(
-                    ['surccursale' => $this->getUser()->getSurccursale()],
-                    ['id' => 'ASC']
-                ));
+            $user = $this->getUser();
+            $userTypeCode = $user->getType()->getCode();
+            $withPagination = $request->get('with_pagination', false);
+
+            // Détermination des critères de filtrage selon le type d'utilisateur
+            $criteria = $this->getClientCriteria($user, $userTypeCode);
+
+            // Récupération des clients
+            $clients = $clientRepository->findBy($criteria, ['id' => 'ASC']);
+
+            if ($withPagination) {
+                $clients = $this->paginationService->paginate($clients);
             }
 
-            $response = $this->responseData($clients, 'group1', ['Content-Type' => 'application/json'], true);
+            return $this->responseData(
+                $clients,
+                'group1',
+                ['Content-Type' => 'application/json'],
+                $withPagination
+            );
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des clients");
-            $response = $this->response([]);
+            return $this->response([]);
         }
+    }
 
-        return $response;
+    /**
+     * Détermine les critères de filtrage des clients selon le type d'utilisateur
+     */
+    private function getClientCriteria($user, string $userTypeCode): array
+    {
+        return match ($userTypeCode) {
+            'SADM', 'ADSB' => ['entreprise' => $user->getEntreprise()],
+            'ADB' => ['boutique' => $user->getBoutique()],
+            default => ['surccursale' => $user->getSurccursale()],
+        };
     }
 
     /**
@@ -316,7 +318,7 @@ class ApiClientController extends ApiInterface
                 new OA\Property(property: "photo", type: "string", nullable: true, example: "/uploads/clients/document_01_abc123.jpg"),
                 new OA\Property(property: "succursale", type: "object"),
                 new OA\Property(property: "boutique", type: "object"),
-               
+
             ]
         )
     )]
@@ -337,16 +339,16 @@ class ApiClientController extends ApiInterface
 
         $client = new Client();
         $client->setEntreprise($this->getUser()->getEntreprise());
-        $client->setPrenom($request->get('prenoms'));
+        $client->setPrenom($request->get('prenoms') ? $request->get('prenoms') : null);
         $client->setIsActive(true);
-        $client->setNom($request->get('nom'));
-        $client->setNumero($request->get('numero'));
-        
-        if($request->get('succursale') && $request->get('succursale') != null){
-        $client->setSurccursale($surccursaleRepository->find($request->get('succursale')));
+        $client->setNom($request->get('nom') ? $request->get('nom') : null);
+        $client->setNumero($request->get('numero') ? $request->get('numero') : "");
+
+        if ($request->get('succursale') && $request->get('succursale') != null) {
+            $client->setSurccursale($surccursaleRepository->find($request->get('succursale')));
         }
         $client->setBoutique($boutiqueRepository->find($request->get('boutique')));
-        if($request->get('boutique') && $request->get('boutique') != null){
+        if ($request->get('boutique') && $request->get('boutique') != null) {
             $client->setBoutique($boutiqueRepository->find($request->get('boutique')));
         }
 
