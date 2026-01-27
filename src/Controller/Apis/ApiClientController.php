@@ -140,75 +140,51 @@ class ApiClientController extends ApiInterface
     #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
     public function indexAll(Request $request, ClientRepository $clientRepository, TypeUserRepository $typeUserRepository): Response
     {
-
-        // dd($this->paginationService->paginate($clientRepository->findAll()));
-        //dd($clientRepository->findAll());
-        //return $this->responseData($this->paginationService->paginate($clientRepository->findAll()), 'group1', ['Content-Type' => 'application/json']);
-        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) == null) {
+        // Vérification de l'abonnement
+        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) === null) {
             return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
         }
 
-        dd($request->get('with_pagination'));
-
         try {
+            $user = $this->getUser();
+            $userTypeCode = $user->getType()->getCode();
+            $withPagination = $request->get('with_pagination', "false");
 
-            if ($request->get('with_pagination') == true) {
-                if ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'SADM'])) {
-                    $clients = $this->paginationService->paginate($clientRepository->findBy(
-                        ['entreprise' => $this->getUser()->getEntreprise()],
-                        ['id' => 'ASC']
-                    ));
-                } elseif ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'ADB'])) {
-                    $clients = $this->paginationService->paginate($clientRepository->findBy(
-                        ['boutique' => $this->getUser()->getBoutique()],
-                        ['id' => 'ASC']
-                    ));
-                } elseif ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'ADSB'])) {
-                    $clients = $this->paginationService->paginate($clientRepository->findBy(
-                        ['entreprise' => $this->getUser()->getEntreprise()],
-                        ['id' => 'ASC']
-                    ));
-                } else {
-                    $clients = $this->paginationService->paginate($clientRepository->findBy(
-                        ['surccursale' => $this->getUser()->getSurccursale()],
-                        ['id' => 'ASC']
-                    ));
-                }
-            } else {
-                if ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'SADM'])) {
-                    $clients = $clientRepository->findBy(
-                        ['entreprise' => $this->getUser()->getEntreprise()],
-                        ['id' => 'ASC']
-                    );
-                } elseif ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'ADB'])) {
-                    $clients = $clientRepository->findBy(
-                        ['boutique' => $this->getUser()->getBoutique()],
-                        ['id' => 'ASC']
-                    );
-                } elseif ($this->getUser()->getType() == $typeUserRepository->findOneBy(['code' => 'ADSB'])) {
-                    $clients = $clientRepository->findBy(
-                        ['entreprise' => $this->getUser()->getEntreprise()],
-                        ['id' => 'ASC']
-                    );
-                } else {
-                    $clients = $clientRepository->findBy(
-                        ['surccursale' => $this->getUser()->getSurccursale()],
-                        ['id' => 'ASC']
-                    );
-                }
+            // Détermination des critères de filtrage selon le type d'utilisateur
+            $criteria = $this->getClientCriteria($user, $userTypeCode);
+
+            // Récupération des clients
+            $clients = $clientRepository->findBy($criteria, ['id' => 'ASC']);
+
+            // Application de la pagination si demandée
+            if ($withPagination == "true") {
+                $clients = $this->paginationService->paginate($clients);
             }
 
-
-            $response = $this->responseData($clients, 'group1', ['Content-Type' => 'application/json'], $request->get('with_pagination') ? true: false);
+            return $this->responseData(
+                $clients,
+                'group1',
+                ['Content-Type' => 'application/json'],
+                $withPagination
+            );
         } catch (\Exception $exception) {
             $this->setStatusCode(500);
             $this->setMessage("Erreur lors de la récupération des clients");
-            $response = $this->response([]);
+            return $this->response([]);
         }
-
-        return $response;
     }
 
+    /**
+     * Détermine les critères de filtrage des clients selon le type d'utilisateur
+     */
+    private function getClientCriteria($user, string $userTypeCode): array
+    {
+        return match ($userTypeCode) {
+            'SADM', 'ADSB' => ['entreprise' => $user->getEntreprise()],
+            'ADB' => ['boutique' => $user->getBoutique()],
+            default => ['surccursale' => $user->getSurccursale()],
+        };
+    }
     /**
      * Récupère les détails d'un client spécifique
      */
