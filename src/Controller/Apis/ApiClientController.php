@@ -173,6 +173,90 @@ class ApiClientController extends ApiInterface
             return $this->response([]);
         }
     }
+    /**
+     * Liste les clients selon les droits de l'utilisateur (entreprise, boutique ou succursale)
+     */
+    #[Route('/entreprise/withParametre', methods: ['GET'])]
+    #[OA\Get(
+        path: "/api/client/entreprise/withParametre",
+        summary: "Lister les clients selon les droits utilisateur",
+        description: "Retourne la liste des clients filtrée selon le type d'utilisateur : Super-admin voit tous les clients de l'entreprise, Admin boutique voit les clients de sa boutique, autres voient les clients de leur succursale. Nécessite un abonnement actif.",
+        tags: ['client']
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Liste des clients récupérée avec succès",
+        content: new OA\JsonContent(
+            type: 'object',
+            properties: [
+                new OA\Property(
+                    property: "data",
+                    type: "array",
+                    items: new OA\Items(
+                        type: "object",
+                        properties: [
+                            new OA\Property(property: "id", type: "integer", example: 1),
+                            new OA\Property(property: "nom", type: "string", example: "Kouassi"),
+                            new OA\Property(property: "prenom", type: "string", example: "Yao"),
+                            new OA\Property(property: "numero", type: "string", example: "+225 0123456789"),
+                            new OA\Property(property: "photo", type: "string", nullable: true, example: "/uploads/clients/photo_001.jpg"),
+                            new OA\Property(property: "boutique", type: "object", nullable: true),
+                            new OA\Property(property: "succursale", type: "object", nullable: true),
+                            new OA\Property(property: "entreprise", type: "object")
+                        ]
+                    )
+                ),
+                new OA\Property(
+                    property: "pagination",
+                    type: "object",
+                    properties: [
+                        new OA\Property(property: "currentPage", type: "integer", example: 1, description: "Page actuelle"),
+                        new OA\Property(property: "totalItems", type: "integer", example: 50, description: "Nombre total d'éléments"),
+                        new OA\Property(property: "itemsPerPage", type: "integer", example: 10, description: "Nombre d'éléments par page"),
+                        new OA\Property(property: "totalPages", type: "integer", example: 5, description: "Nombre total de pages")
+                    ]
+                )
+            ]
+        )
+    )]
+    #[OA\Response(response: 401, description: "Non authentifié")]
+    #[OA\Response(response: 403, description: "Abonnement requis pour cette fonctionnalité")]
+    #[OA\Response(response: 500, description: "Erreur lors de la récupération")]
+    public function indexAllInPost(Request $request, ClientRepository $clientRepository, TypeUserRepository $typeUserRepository): Response
+    {
+        // Vérification de l'abonnement
+        if ($this->subscriptionChecker->getActiveSubscription($this->getUser()->getEntreprise()) === null) {
+            return $this->errorResponseWithoutAbonnement('Abonnement requis pour cette fonctionnalité');
+        }
+
+        try {
+            $user = $this->getUser();
+            $userTypeCode = $user->getType()->getCode();
+            $withPagination = $request->get('with_pagination', "false");
+
+            // Détermination des critères de filtrage selon le type d'utilisateur
+            $criteria = $this->getClientCriteria($user, $userTypeCode);
+
+            // Récupération des clients
+            $clients = $clientRepository->findBy($criteria, ['id' => 'ASC']);
+
+            // Application de la pagination si demandée
+            if ($withPagination == "true") {
+                $clients = $this->paginationService->paginate($clients);
+            }
+
+            return $this->responseData(
+                $clients,
+                'group1',
+                ['Content-Type' => 'application/json'],
+                $withPagination
+            );
+        } catch (\Exception $exception) {
+            $this->setStatusCode(500);
+            $this->setMessage("Erreur lors de la récupération des clients");
+            return $this->response([]);
+        }
+    }
 
     /**
      * Détermine les critères de filtrage des clients selon le type d'utilisateur
